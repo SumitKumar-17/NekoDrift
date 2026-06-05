@@ -39,6 +39,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # ── Linux native deps ──────────────────────────────────────
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-22.04'
         run: |
@@ -47,20 +48,54 @@ jobs:
             libx11-dev libxtst-dev libpng-dev \
             libxcb-xfixes0-dev libxcb-image0-dev \
             rpm fakeroot dpkg \
-            libglib2.0-dev libgtk-3-dev
+            libglib2.0-dev libgtk-3-dev \
+            librsvg2-bin imagemagick
 
+      # ── macOS native deps ──────────────────────────────────────
+      - name: Install macOS dependencies
+        if: matrix.os == 'macos-latest'
+        run: brew install librsvg imagemagick
+
+      # ── Generate icons (non-Windows) ───────────────────────────
+      - name: Generate icons (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          # Regenerate PNG icons from SVG source of truth
+          rsvg-convert -w 512 -h 512 assets/icon.svg -o assets/icon.png
+          rsvg-convert -w 32  -h 32  assets/icon.svg -o assets/tray-icon.png
+          rsvg-convert -w 22  -h 22  assets/icon.svg -o assets/tray-icon-mac.png
+
+      # ── Generate macOS .icns ───────────────────────────────────
+      - name: Generate icon.icns (macOS)
+        if: matrix.os == 'macos-latest'
+        run: bash scripts/generate-icns.sh
+
+      # ── Generate Windows .ico ──────────────────────────────────
+      - name: Generate icon.ico (Linux step for Windows cross-build)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          for size in 16 32 48 256; do
+            rsvg-convert -w $size -h $size assets/icon.svg -o /tmp/icon-${size}.png
+          done
+          convert /tmp/icon-16.png /tmp/icon-32.png /tmp/icon-48.png /tmp/icon-256.png assets/icon.ico || true
+
+      # ── npm install ────────────────────────────────────────────
       - name: Install dependencies
         run: npm ci
 
+      # ── Build TypeScript via esbuild ───────────────────────────
       - name: Build
         run: npm run build
 
+      # ── Package (no release) ───────────────────────────────────
       - name: Package (no publish)
         if: "!startsWith(github.ref, 'refs/tags/')"
         run: npm run package:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      # ── Package + publish to GitHub Releases on version tags ───
       - name: Package & Publish (release)
         if: startsWith(github.ref, 'refs/tags/')
         run: npx electron-builder build --${{ matrix.platform }} --publish always
@@ -68,6 +103,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      # ── Upload artifacts for non-release builds ────────────────
       - name: Upload artifacts (non-release)
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4

@@ -8,24 +8,45 @@ type TrayCallback = {
 };
 
 export function createTray(callbacks: TrayCallback): Tray {
-  // Try to load icon, fall back to empty image
+  const isMac = process.platform === 'darwin';
+  const assetsDir = path.join(app.getAppPath(), 'assets');
+
   let icon: Electron.NativeImage;
   try {
-    const iconPath = path.join(app.getAppPath(), 'assets', 'tray-icon.png');
+    // macOS: use template image (22×22 px @1x, automatically inverted for dark menu bar)
+    // Linux: tray icon must be ≤24×24 for most desktop environments
+    // Windows: any size, but 16×16 or 32×32 looks best
+    const iconFile = isMac ? 'tray-icon-mac.png' : 'tray-icon.png';
+    const iconPath = path.join(assetsDir, iconFile);
     icon = nativeImage.createFromPath(iconPath);
+
+    // Fall back to main icon resized if tray icon not found
+    if (icon.isEmpty()) {
+      const fallbackPath = path.join(assetsDir, 'icon.png');
+      icon = nativeImage.createFromPath(fallbackPath);
+      if (!icon.isEmpty()) {
+        icon = icon.resize({ width: 22, height: 22 });
+      }
+    }
+
     if (icon.isEmpty()) {
       icon = nativeImage.createEmpty();
+    }
+
+    // macOS: mark as template image so it adapts to light/dark menu bar
+    if (isMac && !icon.isEmpty()) {
+      icon.setTemplateImage(true);
     }
   } catch {
     icon = nativeImage.createEmpty();
   }
 
   const tray = new Tray(icon);
-  tray.setToolTip('NekoDrift 🐱');
+  tray.setToolTip('NekoDrift');
 
   const menu = Menu.buildFromTemplate([
     {
-      label: '🐱 NekoDrift',
+      label: 'NekoDrift',
       enabled: false,
     },
     { type: 'separator' },
@@ -36,18 +57,22 @@ export function createTray(callbacks: TrayCallback): Tray {
     {
       label: 'Settings...',
       click: callbacks.onOpenSettings,
+      accelerator: isMac ? 'Cmd+,' : undefined,
     },
     { type: 'separator' },
     {
       label: 'Quit NekoDrift',
       click: callbacks.onQuit,
+      accelerator: isMac ? 'Cmd+Q' : undefined,
     },
   ]);
 
   tray.setContextMenu(menu);
 
-  // Double-click opens settings on Windows/Linux
-  tray.on('double-click', callbacks.onOpenSettings);
+  // macOS: click opens menu; Windows/Linux: double-click opens settings
+  if (!isMac) {
+    tray.on('double-click', callbacks.onOpenSettings);
+  }
 
   return tray;
 }

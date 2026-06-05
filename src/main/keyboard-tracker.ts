@@ -24,9 +24,27 @@ export class KeyboardTracker {
   }
 
   async start(): Promise<void> {
+    // macOS: uiohook-napi requires Accessibility permission
+    if (process.platform === 'darwin') {
+      try {
+        const { systemPreferences } = require('electron');
+        if (typeof systemPreferences.isTrustedAccessibilityClient === 'function') {
+          const trusted = systemPreferences.isTrustedAccessibilityClient(false);
+          if (!trusted) {
+            console.warn('[KeyboardTracker] No Accessibility permission — keyboard tracking disabled.');
+            console.warn('  Grant access in System Settings → Privacy & Security → Accessibility, then restart.');
+            this.startDecayTimer();
+            return;
+          }
+        }
+      } catch (_) {}
+    }
+
     try {
       const { uIOhook } = require('uiohook-napi');
-
+      // Note: on Linux, uiohook-napi may print benign warnings to stderr at startup:
+      //   "XkbGetKeyboard failed to locate a valid keyboard!" — safe to ignore
+      //   "Could not set thread priority 49" — safe to ignore (no realtime scheduling)
       uIOhook.on('keydown', () => this.onKeyPress());
       uIOhook.on('wheel', () => this.onScroll());
       uIOhook.start();
@@ -34,15 +52,10 @@ export class KeyboardTracker {
       console.log('[KeyboardTracker] uiohook-napi started');
     } catch (err) {
       console.warn('[KeyboardTracker] uiohook-napi unavailable, keyboard tracking disabled');
+      console.warn('  →', (err as Error).message);
     }
 
-    // Decay heat level over time
-    this.heatDecayTimer = setInterval(() => {
-      if (!this.isTyping && this.heatLevel > 0) {
-        this.heatLevel = Math.max(0, this.heatLevel - 1);
-        this.heatCb(this.heatLevel);
-      }
-    }, 3000);
+    this.startDecayTimer();
   }
 
   stop(): void {
@@ -51,9 +64,19 @@ export class KeyboardTracker {
         const { uIOhook } = require('uiohook-napi');
         uIOhook.stop();
       } catch (_) {}
+      this.hookActive = false;
     }
     if (this.cooldownTimer) clearTimeout(this.cooldownTimer);
     if (this.heatDecayTimer) clearInterval(this.heatDecayTimer);
+  }
+
+  private startDecayTimer(): void {
+    this.heatDecayTimer = setInterval(() => {
+      if (!this.isTyping && this.heatLevel > 0) {
+        this.heatLevel = Math.max(0, this.heatLevel - 1);
+        this.heatCb(this.heatLevel);
+      }
+    }, 3000);
   }
 
   private onKeyPress(): void {

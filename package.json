@@ -31,6 +31,9 @@
     "appId": "com.nekodrift.app",
     "productName": "NekoDrift",
     "copyright": "Copyright © 2024 NekoDrift",
+    "directories": {
+      "output": "dist-electron"
+    },
     "files": [
       "dist/**/*",
       "assets/**/*",
@@ -47,7 +50,7 @@
         { "target": "dmg", "arch": ["x64", "arm64"] },
         { "target": "zip", "arch": ["x64", "arm64"] }
       ],
-      "icon": "assets/icon.icns",
+      "icon": "assets/icon.png",
       "hardenedRuntime": true,
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist"

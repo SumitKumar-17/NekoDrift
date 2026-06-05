@@ -10,26 +10,32 @@ import { getSettings, saveSettings, isFirstRun, setFirstRunDone } from './store'
 import { IdleDetector } from './idle-detector';
 import { KeyboardTracker } from './keyboard-tracker';
 import { StretchTimer } from './stretch-timer';
+import { PomodoroTimer } from './pomodoro-timer';
+import { MessageReminder } from './message-reminder';
+import { NekoDriftHttpServer } from './http-server';
 import { createTray } from './tray';
 import { IPC } from '../shared/types';
-import { GREETING_MESSAGES, IDLE_MESSAGES } from '../shared/constants';
+import { GREETING_MESSAGES, IDLE_MESSAGES, AI_DONE_MESSAGES, AI_THINK_MESSAGES } from '../shared/constants';
 
-// ─── Single instance lock ─────────────────────────────────────
+// ─── Single instance lock ──────────────────────────────────────
 if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
 
-// ─── Window refs ─────────────────────────────────────────────
+// ─── Window refs ───────────────────────────────────────────────
 let catWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let onboardingWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
-// ─── Services ────────────────────────────────────────────────
+// ─── Services ──────────────────────────────────────────────────
 let idleDetector: IdleDetector;
 let keyboardTracker: KeyboardTracker;
 let stretchTimer: StretchTimer;
+let pomodoroTimer: PomodoroTimer | null = null;
+let messageReminder: MessageReminder | null = null;
+let httpServer: NekoDriftHttpServer | null = null;
 
 const DIST = path.join(app.getAppPath(), 'dist/renderer');
 
@@ -37,7 +43,7 @@ function rendererPath(file: string): string {
   return `file://${path.join(DIST, file)}`;
 }
 
-// ─── Cat Window (transparent, always-on-top) ─────────────────
+// ─── Cat Window ────────────────────────────────────────────────
 function createCatWindow(): void {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   const settings = getSettings();
@@ -45,7 +51,7 @@ function createCatWindow(): void {
 
   catWindow = new BrowserWindow({
     width: catSize + 200,
-    height: catSize + 160,
+    height: catSize + 200,
     x: Math.floor(width / 2),
     y: Math.floor(height / 2),
     transparent: true,
@@ -72,7 +78,7 @@ function createCatWindow(): void {
   catWindow.on('closed', () => { catWindow = null; });
 }
 
-// ─── Settings Window ─────────────────────────────────────────
+// ─── Settings Window ───────────────────────────────────────────
 function createSettingsWindow(): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.focus();
@@ -80,8 +86,8 @@ function createSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 520,
-    height: 660,
+    width: 560,
+    height: 780,
     resizable: false,
     title: 'NekoDrift Settings',
     show: false,
@@ -97,7 +103,7 @@ function createSettingsWindow(): void {
   settingsWindow.on('closed', () => { settingsWindow = null; });
 }
 
-// ─── Onboarding Window ───────────────────────────────────────
+// ─── Onboarding Window ─────────────────────────────────────────
 function createOnboardingWindow(): void {
   if (onboardingWindow && !onboardingWindow.isDestroyed()) {
     onboardingWindow.focus();
@@ -123,36 +129,76 @@ function createOnboardingWindow(): void {
   onboardingWindow.on('closed', () => { onboardingWindow = null; });
 }
 
-// ─── Quit helper ─────────────────────────────────────────────
+// ─── Quit helper ───────────────────────────────────────────────
 function quitApp(): void {
-  // Stop services first
   try { idleDetector?.stop(); } catch (_) {}
   try { keyboardTracker?.stop(); } catch (_) {}
   try { stretchTimer?.stop(); } catch (_) {}
-
-  // Destroy all windows explicitly
+  try { pomodoroTimer?.stop(); } catch (_) {}
+  try { messageReminder?.stop(); } catch (_) {}
+  try { httpServer?.stop(); } catch (_) {}
   try { catWindow?.destroy(); catWindow = null; } catch (_) {}
   try { settingsWindow?.destroy(); settingsWindow = null; } catch (_) {}
   try { onboardingWindow?.destroy(); onboardingWindow = null; } catch (_) {}
-
-  // Remove tray
   try { tray?.destroy(); tray = null; } catch (_) {}
-
   app.exit(0);
 }
 
-// ─── IPC Handlers ────────────────────────────────────────────
+// ─── IPC Handlers ─────────────────────────────────────────────
 function setupIPC(): void {
   ipcMain.handle(IPC.GET_SETTINGS, () => getSettings());
 
   ipcMain.handle(IPC.SAVE_SETTINGS, (_event, partial) => {
     const updated = saveSettings(partial);
     catWindow?.webContents.send(IPC.CAT_SETTINGS, updated);
-    if (partial.stretchIntervalMin || partial.name) {
+
+    // Restart stretch timer if interval changed
+    if (partial.stretchIntervalMin !== undefined || partial.stretchEnabled !== undefined) {
+      stretchTimer?.stop();
       if (updated.stretchEnabled) {
-        stretchTimer?.restart(updated.stretchIntervalMin, updated.name);
+        stretchTimer = new StretchTimer(
+          (msg) => {
+            catWindow?.webContents.send(IPC.STRETCH_REMINDER, msg);
+            catWindow?.webContents.send(IPC.CAT_SPEECH, msg);
+          },
+          updated.stretchIntervalMin,
+          updated.name
+        );
+        stretchTimer.start();
       }
     }
+
+    // Restart pomodoro if settings changed
+    if (partial.pomodoroEnabled !== undefined || partial.pomodoroFocusMin !== undefined || partial.pomodoroBreakMin !== undefined) {
+      pomodoroTimer?.stop();
+      pomodoroTimer = null;
+      if (updated.pomodoroEnabled) {
+        pomodoroTimer = new PomodoroTimer(updated.pomodoroFocusMin, updated.pomodoroBreakMin, (state) => {
+          catWindow?.webContents.send(IPC.POMODORO_STATE, state);
+        });
+      }
+    }
+
+    // Update reminder
+    if (partial.reminderEnabled !== undefined || partial.reminderHour !== undefined || partial.reminderMinute !== undefined || partial.reminderMessage !== undefined) {
+      messageReminder?.stop();
+      messageReminder = null;
+      if (updated.reminderEnabled) {
+        messageReminder = new MessageReminder(
+          updated.reminderHour,
+          updated.reminderMinute,
+          updated.reminderMessage,
+          (msg) => catWindow?.webContents.send(IPC.REMINDER_TRIGGER, msg)
+        );
+        messageReminder.start();
+      }
+    }
+
+    // Update alwaysOnTop
+    if (partial.alwaysOnTop !== undefined && catWindow && !catWindow.isDestroyed()) {
+      catWindow.setAlwaysOnTop(updated.alwaysOnTop);
+    }
+
     return updated;
   });
 
@@ -174,9 +220,41 @@ function setupIPC(): void {
     onboardingWindow?.close();
     startServices();
   });
+
+  // Per-pixel hit test → toggle ignoreMouseEvents
+  ipcMain.on(IPC.SET_IGNORE_MOUSE, (_event, ignore: boolean) => {
+    if (catWindow && !catWindow.isDestroyed()) {
+      catWindow.setIgnoreMouseEvents(ignore, { forward: true });
+    }
+  });
+
+  // Mochi drag
+  ipcMain.on(IPC.DRAG_CAT, (_event, dx: number, dy: number) => {
+    if (!catWindow || catWindow.isDestroyed()) return;
+    const [x, y] = catWindow.getPosition();
+    const display = screen.getDisplayNearestPoint({ x: x + dx, y: y + dy });
+    const { bounds } = display;
+    const [w, h] = catWindow.getSize();
+    const nx = Math.max(bounds.x, Math.min(bounds.x + bounds.width - w, x + dx));
+    const ny = Math.max(bounds.y, Math.min(bounds.y + bounds.height - h, y + dy));
+    catWindow.setPosition(Math.round(nx), Math.round(ny), false);
+  });
+
+  // Pomodoro control
+  ipcMain.on(IPC.POMODORO_CONTROL, (_event, action: 'start' | 'pause' | 'reset') => {
+    if (!pomodoroTimer) {
+      const s = getSettings();
+      pomodoroTimer = new PomodoroTimer(s.pomodoroFocusMin, s.pomodoroBreakMin, (state) => {
+        catWindow?.webContents.send(IPC.POMODORO_STATE, state);
+      });
+    }
+    if (action === 'start') pomodoroTimer.start();
+    else if (action === 'pause') pomodoroTimer.pause();
+    else if (action === 'reset') { pomodoroTimer.reset(); pomodoroTimer = null; }
+  });
 }
 
-// ─── Services Start ──────────────────────────────────────────
+// ─── Services Start ────────────────────────────────────────────
 function startServices(): void {
   const settings = getSettings();
 
@@ -194,9 +272,21 @@ function startServices(): void {
   });
   idleDetector.start();
 
-  keyboardTracker = new KeyboardTracker((isTyping) => {
-    catWindow?.webContents.send(IPC.TYPING_CHANGED, isTyping);
-  });
+  keyboardTracker = new KeyboardTracker(
+    (isTyping) => {
+      catWindow?.webContents.send(IPC.TYPING_CHANGED, isTyping);
+    },
+    (heatLevel) => {
+      // Send heat as a special speech message when newly overheating
+      if (heatLevel >= 2) {
+        const msgs = ['too fast... overheating! 🔥', 'keyboard goes brrr 💨', 'steam coming out! 😤'];
+        catWindow?.webContents.send(IPC.CAT_SPEECH, msgs[Math.floor(Math.random() * msgs.length)]);
+      }
+    },
+    () => {
+      catWindow?.webContents.send(IPC.SCROLL_EVENT);
+    }
+  );
   keyboardTracker.start();
 
   if (settings.stretchEnabled) {
@@ -210,19 +300,70 @@ function startServices(): void {
     );
     stretchTimer.start();
   }
+
+  // Pomodoro
+  if (settings.pomodoroEnabled) {
+    pomodoroTimer = new PomodoroTimer(settings.pomodoroFocusMin, settings.pomodoroBreakMin, (state) => {
+      catWindow?.webContents.send(IPC.POMODORO_STATE, state);
+    });
+  }
+
+  // Daily reminder
+  if (settings.reminderEnabled) {
+    messageReminder = new MessageReminder(
+      settings.reminderHour,
+      settings.reminderMinute,
+      settings.reminderMessage,
+      (msg) => catWindow?.webContents.send(IPC.REMINDER_TRIGGER, msg)
+    );
+    messageReminder.start();
+  }
+
+  // Claude integration HTTP server
+  if (settings.claudeIntegration) {
+    httpServer = new NekoDriftHttpServer();
+    httpServer.start((thinking, done) => {
+      catWindow?.webContents.send(IPC.AI_STATE, { thinking, done });
+      if (done) {
+        const s = getSettings();
+        const msgs = AI_DONE_MESSAGES;
+        const msg = msgs[Math.floor(Math.random() * msgs.length)](s.name);
+        setTimeout(() => catWindow?.webContents.send(IPC.CAT_SPEECH, msg), 200);
+      }
+    });
+  }
 }
 
-// ─── Mouse tracking for cat following ────────────────────────
+// ─── Mouse tracking ────────────────────────────────────────────
 function startMouseTracking(): void {
   let targetX = 400;
   let targetY = 400;
   let currentX = 400;
   let currentY = 400;
+  let lastVelX = 0;
+  let lastVelY = 0;
+  let velTimer = 0;
 
   setInterval(() => {
     const pos = screen.getCursorScreenPoint();
+    const vx = pos.x - targetX;
+    const vy = pos.y - targetY;
+    lastVelX = vx;
+    lastVelY = vy;
     targetX = pos.x;
     targetY = pos.y;
+
+    // Velocity in px/frame (at 60fps)
+    const vel = Math.hypot(vx, vy) * 60;
+    if (vel > 300) {
+      velTimer++;
+      if (velTimer >= 3) { // sustained fast movement for 3 frames
+        catWindow?.webContents.send(IPC.MOUSE_VELOCITY, vel);
+        velTimer = 0;
+      }
+    } else {
+      velTimer = 0;
+    }
   }, 16);
 
   setInterval(() => {
@@ -231,7 +372,7 @@ function startMouseTracking(): void {
     const settings = getSettings();
     const catSize = 64 * settings.size;
     const winW = catSize + 200;
-    const winH = catSize + 160;
+    const winH = catSize + 200;
 
     currentX += (targetX - currentX) * 0.08;
     currentY += (targetY - currentY) * 0.08;
@@ -245,17 +386,25 @@ function startMouseTracking(): void {
     const clampedY = Math.max(bounds.y, Math.min(bounds.y + bounds.height - winH, y));
 
     catWindow.setPosition(clampedX, clampedY, false);
+
+    // Eye direction: lag between cursor and cat window center
+    const winBounds = catWindow.getBounds();
+    const catCenterX = winBounds.x + winBounds.width / 2;
+    const catCenterY = winBounds.y + 60 + catSize * 0.2; // approximate eye position
+    const rawDx = (targetX - catCenterX) / 40;
+    const rawDy = (targetY - catCenterY) / 40;
+    const dx = Math.max(-1, Math.min(1, rawDx));
+    const dy = Math.max(-1, Math.min(1, rawDy));
+    catWindow.webContents.send(IPC.EYE_DIR, { dx, dy });
   }, 16);
 }
 
-// ─── Second instance → focus existing ────────────────────────
+// ─── Second instance ───────────────────────────────────────────
 app.on('second-instance', () => {
-  if (catWindow && !catWindow.isDestroyed()) {
-    catWindow.show();
-  }
+  if (catWindow && !catWindow.isDestroyed()) catWindow.show();
 });
 
-// ─── App lifecycle ───────────────────────────────────────────
+// ─── App lifecycle ─────────────────────────────────────────────
 app.whenReady().then(() => {
   if (process.platform === 'darwin') {
     app.dock?.hide();
@@ -282,5 +431,4 @@ app.whenReady().then(() => {
   }
 });
 
-// Keep running in tray when all windows close
 app.on('window-all-closed', () => {});

@@ -1,21 +1,36 @@
-export const DEFAULT_SETTINGS = {
-  color: 'orange' as const,
+import { CatSettings } from './types';
+
+export const DEFAULT_SETTINGS: CatSettings = {
+  color: 'orange',
+  pattern: 'none',
   name: 'hooman',
   catName: 'NekoDrift',
   stretchIntervalMin: 30,
   stretchEnabled: true,
-  soundEnabled: true,
+  soundEnabled: false,
   size: 2,
   alwaysOnTop: true,
   showOnAllDesktops: true,
   startOnLogin: false,
+  pomodoroEnabled: false,
+  pomodoroFocusMin: 25,
+  pomodoroBreakMin: 5,
+  fixedMessage: '',
+  fixedMessageEnabled: false,
+  reminderEnabled: false,
+  reminderMessage: 'Hey! Check in time! 🐱',
+  reminderHour: 15,
+  reminderMinute: 0,
+  claudeIntegration: true,
 };
 
-export const IDLE_THRESHOLD_MS = 60_000 * 3;   // 3 min to go idle
-export const TYPING_COOLDOWN_MS = 1_500;         // stop typing after 1.5s inactivity
+export const IDLE_THRESHOLD_MS = 60_000 * 3;
+export const TYPING_COOLDOWN_MS = 1_500;
+export const OVERHEAT_WPM = 160;
+export const HUNT_VELOCITY_PX_S = 300;
 
-export const CAT_GRID = 16;   // pixel grid size
-export const CAT_SCALE = 3;   // default pixel scale
+export const CAT_GRID = 16;
+export const CAT_SCALE = 3;
 
 export const CAT_COLORS = {
   orange: { body: '#e8894a', belly: '#f9c89b', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#c96a2a', eye: '#2d1b0e' },
@@ -30,7 +45,7 @@ export const STRETCH_MESSAGES = [
   (name: string) => `Hey ${name}! Time to stretch! 🧘`,
   (name: string) => `${name}, stand up and shake it out! 🕺`,
   (name: string) => `Roll your shoulders, ${name}! 💪`,
-  (name: string) => `Look away from the screen for 20 seconds, ${name}! 👀`,
+  (name: string) => `Look away from the screen for 20s, ${name}! 👀`,
   (name: string) => `Deep breath, ${name}! You've got this! 😮‍💨`,
   (name: string) => `${name}, your back will thank you later! 🌟`,
 ];
@@ -45,4 +60,22 @@ export const GREETING_MESSAGES = [
   (name: string) => `Welcome back, ${name}! meow~ ♡`,
   (name: string) => `${name}! You're here! *purring intensifies*`,
   (name: string) => `nyaa~ hello ${name}!`,
+];
+
+export const OVERHEAT_MESSAGES = [
+  'too... fast... overheating... 🔥',
+  'keyboard goes brrrrr 💨',
+  'steam coming out of ears! 😤',
+];
+
+export const AI_THINK_MESSAGES = [
+  'hmm... thinking along... 🤔',
+  '*concentrated face* ...',
+  'ooh ooh what is Claude doing? 👀',
+];
+
+export const AI_DONE_MESSAGES = [
+  (name: string) => `Claude is done, ${name}! 🎉`,
+  (name: string) => `Yay! Task complete! ♡ ${name}`,
+  (name: string) => `Go check your screen, ${name}! ✨`,
 ];

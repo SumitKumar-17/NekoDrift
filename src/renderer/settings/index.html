@@ -26,14 +26,7 @@
       padding: 24px;
       min-height: 100vh;
     }
-    h1 {
-      font-size: 22px;
-      font-weight: 900;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
     .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
 
     .section {
@@ -62,7 +55,7 @@
     .row-label { font-size: 13px; font-weight: 600; }
     .row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    input[type="text"], select, input[type="number"] {
+    input[type="text"], input[type="number"], select {
       border: 1.5px solid var(--border);
       border-radius: 10px;
       padding: 6px 10px;
@@ -73,11 +66,12 @@
       outline: none;
       width: 140px;
     }
-    input[type="text"]:focus, select:focus, input[type="number"]:focus {
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
       border-color: var(--pink);
     }
+    input[type="text"].wide { width: 220px; }
 
-    /* Toggle switch */
+    /* Toggle */
     .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
     .toggle-slider {
@@ -87,52 +81,64 @@
     }
     .toggle-slider::before {
       content: ''; position: absolute;
-      height: 18px; width: 18px;
-      left: 3px; top: 3px;
-      background: white; border-radius: 50%;
-      transition: transform 0.2s;
+      height: 18px; width: 18px; left: 3px; top: 3px;
+      background: white; border-radius: 50%; transition: transform 0.2s;
     }
     .toggle input:checked + .toggle-slider { background: var(--pink); }
     .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
 
-    /* Color swatches */
-    .swatch-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+    /* Swatches */
+    .swatch-grid { display: flex; gap: 8px; flex-wrap: wrap; }
     .swatch {
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 28px; height: 28px; border-radius: 50%;
       border: 3px solid transparent; cursor: pointer;
       transition: transform 0.15s, border-color 0.15s;
     }
     .swatch:hover { transform: scale(1.15); }
     .swatch.active { border-color: #2d1b0e; transform: scale(1.15); }
 
-    /* Size slider */
+    /* Pattern chips */
+    .pattern-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pattern-chip {
+      padding: 4px 10px; border-radius: 20px;
+      border: 2px solid var(--border); cursor: pointer;
+      font-size: 11px; font-weight: 700;
+      background: var(--bg); color: var(--muted);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .pattern-chip.active { border-color: var(--pink); background: #fff0f5; color: var(--pink); }
+
+    /* Range */
     input[type="range"] {
-      -webkit-appearance: none;
-      width: 140px; height: 6px;
-      border-radius: 6px;
-      background: var(--border);
-      outline: none;
+      -webkit-appearance: none; width: 140px; height: 6px;
+      border-radius: 6px; background: var(--border); outline: none;
     }
     input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      background: var(--pink);
-      cursor: pointer;
+      -webkit-appearance: none; width: 18px; height: 18px;
+      border-radius: 50%; background: var(--pink); cursor: pointer;
     }
 
+    /* Time inputs */
+    .time-pair { display: flex; gap: 6px; align-items: center; }
+    .time-pair input { width: 60px; text-align: center; }
+    .time-colon { font-weight: 800; color: var(--muted); }
+
+    /* Pomodoro control buttons */
+    .pomo-btns { display: flex; gap: 6px; }
+    .pomo-btn {
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 4px 10px; font-size: 11px; font-weight: 700;
+      font-family: inherit; cursor: pointer; background: var(--bg);
+      color: var(--muted); transition: border-color 0.15s;
+    }
+    .pomo-btn:hover { border-color: var(--pink); color: var(--pink); }
+
     .save-btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
+      width: 100%; padding: 14px; border: none;
       border-radius: var(--radius);
       background: linear-gradient(90deg, #f4a7b9, #c5b4e3);
-      color: white;
-      font-size: 15px;
-      font-weight: 800;
-      font-family: inherit;
-      cursor: pointer;
-      margin-top: 8px;
+      color: white; font-size: 15px; font-weight: 800;
+      font-family: inherit; cursor: pointer; margin-top: 8px;
       transition: opacity 0.2s, transform 0.1s;
     }
     .save-btn:hover { opacity: 0.9; transform: scale(1.01); }
@@ -144,6 +150,12 @@
       opacity: 0; transition: opacity 0.3s;
     }
     .saved-msg.show { opacity: 1; }
+
+    .claude-status {
+      font-size: 11px; color: var(--muted);
+      padding: 4px 8px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -156,14 +168,13 @@
     <div class="row">
       <div>
         <div class="row-label">Your name</div>
-        <div class="row-sub">Used in reminders and greetings</div>
+        <div class="row-sub">Used in greetings &amp; reminders</div>
       </div>
       <input type="text" id="input-name" maxlength="24" placeholder="hooman" />
     </div>
     <div class="row">
       <div>
         <div class="row-label">Cat's name</div>
-        <div class="row-sub">What to call your cat</div>
       </div>
       <input type="text" id="input-cat-name" maxlength="20" placeholder="NekoDrift" />
     </div>
@@ -173,16 +184,28 @@
   <div class="section">
     <div class="section-title">Appearance</div>
     <div class="row">
-      <div>
-        <div class="row-label">Coat color</div>
-      </div>
+      <div><div class="row-label">Coat color</div></div>
       <div class="swatch-grid">
         <div class="swatch" data-color="orange" style="background:#e8894a" title="Ginger"></div>
         <div class="swatch" data-color="gray"   style="background:#9eaabb" title="Silver"></div>
         <div class="swatch" data-color="black"  style="background:#2c2c3e" title="Midnight"></div>
-        <div class="swatch" data-color="white"  style="background:#f0ece8; border: 2px solid #e0d5cc" title="Cream"></div>
+        <div class="swatch" data-color="white"  style="background:#f0ece8;border:2px solid #ddd" title="Cream"></div>
         <div class="swatch" data-color="brown"  style="background:#8b5e3c" title="Mocha"></div>
         <div class="swatch" data-color="pink"   style="background:#f4a7b9" title="Blossom"></div>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Coat pattern</div>
+        <div class="row-sub">Markings overlay</div>
+      </div>
+      <div class="pattern-grid">
+        <div class="pattern-chip active" data-pattern="none">None</div>
+        <div class="pattern-chip" data-pattern="tuxedo">Tuxedo</div>
+        <div class="pattern-chip" data-pattern="tabby">Tabby</div>
+        <div class="pattern-chip" data-pattern="calico">Calico</div>
+        <div class="pattern-chip" data-pattern="spotted">Spotted</div>
+        <div class="pattern-chip" data-pattern="bicolor">Bicolor</div>
       </div>
     </div>
     <div class="row">
@@ -191,6 +214,46 @@
         <div class="row-sub" id="size-label">Medium (2×)</div>
       </div>
       <input type="range" id="input-size" min="1" max="3" step="1" />
+    </div>
+  </div>
+
+  <!-- Interactions -->
+  <div class="section">
+    <div class="section-title">Interactions</div>
+    <div class="row">
+      <div>
+        <div class="row-label">Eye follow</div>
+        <div class="row-sub">Cat eyes track your cursor</div>
+      </div>
+      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Mouse hunt</div>
+        <div class="row-sub">Pounce when you move fast</div>
+      </div>
+      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Purring pets</div>
+        <div class="row-sub">Hover slowly to pet</div>
+      </div>
+      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Mochi drag</div>
+        <div class="row-sub">Click + drag to toss the cat</div>
+      </div>
+      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Overheat mode</div>
+        <div class="row-sub">Cat overheats when you type fast</div>
+      </div>
+      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
     </div>
   </div>
 
@@ -210,9 +273,114 @@
     <div class="row">
       <div>
         <div class="row-label">Interval (minutes)</div>
-        <div class="row-sub">How often to remind you</div>
       </div>
       <input type="number" id="input-interval" min="10" max="120" step="5" />
+    </div>
+  </div>
+
+  <!-- Pomodoro -->
+  <div class="section">
+    <div class="section-title">🍅 Pomodoro Timer</div>
+    <div class="row">
+      <div>
+        <div class="row-label">Enable Pomodoro</div>
+        <div class="row-sub">Floating timer next to cat</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-pomodoro" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="row">
+      <div><div class="row-label">Focus duration (min)</div></div>
+      <input type="number" id="input-pomo-focus" min="5" max="90" step="5" value="25" />
+    </div>
+    <div class="row">
+      <div><div class="row-label">Break duration (min)</div></div>
+      <input type="number" id="input-pomo-break" min="1" max="30" step="1" value="5" />
+    </div>
+    <div class="row">
+      <div><div class="row-label">Control timer</div></div>
+      <div class="pomo-btns">
+        <button class="pomo-btn" id="btn-pomo-start">▶ Start</button>
+        <button class="pomo-btn" id="btn-pomo-pause">⏸ Pause</button>
+        <button class="pomo-btn" id="btn-pomo-reset">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fixed message -->
+  <div class="section">
+    <div class="section-title">📌 Pinned Message</div>
+    <div class="row">
+      <div>
+        <div class="row-label">Show pinned message</div>
+        <div class="row-sub">Always-visible note above cat</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-fixed-msg" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="row">
+      <div><div class="row-label">Message</div></div>
+      <input type="text" id="input-fixed-msg" class="wide" maxlength="60" placeholder="Write something..." />
+    </div>
+  </div>
+
+  <!-- Daily reminder -->
+  <div class="section">
+    <div class="section-title">🔔 Daily Reminder</div>
+    <div class="row">
+      <div>
+        <div class="row-label">Enable daily reminder</div>
+        <div class="row-sub">Cat meows at a set time</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-reminder" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="row">
+      <div><div class="row-label">Time (24h)</div></div>
+      <div class="time-pair">
+        <input type="number" id="input-reminder-hour" min="0" max="23" value="15" />
+        <span class="time-colon">:</span>
+        <input type="number" id="input-reminder-min" min="0" max="59" value="0" />
+      </div>
+    </div>
+    <div class="row">
+      <div><div class="row-label">Message</div></div>
+      <input type="text" id="input-reminder-msg" class="wide" maxlength="60" placeholder="Hey! Check in time! 🐱" />
+    </div>
+  </div>
+
+  <!-- Claude integration -->
+  <div class="section">
+    <div class="section-title">🤖 Claude AI Integration</div>
+    <div class="row">
+      <div>
+        <div class="row-label">Enable Claude reactions</div>
+        <div class="row-sub">Cat thinks &amp; celebrates with Claude Code</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-claude" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Local endpoint</div>
+        <div class="row-sub">Claude Code hooks POST here</div>
+      </div>
+      <span class="claude-status">127.0.0.1:27182</span>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-label">Setup hooks</div>
+        <div class="row-sub">Add to ~/.claude/settings.local.json</div>
+      </div>
+      <button class="pomo-btn" id="btn-copy-hooks">Copy config</button>
     </div>
   </div>
 
@@ -232,7 +400,6 @@
     <div class="row">
       <div>
         <div class="row-label">Launch at login</div>
-        <div class="row-sub">Start with your computer</div>
       </div>
       <label class="toggle">
         <input type="checkbox" id="toggle-login" />

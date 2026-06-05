@@ -1,5 +1,7 @@
 export type CatColor = 'orange' | 'gray' | 'black' | 'white' | 'brown' | 'pink';
 
+export type CatPattern = 'none' | 'tuxedo' | 'tabby' | 'calico' | 'spotted' | 'bicolor';
+
 export type CatAnimation =
   | 'idle'
   | 'walk'
@@ -9,26 +11,63 @@ export type CatAnimation =
   | 'type'
   | 'stretch'
   | 'happy'
-  | 'surprised';
+  | 'surprised'
+  | 'hunt'
+  | 'purr'
+  | 'overheat'
+  | 'paper'
+  | 'think'
+  | 'jump';
+
+export interface EyeDir {
+  dx: number; // -1 to 1
+  dy: number; // -1 to 1
+}
 
 export interface CatSettings {
   color: CatColor;
-  name: string;           // user's name
-  catName: string;        // cat's name
-  stretchIntervalMin: number;  // minutes between stretch reminders
+  pattern: CatPattern;
+  name: string;
+  catName: string;
+  stretchIntervalMin: number;
   stretchEnabled: boolean;
   soundEnabled: boolean;
-  size: number;           // scale multiplier 1-3
+  size: number;
   alwaysOnTop: boolean;
   showOnAllDesktops: boolean;
   startOnLogin: boolean;
+  // Pomodoro
+  pomodoroEnabled: boolean;
+  pomodoroFocusMin: number;
+  pomodoroBreakMin: number;
+  // Fixed message
+  fixedMessage: string;
+  fixedMessageEnabled: boolean;
+  // Daily reminder
+  reminderEnabled: boolean;
+  reminderMessage: string;
+  reminderHour: number;
+  reminderMinute: number;
+  // Claude integration
+  claudeIntegration: boolean;
 }
 
 export interface AppState {
   settings: CatSettings;
-  lastActivity: number;   // timestamp
+  lastActivity: number;
   isIdle: boolean;
   isTyping: boolean;
+}
+
+export interface PomodoroState {
+  mode: 'focus' | 'break' | 'idle';
+  remainingMs: number;
+  session: number;
+}
+
+export interface AiState {
+  thinking: boolean;
+  done: boolean;
 }
 
 export const IPC = {
@@ -39,6 +78,12 @@ export const IPC = {
   STRETCH_REMINDER:   'stretch:reminder',
   IDLE_CHANGED:       'idle:changed',
   TYPING_CHANGED:     'typing:changed',
+  MOUSE_VELOCITY:     'mouse:velocity',
+  EYE_DIR:            'cat:eye-dir',
+  POMODORO_STATE:     'pomodoro:state',
+  AI_STATE:           'ai:state',
+  SCROLL_EVENT:       'scroll:event',
+  REMINDER_TRIGGER:   'reminder:trigger',
 
   // Renderer → Main
   GET_SETTINGS:       'settings:get',
@@ -48,4 +93,7 @@ export const IPC = {
   OPEN_SETTINGS:      'window:open-settings',
   QUIT_APP:           'app:quit',
   ONBOARDING_DONE:    'onboarding:done',
+  SET_IGNORE_MOUSE:   'mouse:ignore',
+  DRAG_CAT:           'cat:drag',
+  POMODORO_CONTROL:   'pomodoro:control',
 } as const;

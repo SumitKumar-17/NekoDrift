@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC, CatSettings } from '../shared/types';
+import { IPC, CatSettings, EyeDir, PomodoroState, AiState } from '../shared/types';
 
 contextBridge.exposeInMainWorld('nekodrift', {
   // Settings
@@ -19,7 +19,15 @@ contextBridge.exposeInMainWorld('nekodrift', {
   onboardingDone: (settings: Partial<CatSettings>) =>
     ipcRenderer.send(IPC.ONBOARDING_DONE, settings),
 
-  // Listeners (cat window)
+  // Mouse
+  setIgnoreMouse: (ignore: boolean) => ipcRenderer.send(IPC.SET_IGNORE_MOUSE, ignore),
+  dragCat: (dx: number, dy: number) => ipcRenderer.send(IPC.DRAG_CAT, dx, dy),
+
+  // Pomodoro
+  pomodoroControl: (action: 'start' | 'pause' | 'reset') =>
+    ipcRenderer.send(IPC.POMODORO_CONTROL, action),
+
+  // Listeners
   onCatSettings: (cb: (s: CatSettings) => void) => {
     ipcRenderer.on(IPC.CAT_SETTINGS, (_e, s) => cb(s));
   },
@@ -34,5 +42,23 @@ contextBridge.exposeInMainWorld('nekodrift', {
   },
   onTypingChanged: (cb: (isTyping: boolean) => void) => {
     ipcRenderer.on(IPC.TYPING_CHANGED, (_e, isTyping) => cb(isTyping));
+  },
+  onMouseVelocity: (cb: (vel: number) => void) => {
+    ipcRenderer.on(IPC.MOUSE_VELOCITY, (_e, vel) => cb(vel));
+  },
+  onEyeDir: (cb: (dir: EyeDir) => void) => {
+    ipcRenderer.on(IPC.EYE_DIR, (_e, dir) => cb(dir));
+  },
+  onPomodoroState: (cb: (s: PomodoroState) => void) => {
+    ipcRenderer.on(IPC.POMODORO_STATE, (_e, s) => cb(s));
+  },
+  onAiState: (cb: (s: AiState) => void) => {
+    ipcRenderer.on(IPC.AI_STATE, (_e, s) => cb(s));
+  },
+  onScrollEvent: (cb: () => void) => {
+    ipcRenderer.on(IPC.SCROLL_EVENT, () => cb());
+  },
+  onReminderTrigger: (cb: (msg: string) => void) => {
+    ipcRenderer.on(IPC.REMINDER_TRIGGER, (_e, msg) => cb(msg));
   },
 });

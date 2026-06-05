@@ -10,7 +10,8 @@ const store = new Store<{ settings: CatSettings; firstRun: boolean }>({
 });
 
 export function getSettings(): CatSettings {
-  return store.get('settings');
+  // Merge with defaults so new fields are always populated
+  return { ...DEFAULT_SETTINGS, ...store.get('settings') };
 }
 
 export function saveSettings(settings: Partial<CatSettings>): CatSettings {

@@ -1,5 +1,7 @@
-import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState, CatMood } from '../../shared/types';
+import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState } from '../../shared/types';
 import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
+import { SoundEngine } from './sound';
+import { MoodSystem } from './mood';
 
 declare global {
   interface Window {
@@ -33,153 +35,6 @@ declare global {
   }
 }
 
-// ─── Sound Engine (Web Audio API) ──────────────────────────────
-class SoundEngine {
-  private ac: AudioContext | null = null;
-  enabled = true;
-
-  private ctx(): AudioContext {
-    if (!this.ac) this.ac = new AudioContext();
-    if (this.ac.state === 'suspended') this.ac.resume();
-    return this.ac;
-  }
-
-  purr(durationSec = 0.9): void {
-    if (!this.enabled) return;
-    try {
-      const ac = this.ctx();
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      const lfo = ac.createOscillator();
-      const lfoGain = ac.createGain();
-      osc.frequency.value = 26;
-      osc.type = 'sawtooth';
-      lfo.frequency.value = 28;
-      lfoGain.gain.value = 9;
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc.frequency);
-      gain.gain.setValueAtTime(0, ac.currentTime);
-      gain.gain.linearRampToValueAtTime(0.11, ac.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.11, ac.currentTime + durationSec - 0.1);
-      gain.gain.linearRampToValueAtTime(0, ac.currentTime + durationSec);
-      osc.connect(gain);
-      gain.connect(ac.destination);
-      lfo.start();
-      osc.start();
-      osc.stop(ac.currentTime + durationSec);
-      lfo.stop(ac.currentTime + durationSec);
-    } catch (_) {}
-  }
-
-  meow(): void {
-    if (!this.enabled) return;
-    try {
-      const ac = this.ctx();
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(720, ac.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, ac.currentTime + 0.28);
-      osc.frequency.exponentialRampToValueAtTime(560, ac.currentTime + 0.48);
-      gain.gain.setValueAtTime(0, ac.currentTime);
-      gain.gain.linearRampToValueAtTime(0.18, ac.currentTime + 0.04);
-      gain.gain.setValueAtTime(0.18, ac.currentTime + 0.36);
-      gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.58);
-      osc.connect(gain);
-      gain.connect(ac.destination);
-      osc.start();
-      osc.stop(ac.currentTime + 0.62);
-    } catch (_) {}
-  }
-
-  chime(): void {
-    if (!this.enabled) return;
-    try {
-      const ac = this.ctx();
-      [523.25, 659.25, 783.99].forEach((freq, i) => {
-        const osc = ac.createOscillator();
-        const gain = ac.createGain();
-        const t = ac.currentTime + i * 0.14;
-        osc.frequency.value = freq;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.13, t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-        osc.connect(gain);
-        gain.connect(ac.destination);
-        osc.start(t);
-        osc.stop(t + 0.65);
-      });
-    } catch (_) {}
-  }
-
-  alert(): void {
-    if (!this.enabled) return;
-    try {
-      const ac = this.ctx();
-      [440, 554, 440].forEach((freq, i) => {
-        const osc = ac.createOscillator();
-        const gain = ac.createGain();
-        const t = ac.currentTime + i * 0.18;
-        osc.frequency.value = freq;
-        osc.type = 'triangle';
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.09, t + 0.02);
-        gain.gain.linearRampToValueAtTime(0, t + 0.16);
-        osc.connect(gain);
-        gain.connect(ac.destination);
-        osc.start(t);
-        osc.stop(t + 0.2);
-      });
-    } catch (_) {}
-  }
-
-  pop(): void {
-    if (!this.enabled) return;
-    try {
-      const ac = this.ctx();
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.frequency.setValueAtTime(300, ac.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(80, ac.currentTime + 0.1);
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.15, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(ac.destination);
-      osc.start();
-      osc.stop(ac.currentTime + 0.12);
-    } catch (_) {}
-  }
-}
-
-// ─── Mood System ───────────────────────────────────────────────
-class MoodSystem {
-  private petCount = 0;
-  private lastPetTime = 0;
-  private stretchDone = 0;
-  private overheatCount = 0;
-  private sessionStartTime = Date.now();
-
-  onPet() {
-    this.petCount++;
-    this.lastPetTime = Date.now();
-  }
-  onStretchDone() { this.stretchDone++; }
-  onOverheat() { this.overheatCount++; }
-
-  getMood(): CatMood {
-    const now = Date.now();
-    const sessionMin = (now - this.sessionStartTime) / 60_000;
-    const timeSincePet = (now - this.lastPetTime) / 60_000;
-
-    if (this.overheatCount >= 3) return 'tired';
-    if (sessionMin > 30 && this.petCount === 0) return 'lonely';
-    if (this.lastPetTime > 0 && timeSincePet < 5) return 'happy';
-    return 'content';
-  }
-}
-
 const sound = new SoundEngine();
 const mood = new MoodSystem();
 
@@ -193,6 +48,7 @@ let settings: CatSettings = {
   fixedMessage: '', fixedMessageEnabled: false,
   reminderEnabled: false, reminderMessage: '', reminderHour: 15, reminderMinute: 0,
   claudeIntegration: true,
+  lockedPosition: false, stickyNote: '', stickyNoteEnabled: false,
 };
 
 let currentAnim: CatAnimation = 'idle';
@@ -208,12 +64,8 @@ let pomodoroState: PomodoroState = { mode: 'idle', remainingMs: 0, session: 0 };
 let frame = 0;
 let showHearts = false;
 let heartsTimer: ReturnType<typeof setTimeout> | null = null;
-
-// Wobble (shake)
 let wobble = 0;
 let wobbleDecay = false;
-
-// Drag
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -266,7 +118,6 @@ function render() {
   const anim = getAnimation();
   const catMood = mood.getMood();
 
-  // Wobble decay
   if (wobbleDecay && Math.abs(wobble) > 0.01) {
     wobble *= 0.82;
     if (Math.abs(wobble) < 0.02) { wobble = 0; wobbleDecay = false; }
@@ -288,37 +139,33 @@ function render() {
   });
   ctx.restore();
 
-  // Steam (overheat)
   if (anim === 'overheat' || heatLevel >= 2) {
     drawSteam(ctx, offsetX + catSize / 2, offsetY + 4, frame, scale / 5);
   }
 
-  // Zzz (sleep)
   if (anim === 'sleep') {
     drawZzz(ctx, offsetX + catSize - scale, offsetY + scale * 2, frame, scale / 5);
   }
 
-  // Hearts (purr / happy / pet)
   if (showHearts || anim === 'purr' || anim === 'happy') {
     drawHearts(ctx, offsetX + catSize / 2, offsetY - scale * 2, frame, scale / 5);
   }
 
-  // Pomodoro timer
   if (settings.pomodoroEnabled && pomodoroState.mode !== 'idle') {
     drawPomodoroTimer(
       ctx, offsetX + catSize / 2, offsetY - 42,
-      pomodoroState.remainingMs, pomodoroState.mode, scale / 5
+      pomodoroState.remainingMs, pomodoroState.mode, scale / 5,
     );
   }
 
-  // Sticky note — shown only while hovering (yellow, pinned style)
+  // Sticky note — pinned yellow bubble only while hovering (hidden if speech active)
   if (settings.stickyNoteEnabled && settings.stickyNote && isHoveringCat && !speechText) {
     drawSpeechBubble(ctx, settings.stickyNote, offsetX + catSize / 2, offsetY, scale, true);
   }
 
-  // Fixed pinned message (shown when no transient speech and not showing sticky note)
+  // Fixed pinned message
   if (settings.fixedMessageEnabled && settings.fixedMessage && !speechText
-      && !(settings.stickyNoteEnabled && isHoveringCat)) {
+    && !(settings.stickyNoteEnabled && isHoveringCat)) {
     drawSpeechBubble(ctx, settings.fixedMessage, offsetX + catSize / 2, offsetY, scale, true);
   }
 
@@ -338,11 +185,10 @@ function showSpeech(text: string, durationMs = 3500) {
   speechTimer = setTimeout(() => { speechText = null; }, durationMs);
 }
 
-// ─── Per-pixel hit test → toggle ignoreMouseEvents ──────────────
+// ─── Per-pixel hit test ────────────────────────────────────────
 function hitTestCat(clientX: number, clientY: number): boolean {
   try {
-    const d = ctx.getImageData(clientX, clientY, 1, 1).data;
-    return d[3] > 25;
+    return ctx.getImageData(clientX, clientY, 1, 1).data[3] > 25;
   } catch (_) { return false; }
 }
 
@@ -362,7 +208,6 @@ canvas.addEventListener('pointermove', (e) => {
 
   const vel = Math.hypot(e.movementX, e.movementY);
 
-  // Purring: slow hover over cat
   if (isHoveringCat && vel < 3 && !isIdle && !forcedAnim) {
     if (currentAnim !== 'purr') {
       currentAnim = 'purr';
@@ -379,7 +224,6 @@ canvas.addEventListener('pointermove', (e) => {
     currentAnim = 'idle';
   }
 
-  // Mochi drag
   if (isDragging) {
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
@@ -416,7 +260,6 @@ canvas.addEventListener('pointerleave', () => {
   }
 });
 
-// Right-click → native context menu (pin, sticky note, settings, quit)
 canvas.addEventListener('contextmenu', (e) => {
   if (isHoveringCat) {
     e.preventDefault();
@@ -450,8 +293,8 @@ window.nekodrift.onCatSettings((s) => {
 });
 
 window.nekodrift.onCatSpeech((msg) => {
-  if (msg) { showSpeech(msg, 4500); }
-  else { speechText = null; }
+  if (msg) showSpeech(msg, 4500);
+  else speechText = null;
 });
 
 window.nekodrift.onStretchReminder((msg) => {
@@ -471,9 +314,7 @@ window.nekodrift.onIdleChanged((idle) => {
 
 window.nekodrift.onTypingChanged((typing) => {
   isTyping = typing;
-  if (!typing) {
-    heatLevel = Math.max(0, heatLevel - 0.8);
-  }
+  if (!typing) heatLevel = Math.max(0, heatLevel - 0.8);
 });
 
 window.nekodrift.onHeatLevel((level) => {
@@ -493,7 +334,6 @@ window.nekodrift.onMouseVelocity((vel) => {
 });
 
 window.nekodrift.onEyeDir((dir) => {
-  // Smooth eye direction
   eyeDir = {
     dx: eyeDir.dx + (dir.dx - eyeDir.dx) * 0.25,
     dy: eyeDir.dy + (dir.dy - eyeDir.dy) * 0.25,
@@ -532,16 +372,13 @@ window.nekodrift.onAiState((s) => {
     sound.meow();
     showSpeech(`Claude is done, ${settings.name}! ✨`, 5000);
   } else {
-    // reset
     if (forcedAnim === 'think') forcedAnim = null;
     if (speechText?.includes('thinking')) speechText = null;
   }
 });
 
 window.nekodrift.onScrollEvent(() => {
-  if (!isIdle && currentAnim !== 'paper') {
-    forceAnim('paper', 2200);
-  }
+  if (!isIdle && currentAnim !== 'paper') forceAnim('paper', 2200);
 });
 
 window.nekodrift.onReminderTrigger((msg) => {
@@ -552,7 +389,6 @@ window.nekodrift.onReminderTrigger((msg) => {
 });
 
 window.nekodrift.onShakeEvent(() => {
-  // Rapid wobble animation
   let dir = 1;
   let count = 0;
   const wobbleStep = () => {
@@ -560,18 +396,16 @@ window.nekodrift.onShakeEvent(() => {
     dir *= -0.8;
     count++;
     if (count < 8) setTimeout(wobbleStep, 60);
-    else { wobbleDecay = true; }
+    else wobbleDecay = true;
   };
   wobbleStep();
   forceAnim('surprised', 800);
   sound.pop();
 });
 
-// ─── Heat decay over time ──────────────────────────────────────
+// ─── Heat decay ────────────────────────────────────────────────
 setInterval(() => {
-  if (!isTyping && heatLevel > 0) {
-    heatLevel = Math.max(0, heatLevel - 0.15);
-  }
+  if (!isTyping && heatLevel > 0) heatLevel = Math.max(0, heatLevel - 0.15);
 }, 1500);
 
 // ─── Mood-based idle behaviours ────────────────────────────────
@@ -596,9 +430,7 @@ async function boot() {
   showHeartsBurst(4000);
   showSpeech(`meow! i'm ${settings.catName}! ♡`, 4500);
 
-  setTimeout(() => {
-    if (sound.enabled) sound.meow();
-  }, 300);
+  setTimeout(() => { if (sound.enabled) sound.meow(); }, 300);
 
   render();
 }

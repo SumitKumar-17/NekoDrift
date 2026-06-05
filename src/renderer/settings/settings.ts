@@ -1,4 +1,5 @@
 import { CatSettings, CatColor, CatPattern } from '../../shared/types';
+import { EDITOR_PALETTE, drawCatGhost } from '../cat/pixel-cat';
 
 declare global {
   interface Window {
@@ -56,7 +57,124 @@ const CLAUDE_HOOKS_CONFIG = `{
 let currentColor: CatColor = 'orange';
 let currentPattern: CatPattern = 'none';
 
+// ─── Pixel Pattern Editor ─────────────────────────────────────
+const CELL = 12; // px per grid cell — 12 × 16 = 192px canvas
+
+class PatternEditor {
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private pixels: number[]; // 256 values (16×16), index into EDITOR_PALETTE
+  private selectedIdx = 0;  // 0 = eraser
+  private painting = false;
+
+  constructor() {
+    this.canvas = document.getElementById('pattern-editor-canvas') as HTMLCanvasElement;
+    this.ctx = this.canvas.getContext('2d')!;
+    this.pixels = new Array(256).fill(0);
+    this.setupEvents();
+    this.render();
+  }
+
+  load(pixelStr: string) {
+    this.pixels = new Array(256).fill(0);
+    for (let i = 0; i < Math.min(256, pixelStr.length); i++) {
+      this.pixels[i] = parseInt(pixelStr[i], 10) || 0;
+    }
+    this.render();
+  }
+
+  export(): string {
+    return this.pixels.map(v => v.toString()).join('');
+  }
+
+  clear() {
+    this.pixels.fill(0);
+    this.render();
+  }
+
+  setColor(idx: number) {
+    this.selectedIdx = idx;
+    document.querySelectorAll('.pal-swatch').forEach(el => {
+      el.classList.toggle('active', Number((el as HTMLElement).dataset.idx) === idx);
+    });
+  }
+
+  private cellAt(clientX: number, clientY: number): { gx: number; gy: number } | null {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const gx = Math.floor(x / CELL);
+    const gy = Math.floor(y / CELL);
+    if (gx < 0 || gx >= 16 || gy < 0 || gy >= 16) return null;
+    return { gx, gy };
+  }
+
+  private paint(clientX: number, clientY: number, erase = false) {
+    const cell = this.cellAt(clientX, clientY);
+    if (!cell) return;
+    this.pixels[cell.gy * 16 + cell.gx] = erase ? 0 : this.selectedIdx;
+    this.render();
+  }
+
+  private setupEvents() {
+    this.canvas.addEventListener('mousedown', (e) => {
+      this.painting = true;
+      this.paint(e.clientX, e.clientY, e.button === 2);
+    });
+    this.canvas.addEventListener('mousemove', (e) => {
+      if (!this.painting) return;
+      this.paint(e.clientX, e.clientY, e.buttons === 2);
+    });
+    this.canvas.addEventListener('mouseup', () => { this.painting = false; });
+    this.canvas.addEventListener('mouseleave', () => { this.painting = false; });
+    this.canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.paint(e.clientX, e.clientY, true);
+    });
+  }
+
+  render() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Ghost cat reference
+    drawCatGhost(ctx, currentColor, CELL);
+
+    // Painted pixels
+    ctx.imageSmoothingEnabled = false;
+    for (let i = 0; i < 256; i++) {
+      const idx = this.pixels[i];
+      if (!idx) continue;
+      const color = EDITOR_PALETTE[idx];
+      if (!color) continue;
+      const gx = i % 16;
+      const gy = Math.floor(i / 16);
+      ctx.fillStyle = color;
+      ctx.fillRect(gx * CELL, gy * CELL, CELL, CELL);
+    }
+
+    // Grid overlay
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 16; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * CELL, 0);
+      ctx.lineTo(i * CELL, 16 * CELL);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, i * CELL);
+      ctx.lineTo(16 * CELL, i * CELL);
+      ctx.stroke();
+    }
+  }
+}
+
+let editor: PatternEditor;
+
 async function init() {
+  // Init pixel editor first (needs DOM ready)
+  editor = new PatternEditor();
+
   const settings = await window.nekodrift.getSettings();
 
   // Populate identity
@@ -93,6 +211,27 @@ async function init() {
   // Claude integration
   (document.getElementById('toggle-claude') as HTMLInputElement).checked = settings.claudeIntegration ?? true;
 
+  // Load pixel pattern editor
+  if (settings.customPixels && settings.customPixels.length === 256) {
+    editor.load(settings.customPixels);
+  }
+
+  // Pixel editor controls
+  document.querySelectorAll('.pal-swatch').forEach((el) => {
+    el.addEventListener('click', () => editor.setColor(Number((el as HTMLElement).dataset.idx)));
+  });
+  document.getElementById('btn-editor-clear')!.addEventListener('click', () => editor.clear());
+  document.getElementById('btn-editor-load-base')!.addEventListener('click', () => {
+    editor.clear(); // reload ghost with current color
+    editor.render();
+  });
+  document.getElementById('btn-editor-apply')!.addEventListener('click', async () => {
+    const updated = await window.nekodrift.saveSettings({ customPixels: editor.export() });
+    const btn = document.getElementById('btn-editor-apply')!;
+    btn.textContent = 'Applied! ✓';
+    setTimeout(() => { btn.textContent = 'Apply to cat ✓'; }, 2000);
+  });
+
   // System
   (document.getElementById('toggle-ontop') as HTMLInputElement).checked = settings.alwaysOnTop;
   (document.getElementById('toggle-login') as HTMLInputElement).checked = settings.startOnLogin;
@@ -103,6 +242,7 @@ async function init() {
     el.addEventListener('click', () => {
       currentColor = (el as HTMLElement).dataset.color as CatColor;
       updateSwatches();
+      editor.render(); // refresh ghost reference
     });
   });
 
@@ -141,6 +281,7 @@ async function init() {
   // ── Save ──
   document.getElementById('btn-save')!.addEventListener('click', async () => {
     const updated: Partial<CatSettings> = {
+      customPixels: editor.export(),
       name: (document.getElementById('input-name') as HTMLInputElement).value.trim() || 'hooman',
       catName: (document.getElementById('input-cat-name') as HTMLInputElement).value.trim() || 'NekoDrift',
       color: currentColor,

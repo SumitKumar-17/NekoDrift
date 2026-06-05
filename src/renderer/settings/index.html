@@ -156,6 +156,59 @@
       padding: 4px 8px; border-radius: 8px;
       background: var(--bg); border: 1px solid var(--border);
     }
+
+    /* Pixel pattern editor */
+    .editor-wrap {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    #pattern-editor-canvas {
+      image-rendering: pixelated;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: crosshair;
+      flex-shrink: 0;
+    }
+    .editor-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .palette-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pal-swatch {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+    .pal-swatch:hover { transform: scale(1.18); }
+    .pal-swatch.active { border-color: #2d1b0e; transform: scale(1.18); }
+    .pal-swatch.eraser {
+      background: repeating-linear-gradient(
+        45deg, #ddd 0px, #ddd 4px, #fff 4px, #fff 8px
+      );
+    }
+    .editor-btn {
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 5px 10px; font-size: 11px; font-weight: 700;
+      font-family: inherit; cursor: pointer; background: var(--bg);
+      color: var(--muted); transition: border-color 0.15s, color 0.15s;
+      text-align: center;
+    }
+    .editor-btn:hover { border-color: var(--pink); color: var(--pink); }
+    .editor-hint {
+      font-size: 10px; color: var(--muted); line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -214,6 +267,40 @@
         <div class="row-sub" id="size-label">Medium (2×)</div>
       </div>
       <input type="range" id="input-size" min="1" max="3" step="1" />
+    </div>
+  </div>
+
+  <!-- Custom Pattern Editor -->
+  <div class="section">
+    <div class="section-title">🎨 Custom Coat Pattern</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+      Paint your own markings on the cat — match your real cat's fur pattern!
+    </div>
+    <div class="editor-wrap">
+      <canvas id="pattern-editor-canvas" width="192" height="192"></canvas>
+      <div class="editor-controls">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:2px">COLOR</div>
+        <div class="palette-row" id="palette-row">
+          <div class="pal-swatch eraser active" data-idx="0" title="Erase"></div>
+          <div class="pal-swatch" data-idx="1" style="background:#1a1a2e" title="Dark"></div>
+          <div class="pal-swatch" data-idx="2" style="background:#4a4a62" title="Mid-dark"></div>
+          <div class="pal-swatch" data-idx="3" style="background:#9eaabb" title="Gray"></div>
+          <div class="pal-swatch" data-idx="4" style="background:#e8894a" title="Orange"></div>
+          <div class="pal-swatch" data-idx="5" style="background:#8b5e3c" title="Brown"></div>
+          <div class="pal-swatch" data-idx="6" style="background:#f0ece8;border:2px solid #ccc" title="Cream"></div>
+          <div class="pal-swatch" data-idx="7" style="background:#f4a7b9" title="Pink"></div>
+          <div class="pal-swatch" data-idx="8" style="background:#f4c06a" title="Gold"></div>
+          <div class="pal-swatch" data-idx="9" style="background:#2a9d8a" title="Teal"></div>
+        </div>
+        <button class="editor-btn" id="btn-editor-clear">Clear all</button>
+        <button class="editor-btn" id="btn-editor-load-base">Load current color</button>
+        <button class="editor-btn" id="btn-editor-apply">Apply to cat ✓</button>
+        <div class="editor-hint">
+          Click or drag to paint.<br/>
+          Right-click to erase.<br/>
+          This overlays your chosen color.
+        </div>
+      </div>
     </div>
   </div>
 

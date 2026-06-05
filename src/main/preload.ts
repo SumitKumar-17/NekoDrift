@@ -61,4 +61,10 @@ contextBridge.exposeInMainWorld('nekodrift', {
   onReminderTrigger: (cb: (msg: string) => void) => {
     ipcRenderer.on(IPC.REMINDER_TRIGGER, (_e, msg) => cb(msg));
   },
+  onShakeEvent: (cb: () => void) => {
+    ipcRenderer.on(IPC.SHAKE_EVENT, () => cb());
+  },
+  onHeatLevel: (cb: (level: number) => void) => {
+    ipcRenderer.on(IPC.HEAT_LEVEL, (_e, level) => cb(level));
+  },
 });

@@ -277,11 +277,7 @@ function startServices(): void {
       catWindow?.webContents.send(IPC.TYPING_CHANGED, isTyping);
     },
     (heatLevel) => {
-      // Send heat as a special speech message when newly overheating
-      if (heatLevel >= 2) {
-        const msgs = ['too fast... overheating! 🔥', 'keyboard goes brrr 💨', 'steam coming out! 😤'];
-        catWindow?.webContents.send(IPC.CAT_SPEECH, msgs[Math.floor(Math.random() * msgs.length)]);
-      }
+      catWindow?.webContents.send(IPC.HEAT_LEVEL, heatLevel);
     },
     () => {
       catWindow?.webContents.send(IPC.SCROLL_EVENT);
@@ -344,6 +340,10 @@ function startMouseTracking(): void {
   let lastVelY = 0;
   let velTimer = 0;
 
+  // Shake detection: track last 16 x-velocities
+  const recentVelX: number[] = [];
+  let lastShakeTime = 0;
+
   setInterval(() => {
     const pos = screen.getCursorScreenPoint();
     const vx = pos.x - targetX;
@@ -357,12 +357,28 @@ function startMouseTracking(): void {
     const vel = Math.hypot(vx, vy) * 60;
     if (vel > 300) {
       velTimer++;
-      if (velTimer >= 3) { // sustained fast movement for 3 frames
+      if (velTimer >= 3) {
         catWindow?.webContents.send(IPC.MOUSE_VELOCITY, vel);
         velTimer = 0;
       }
     } else {
       velTimer = 0;
+    }
+
+    // Shake detection: rapid direction reversals in X
+    recentVelX.push(vx);
+    if (recentVelX.length > 16) recentVelX.shift();
+    if (recentVelX.length === 16) {
+      let reversals = 0;
+      for (let i = 1; i < recentVelX.length; i++) {
+        if (Math.sign(recentVelX[i]) !== Math.sign(recentVelX[i - 1]) &&
+            Math.abs(recentVelX[i]) > 8) reversals++;
+      }
+      const now = Date.now();
+      if (reversals >= 5 && now - lastShakeTime > 1200) {
+        lastShakeTime = now;
+        catWindow?.webContents.send(IPC.SHAKE_EVENT);
+      }
     }
   }, 16);
 

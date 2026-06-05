@@ -50,7 +50,11 @@ export interface CatSettings {
   reminderMinute: number;
   // Claude integration
   claudeIntegration: boolean;
+  // Custom pixel pattern (256-char string, each char = palette index 0-9, 0=transparent)
+  customPixels: string;
 }
+
+export type CatMood = 'happy' | 'content' | 'tired' | 'lonely';
 
 export interface AppState {
   settings: CatSettings;
@@ -96,4 +100,6 @@ export const IPC = {
   SET_IGNORE_MOUSE:   'mouse:ignore',
   DRAG_CAT:           'cat:drag',
   POMODORO_CONTROL:   'pomodoro:control',
+  SHAKE_EVENT:        'cat:shake',
+  HEAT_LEVEL:         'cat:heat',
 } as const;

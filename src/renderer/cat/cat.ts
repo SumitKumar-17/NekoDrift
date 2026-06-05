@@ -1,5 +1,5 @@
-import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState } from '../../shared/types';
-import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer } from './pixel-cat';
+import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState, CatMood } from '../../shared/types';
+import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
 
 declare global {
   interface Window {
@@ -11,6 +11,9 @@ declare global {
       openSettings: () => void;
       quit: () => void;
       onboardingDone: (s: Partial<CatSettings>) => void;
+      setIgnoreMouse: (ignore: boolean) => void;
+      dragCat: (dx: number, dy: number) => void;
+      pomodoroControl: (action: 'start' | 'pause' | 'reset') => void;
       onCatSettings: (cb: (s: CatSettings) => void) => void;
       onCatSpeech: (cb: (msg: string | null) => void) => void;
       onStretchReminder: (cb: (msg: string) => void) => void;
@@ -22,16 +25,166 @@ declare global {
       onAiState: (cb: (s: AiState) => void) => void;
       onScrollEvent: (cb: () => void) => void;
       onReminderTrigger: (cb: (msg: string) => void) => void;
-      setIgnoreMouse: (ignore: boolean) => void;
-      dragCat: (dx: number, dy: number) => void;
-      pomodoroControl: (action: 'start' | 'pause' | 'reset') => void;
+      onShakeEvent: (cb: () => void) => void;
+      onHeatLevel: (cb: (level: number) => void) => void;
     };
   }
 }
 
+// ─── Sound Engine (Web Audio API) ──────────────────────────────
+class SoundEngine {
+  private ac: AudioContext | null = null;
+  enabled = true;
+
+  private ctx(): AudioContext {
+    if (!this.ac) this.ac = new AudioContext();
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  }
+
+  purr(durationSec = 0.9): void {
+    if (!this.enabled) return;
+    try {
+      const ac = this.ctx();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      const lfo = ac.createOscillator();
+      const lfoGain = ac.createGain();
+      osc.frequency.value = 26;
+      osc.type = 'sawtooth';
+      lfo.frequency.value = 28;
+      lfoGain.gain.value = 9;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      gain.gain.setValueAtTime(0, ac.currentTime);
+      gain.gain.linearRampToValueAtTime(0.11, ac.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.11, ac.currentTime + durationSec - 0.1);
+      gain.gain.linearRampToValueAtTime(0, ac.currentTime + durationSec);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      lfo.start();
+      osc.start();
+      osc.stop(ac.currentTime + durationSec);
+      lfo.stop(ac.currentTime + durationSec);
+    } catch (_) {}
+  }
+
+  meow(): void {
+    if (!this.enabled) return;
+    try {
+      const ac = this.ctx();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(720, ac.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ac.currentTime + 0.28);
+      osc.frequency.exponentialRampToValueAtTime(560, ac.currentTime + 0.48);
+      gain.gain.setValueAtTime(0, ac.currentTime);
+      gain.gain.linearRampToValueAtTime(0.18, ac.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.18, ac.currentTime + 0.36);
+      gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.58);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start();
+      osc.stop(ac.currentTime + 0.62);
+    } catch (_) {}
+  }
+
+  chime(): void {
+    if (!this.enabled) return;
+    try {
+      const ac = this.ctx();
+      [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        const t = ac.currentTime + i * 0.14;
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.13, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(t);
+        osc.stop(t + 0.65);
+      });
+    } catch (_) {}
+  }
+
+  alert(): void {
+    if (!this.enabled) return;
+    try {
+      const ac = this.ctx();
+      [440, 554, 440].forEach((freq, i) => {
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        const t = ac.currentTime + i * 0.18;
+        osc.frequency.value = freq;
+        osc.type = 'triangle';
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.09, t + 0.02);
+        gain.gain.linearRampToValueAtTime(0, t + 0.16);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(t);
+        osc.stop(t + 0.2);
+      });
+    } catch (_) {}
+  }
+
+  pop(): void {
+    if (!this.enabled) return;
+    try {
+      const ac = this.ctx();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.frequency.setValueAtTime(300, ac.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ac.currentTime + 0.1);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start();
+      osc.stop(ac.currentTime + 0.12);
+    } catch (_) {}
+  }
+}
+
+// ─── Mood System ───────────────────────────────────────────────
+class MoodSystem {
+  private petCount = 0;
+  private lastPetTime = 0;
+  private stretchDone = 0;
+  private overheatCount = 0;
+  private sessionStartTime = Date.now();
+
+  onPet() {
+    this.petCount++;
+    this.lastPetTime = Date.now();
+  }
+  onStretchDone() { this.stretchDone++; }
+  onOverheat() { this.overheatCount++; }
+
+  getMood(): CatMood {
+    const now = Date.now();
+    const sessionMin = (now - this.sessionStartTime) / 60_000;
+    const timeSincePet = (now - this.lastPetTime) / 60_000;
+
+    if (this.overheatCount >= 3) return 'tired';
+    if (sessionMin > 30 && this.petCount === 0) return 'lonely';
+    if (this.lastPetTime > 0 && timeSincePet < 5) return 'happy';
+    return 'content';
+  }
+}
+
+const sound = new SoundEngine();
+const mood = new MoodSystem();
+
 // ─── State ─────────────────────────────────────────────────────
 let settings: CatSettings = {
-  color: 'orange', pattern: 'none', name: 'hooman', catName: 'NekoDrift',
+  color: 'orange', pattern: 'none', customPixels: '0'.repeat(256),
+  name: 'hooman', catName: 'NekoDrift',
   stretchIntervalMin: 30, stretchEnabled: true, soundEnabled: false,
   size: 2, alwaysOnTop: true, showOnAllDesktops: true, startOnLogin: false,
   pomodoroEnabled: false, pomodoroFocusMin: 25, pomodoroBreakMin: 5,
@@ -48,25 +201,30 @@ let isTyping = false;
 let heatLevel = 0;
 let speechText: string | null = null;
 let speechTimer: ReturnType<typeof setTimeout> | null = null;
-let isPinnedSpeech = false;
 let eyeDir: EyeDir = { dx: 0, dy: 0 };
 let pomodoroState: PomodoroState = { mode: 'idle', remainingMs: 0, session: 0 };
 let frame = 0;
+let showHearts = false;
+let heartsTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Mochi drag
+// Wobble (shake)
+let wobble = 0;
+let wobbleDecay = false;
+
+// Drag
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
 let isHoveringCat = false;
 
-// ─── Canvas setup ──────────────────────────────────────────────
+// ─── Canvas ────────────────────────────────────────────────────
 const canvas = document.getElementById('cat-canvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
 function resize() {
   const scale = settings.size;
   const catPx = 16 * (scale * 4);
-  const extra = 160;
+  const extra = 180;
   canvas.width = catPx + extra;
   canvas.height = catPx + extra;
   canvas.style.width = `${catPx + extra}px`;
@@ -88,58 +246,75 @@ function forceAnim(anim: CatAnimation, durationMs: number) {
   forcedAnimTimer = setTimeout(() => { forcedAnim = null; }, durationMs);
 }
 
-// ─── Render loop ───────────────────────────────────────────────
+function showHeartsBurst(durationMs = 2500) {
+  showHearts = true;
+  if (heartsTimer) clearTimeout(heartsTimer);
+  heartsTimer = setTimeout(() => { showHearts = false; }, durationMs);
+}
+
+// ─── Render ────────────────────────────────────────────────────
 function render() {
   const scale = settings.size * 4;
   const catSize = 16 * scale;
-  const offsetX = 60;
-  const offsetY = 80;
+  const offsetX = 70;
+  const offsetY = 90;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const anim = getAnimation();
+  const catMood = mood.getMood();
+
+  // Wobble decay
+  if (wobbleDecay && Math.abs(wobble) > 0.01) {
+    wobble *= 0.82;
+    if (Math.abs(wobble) < 0.02) { wobble = 0; wobbleDecay = false; }
+  }
 
   ctx.save();
   ctx.translate(offsetX, offsetY);
   drawCat(ctx, {
     color: settings.color as CatColor,
     pattern: settings.pattern,
+    customPixels: settings.customPixels,
     animation: anim,
     frame,
     scale,
     eyeDir,
     heatLevel,
+    wobble,
+    mood: catMood,
   });
   ctx.restore();
 
-  // Steam for overheat
+  // Steam (overheat)
   if (anim === 'overheat' || heatLevel >= 2) {
-    drawSteam(ctx, offsetX + catSize / 2, offsetY + 4, frame, scale / 4);
+    drawSteam(ctx, offsetX + catSize / 2, offsetY + 4, frame, scale / 5);
   }
 
-  // Zzz for sleep
+  // Zzz (sleep)
   if (anim === 'sleep') {
-    drawZzz(ctx, offsetX + catSize - scale * 2, offsetY + scale * 2, frame, scale / 4);
+    drawZzz(ctx, offsetX + catSize - scale, offsetY + scale * 2, frame, scale / 5);
+  }
+
+  // Hearts (purr / happy / pet)
+  if (showHearts || anim === 'purr' || anim === 'happy') {
+    drawHearts(ctx, offsetX + catSize / 2, offsetY - scale * 2, frame, scale / 5);
   }
 
   // Pomodoro timer
   if (settings.pomodoroEnabled && pomodoroState.mode !== 'idle') {
     drawPomodoroTimer(
-      ctx,
-      offsetX + catSize / 2,
-      offsetY - 32,
-      pomodoroState.remainingMs,
-      pomodoroState.mode,
-      scale / 4
+      ctx, offsetX + catSize / 2, offsetY - 42,
+      pomodoroState.remainingMs, pomodoroState.mode, scale / 5
     );
   }
 
-  // Fixed pinned message
+  // Fixed pinned message (shown when no transient speech)
   if (settings.fixedMessageEnabled && settings.fixedMessage && !speechText) {
     drawSpeechBubble(ctx, settings.fixedMessage, offsetX + catSize / 2, offsetY, scale, true);
   }
 
-  // Speech bubble (transient)
+  // Transient speech bubble
   if (speechText) {
     drawSpeechBubble(ctx, speechText, offsetX + catSize / 2, offsetY, scale, false);
   }
@@ -148,18 +323,19 @@ function render() {
   requestAnimationFrame(render);
 }
 
-// ─── Speech helpers ────────────────────────────────────────────
-function showSpeech(text: string, durationMs = 3000) {
-  isPinnedSpeech = false;
+// ─── Speech ────────────────────────────────────────────────────
+function showSpeech(text: string, durationMs = 3500) {
   speechText = text;
   if (speechTimer) clearTimeout(speechTimer);
   speechTimer = setTimeout(() => { speechText = null; }, durationMs);
 }
 
-// ─── Per-pixel hit test → toggle ignoreMouseEvents ────────────
+// ─── Per-pixel hit test → toggle ignoreMouseEvents ──────────────
 function hitTestCat(clientX: number, clientY: number): boolean {
-  const d = ctx.getImageData(clientX, clientY, 1, 1).data;
-  return d[3] > 30; // alpha > 30/255 = over cat
+  try {
+    const d = ctx.getImageData(clientX, clientY, 1, 1).data;
+    return d[3] > 25;
+  } catch (_) { return false; }
 }
 
 function updateIgnoreMouse(x: number, y: number) {
@@ -170,18 +346,28 @@ function updateIgnoreMouse(x: number, y: number) {
   }
 }
 
-// Pointer tracking on the canvas (receives events even when ignoreMouseEvents=true because forward:true)
+// ─── Pointer events ────────────────────────────────────────────
+let lastPurr = 0;
+
 canvas.addEventListener('pointermove', (e) => {
   updateIgnoreMouse(e.clientX, e.clientY);
 
-  // Purring: cursor slow + over cat = purr
   const vel = Math.hypot(e.movementX, e.movementY);
+
+  // Purring: slow hover over cat
   if (isHoveringCat && vel < 3 && !isIdle && !forcedAnim) {
     if (currentAnim !== 'purr') {
       currentAnim = 'purr';
-      showSpeech('purr purr purr... ♡', 2000);
+      showSpeech('purr purr purr... ♡', 2500);
+      showHeartsBurst(2500);
+      mood.onPet();
+      const now = Date.now();
+      if (sound.enabled && now - lastPurr > 1000) {
+        sound.purr(0.9);
+        lastPurr = now;
+      }
     }
-  } else if (currentAnim === 'purr' && vel > 8) {
+  } else if (currentAnim === 'purr' && vel > 10) {
     currentAnim = 'idle';
   }
 
@@ -200,16 +386,17 @@ canvas.addEventListener('pointerdown', (e) => {
   isDragging = true;
   dragStartX = e.clientX;
   dragStartY = e.clientY;
-  forceAnim('surprised', 200);
+  forceAnim('surprised', 250);
+  sound.pop();
   canvas.setPointerCapture(e.pointerId);
 });
 
 canvas.addEventListener('pointerup', () => {
   if (isDragging) {
     isDragging = false;
-    // Spring release: quick happy bounce
-    forceAnim('jump', 800);
-    setTimeout(() => { forceAnim('happy', 1000); }, 800);
+    forceAnim('jump', 900);
+    sound.meow();
+    setTimeout(() => { forceAnim('happy', 1200); showHeartsBurst(1500); }, 900);
   }
 });
 
@@ -224,17 +411,16 @@ canvas.addEventListener('pointerleave', () => {
 // ─── Stretch banner ────────────────────────────────────────────
 const stretchBanner = document.getElementById('stretch-banner')!;
 const stretchMsg = document.getElementById('stretch-msg')!;
-const btnDismiss = document.getElementById('btn-dismiss')!;
-const btnSnooze = document.getElementById('btn-snooze')!;
-
-btnDismiss.addEventListener('click', () => {
+document.getElementById('btn-dismiss')!.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
   window.nekodrift.dismissStretch();
-  showSpeech('yay, good job! ♡', 2000);
+  mood.onStretchDone();
+  showSpeech('good stretch! ♡ keep it up!', 2500);
   forceAnim('happy', 3000);
+  showHeartsBurst(3000);
+  sound.chime();
 });
-
-btnSnooze.addEventListener('click', () => {
+document.getElementById('btn-snooze')!.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
   window.nekodrift.snoozeStretch(5);
   showSpeech('ok, 5 more mins... 😴', 2000);
@@ -243,98 +429,160 @@ btnSnooze.addEventListener('click', () => {
 // ─── IPC listeners ─────────────────────────────────────────────
 window.nekodrift.onCatSettings((s) => {
   settings = s;
+  sound.enabled = s.soundEnabled;
   resize();
-  // Update alwaysOnTop is handled by main
 });
 
 window.nekodrift.onCatSpeech((msg) => {
-  if (msg) showSpeech(msg, 4000);
-  else speechText = null;
+  if (msg) { showSpeech(msg, 4500); }
+  else { speechText = null; }
 });
 
 window.nekodrift.onStretchReminder((msg) => {
   stretchMsg.textContent = msg;
   stretchBanner.classList.add('visible');
   forceAnim('stretch', 5000);
+  sound.alert();
 });
 
 window.nekodrift.onIdleChanged((idle) => {
   isIdle = idle;
   if (!idle) {
     forceAnim('happy', 3000);
+    showHeartsBurst(2000);
   }
 });
 
 window.nekodrift.onTypingChanged((typing) => {
   isTyping = typing;
-  // Typing → slowly increase heat
-  if (typing) {
-    heatLevel = Math.min(3, heatLevel + 0.5);
-  } else {
-    heatLevel = Math.max(0, heatLevel - 1);
+  if (!typing) {
+    heatLevel = Math.max(0, heatLevel - 0.8);
+  }
+});
+
+window.nekodrift.onHeatLevel((level) => {
+  const prev = heatLevel;
+  heatLevel = level;
+  if (level >= 2 && prev < 2) {
+    mood.onOverheat();
+    const msgs = ['too fast! overheating!! 🔥', 'keyboard goes BRRR 💨', 'steam from ears! 😤'];
+    showSpeech(msgs[Math.floor(Math.random() * msgs.length)], 3000);
   }
 });
 
 window.nekodrift.onMouseVelocity((vel) => {
-  if (vel > 300 && !isIdle && !forcedAnim) {
-    forceAnim('hunt', 2000);
+  if (vel > 300 && !isIdle && currentAnim !== 'hunt') {
+    forceAnim('hunt', 2200);
   }
 });
 
 window.nekodrift.onEyeDir((dir) => {
-  eyeDir = dir;
+  // Smooth eye direction
+  eyeDir = {
+    dx: eyeDir.dx + (dir.dx - eyeDir.dx) * 0.25,
+    dy: eyeDir.dy + (dir.dy - eyeDir.dy) * 0.25,
+  };
 });
 
 window.nekodrift.onPomodoroState((s) => {
   const prev = pomodoroState;
   pomodoroState = s;
   if (prev.mode === 'focus' && s.mode === 'break') {
-    forceAnim('happy', 2000);
-    showSpeech('break time! take a breather ♡', 4000);
+    forceAnim('happy', 2500);
+    showHeartsBurst(2500);
+    showSpeech(`break time! you earned it ♡ ${settings.name}`, 5000);
+    sound.chime();
   } else if (prev.mode === 'break' && s.mode === 'focus') {
-    forceAnim('surprised', 1000);
-    showSpeech(`focus time! let's go ${settings.name}! 🍅`, 3000);
+    forceAnim('surprised', 1200);
+    showSpeech(`back to focus! let's go ${settings.name}! 🍅`, 3500);
+    sound.alert();
+  } else if (prev.mode !== 'idle' && s.mode === 'idle') {
+    forceAnim('happy', 2000);
+    showSpeech('all sessions done! great work! 🎉', 4000);
+    sound.chime();
   }
 });
 
 window.nekodrift.onAiState((s) => {
   if (s.thinking) {
-    forcedAnim = 'think'; // hold until done — no timer
+    forcedAnim = 'think';
     if (forcedAnimTimer) { clearTimeout(forcedAnimTimer); forcedAnimTimer = null; }
-    showSpeech('hmm... thinking along... 🤔', 30000);
+    showSpeech('hmm... thinking along... 🤔', 60_000);
   } else if (s.done) {
     forcedAnim = null;
-    forceAnim('jump', 1500);
-    setTimeout(() => { forceAnim('happy', 2000); }, 1500);
-    showSpeech(`Claude is done, ${settings.name}! ✨`, 4000);
+    forceAnim('jump', 1600);
+    showHeartsBurst(3000);
+    setTimeout(() => { forceAnim('happy', 2500); }, 1600);
+    sound.meow();
+    showSpeech(`Claude is done, ${settings.name}! ✨`, 5000);
+  } else {
+    // reset
+    if (forcedAnim === 'think') forcedAnim = null;
+    if (speechText?.includes('thinking')) speechText = null;
   }
 });
 
 window.nekodrift.onScrollEvent(() => {
-  if (!isIdle && !forcedAnim) {
-    forceAnim('paper', 2000);
+  if (!isIdle && currentAnim !== 'paper') {
+    forceAnim('paper', 2200);
   }
 });
 
 window.nekodrift.onReminderTrigger((msg) => {
-  forceAnim('surprised', 1000);
-  showSpeech(msg, 6000);
+  forceAnim('surprised', 1200);
+  setTimeout(() => { forceAnim('happy', 2000); }, 1200);
+  showSpeech(msg, 7000);
+  sound.meow();
 });
 
-// ─── Heat decay (typing stops → cool down) ────────────────────
+window.nekodrift.onShakeEvent(() => {
+  // Rapid wobble animation
+  let dir = 1;
+  let count = 0;
+  const wobbleStep = () => {
+    wobble = dir * 1.2;
+    dir *= -0.8;
+    count++;
+    if (count < 8) setTimeout(wobbleStep, 60);
+    else { wobbleDecay = true; }
+  };
+  wobbleStep();
+  forceAnim('surprised', 800);
+  sound.pop();
+});
+
+// ─── Heat decay over time ──────────────────────────────────────
 setInterval(() => {
   if (!isTyping && heatLevel > 0) {
-    heatLevel = Math.max(0, heatLevel - 0.2);
+    heatLevel = Math.max(0, heatLevel - 0.15);
   }
-}, 2000);
+}, 1500);
+
+// ─── Mood-based idle behaviours ────────────────────────────────
+setInterval(() => {
+  if (isIdle || forcedAnim || isTyping) return;
+  const catMood = mood.getMood();
+  const r = Math.random();
+  if (catMood === 'lonely' && r < 0.3 && currentAnim === 'idle') {
+    showSpeech(`${settings.name}... pet me please... 🥺`, 4000);
+  } else if (catMood === 'happy' && r < 0.2 && currentAnim === 'idle') {
+    forceAnim('happy', 1500);
+  }
+}, 45_000);
 
 // ─── Boot ──────────────────────────────────────────────────────
 async function boot() {
   settings = await window.nekodrift.getSettings();
+  sound.enabled = settings.soundEnabled;
   resize();
 
-  forceAnim('happy', 4000);
-  showSpeech(`meow! i'm ${settings.catName}! ♡`, 4000);
+  forceAnim('happy', 5000);
+  showHeartsBurst(4000);
+  showSpeech(`meow! i'm ${settings.catName}! ♡`, 4500);
+
+  setTimeout(() => {
+    if (sound.enabled) sound.meow();
+  }, 300);
 
   render();
 }

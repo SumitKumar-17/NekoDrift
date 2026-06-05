@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: CatSettings = {
   reminderHour: 15,
   reminderMinute: 0,
   claudeIntegration: true,
+  customPixels: '0'.repeat(256),
 };
 
 export const IDLE_THRESHOLD_MS = 60_000 * 3;

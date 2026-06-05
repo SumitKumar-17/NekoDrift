@@ -1,5 +1,6 @@
 import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState } from '../../shared/types';
-import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
+import { drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
+import { drawVectorCat } from './drawing/vector-cat';
 import { SoundEngine } from './sound';
 import { MoodSystem } from './mood';
 
@@ -125,7 +126,7 @@ function render() {
 
   ctx.save();
   ctx.translate(offsetX, offsetY);
-  drawCat(ctx, {
+  drawVectorCat(ctx, {
     color: settings.color as CatColor,
     pattern: settings.pattern,
     customPixels: settings.customPixels,

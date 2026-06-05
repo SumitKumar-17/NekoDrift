@@ -14,6 +14,12 @@ import { createTray } from './tray';
 import { IPC } from '../shared/types';
 import { GREETING_MESSAGES, IDLE_MESSAGES } from '../shared/constants';
 
+// ─── Single instance lock ─────────────────────────────────────
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+
 // ─── Window refs ─────────────────────────────────────────────
 let catWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
@@ -25,7 +31,6 @@ let idleDetector: IdleDetector;
 let keyboardTracker: KeyboardTracker;
 let stretchTimer: StretchTimer;
 
-const isDev = process.env.NODE_ENV === 'development';
 const DIST = path.join(app.getAppPath(), 'dist/renderer');
 
 function rendererPath(file: string): string {
@@ -36,11 +41,11 @@ function rendererPath(file: string): string {
 function createCatWindow(): void {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   const settings = getSettings();
-  const catSize = 64 * settings.size;  // pixel size on screen
+  const catSize = 64 * settings.size;
 
   catWindow = new BrowserWindow({
-    width: catSize + 120,   // extra room for speech bubble
-    height: catSize + 100,
+    width: catSize + 200,
+    height: catSize + 160,
     x: Math.floor(width / 2),
     y: Math.floor(height / 2),
     transparent: true,
@@ -57,20 +62,13 @@ function createCatWindow(): void {
     },
   });
 
-  // Click-through the transparent area
   catWindow.setIgnoreMouseEvents(true, { forward: true });
 
-  // Keep on all workspaces (macOS)
   if (process.platform === 'darwin') {
     catWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
   }
 
   catWindow.loadURL(rendererPath('cat/index.html'));
-
-  if (isDev) {
-    catWindow.webContents.openDevTools({ mode: 'detach' });
-  }
-
   catWindow.on('closed', () => { catWindow = null; });
 }
 
@@ -83,9 +81,9 @@ function createSettingsWindow(): void {
 
   settingsWindow = new BrowserWindow({
     width: 520,
-    height: 640,
+    height: 660,
     resizable: false,
-    title: 'Comnyang Settings',
+    title: 'NekoDrift Settings',
     show: false,
     webPreferences: {
       preload: path.join(app.getAppPath(), 'dist/main/preload.js'),
@@ -101,12 +99,17 @@ function createSettingsWindow(): void {
 
 // ─── Onboarding Window ───────────────────────────────────────
 function createOnboardingWindow(): void {
+  if (onboardingWindow && !onboardingWindow.isDestroyed()) {
+    onboardingWindow.focus();
+    return;
+  }
+
   onboardingWindow = new BrowserWindow({
     width: 480,
-    height: 560,
+    height: 580,
     resizable: false,
     center: true,
-    title: 'Welcome to Comnyang!',
+    title: 'Welcome to NekoDrift!',
     show: false,
     webPreferences: {
       preload: path.join(app.getAppPath(), 'dist/main/preload.js'),
@@ -120,40 +123,51 @@ function createOnboardingWindow(): void {
   onboardingWindow.on('closed', () => { onboardingWindow = null; });
 }
 
+// ─── Quit helper ─────────────────────────────────────────────
+function quitApp(): void {
+  // Stop services first
+  try { idleDetector?.stop(); } catch (_) {}
+  try { keyboardTracker?.stop(); } catch (_) {}
+  try { stretchTimer?.stop(); } catch (_) {}
+
+  // Destroy all windows explicitly
+  try { catWindow?.destroy(); catWindow = null; } catch (_) {}
+  try { settingsWindow?.destroy(); settingsWindow = null; } catch (_) {}
+  try { onboardingWindow?.destroy(); onboardingWindow = null; } catch (_) {}
+
+  // Remove tray
+  try { tray?.destroy(); tray = null; } catch (_) {}
+
+  app.exit(0);
+}
+
 // ─── IPC Handlers ────────────────────────────────────────────
 function setupIPC(): void {
-  // Settings CRUD
   ipcMain.handle(IPC.GET_SETTINGS, () => getSettings());
 
   ipcMain.handle(IPC.SAVE_SETTINGS, (_event, partial) => {
     const updated = saveSettings(partial);
-    // Push updated settings to cat window
     catWindow?.webContents.send(IPC.CAT_SETTINGS, updated);
-    // Restart stretch timer if interval changed
     if (partial.stretchIntervalMin || partial.name) {
-      const s = updated;
-      if (s.stretchEnabled) {
-        stretchTimer.restart(s.stretchIntervalMin, s.name);
+      if (updated.stretchEnabled) {
+        stretchTimer?.restart(updated.stretchIntervalMin, updated.name);
       }
     }
     return updated;
   });
 
-  // Stretch actions
   ipcMain.on(IPC.DISMISS_STRETCH, () => {
     catWindow?.webContents.send(IPC.CAT_SPEECH, null);
   });
 
   ipcMain.on(IPC.SNOOZE_STRETCH, (_event, minutes: number) => {
-    stretchTimer.snooze(minutes);
+    stretchTimer?.snooze(minutes);
     catWindow?.webContents.send(IPC.CAT_SPEECH, null);
   });
 
-  // Window actions
   ipcMain.on(IPC.OPEN_SETTINGS, () => createSettingsWindow());
-  ipcMain.on(IPC.QUIT_APP, () => app.quit());
+  ipcMain.on(IPC.QUIT_APP, () => quitApp());
 
-  // Onboarding done
   ipcMain.on(IPC.ONBOARDING_DONE, (_event, settings) => {
     saveSettings(settings);
     setFirstRunDone();
@@ -166,11 +180,9 @@ function setupIPC(): void {
 function startServices(): void {
   const settings = getSettings();
 
-  // Idle detection
   idleDetector = new IdleDetector((isIdle) => {
     catWindow?.webContents.send(IPC.IDLE_CHANGED, isIdle);
     if (!isIdle) {
-      // Welcome back
       const msg = GREETING_MESSAGES[Math.floor(Math.random() * GREETING_MESSAGES.length)];
       setTimeout(() => {
         catWindow?.webContents.send(IPC.CAT_SPEECH, msg(settings.name));
@@ -182,13 +194,11 @@ function startServices(): void {
   });
   idleDetector.start();
 
-  // Keyboard tracking
   keyboardTracker = new KeyboardTracker((isTyping) => {
     catWindow?.webContents.send(IPC.TYPING_CHANGED, isTyping);
   });
   keyboardTracker.start();
 
-  // Stretch timer
   if (settings.stretchEnabled) {
     stretchTimer = new StretchTimer(
       (msg) => {
@@ -204,37 +214,31 @@ function startServices(): void {
 
 // ─── Mouse tracking for cat following ────────────────────────
 function startMouseTracking(): void {
-  // Poll mouse position and move the cat window toward it
   let targetX = 400;
   let targetY = 400;
   let currentX = 400;
   let currentY = 400;
 
-  // Get mouse position via Electron's screen API
   setInterval(() => {
     const pos = screen.getCursorScreenPoint();
     targetX = pos.x;
     targetY = pos.y;
-  }, 16); // ~60fps polling
+  }, 16);
 
-  // Smooth lerp movement
   setInterval(() => {
     if (!catWindow || catWindow.isDestroyed()) return;
 
     const settings = getSettings();
     const catSize = 64 * settings.size;
-    const winW = catSize + 120;
-    const winH = catSize + 100;
+    const winW = catSize + 200;
+    const winH = catSize + 160;
 
-    // Lerp toward cursor
     currentX += (targetX - currentX) * 0.08;
     currentY += (targetY - currentY) * 0.08;
 
-    // Offset so cat appears next to cursor, not on top
     const x = Math.round(currentX) - Math.floor(catSize / 2);
     const y = Math.round(currentY) - catSize + 8;
 
-    // Clamp to screen
     const display = screen.getDisplayNearestPoint({ x: Math.round(currentX), y: Math.round(currentY) });
     const { bounds } = display;
     const clampedX = Math.max(bounds.x, Math.min(bounds.x + bounds.width - winW, x));
@@ -244,9 +248,15 @@ function startMouseTracking(): void {
   }, 16);
 }
 
+// ─── Second instance → focus existing ────────────────────────
+app.on('second-instance', () => {
+  if (catWindow && !catWindow.isDestroyed()) {
+    catWindow.show();
+  }
+});
+
 // ─── App lifecycle ───────────────────────────────────────────
 app.whenReady().then(() => {
-  // Prevent app from showing in dock (macOS) — lives in tray only
   if (process.platform === 'darwin') {
     app.dock?.hide();
   }
@@ -256,7 +266,7 @@ app.whenReady().then(() => {
 
   tray = createTray({
     onOpenSettings: createSettingsWindow,
-    onQuit: () => app.quit(),
+    onQuit: quitApp,
     onToggleCat: () => {
       if (catWindow?.isVisible()) catWindow.hide();
       else catWindow?.show();
@@ -272,12 +282,5 @@ app.whenReady().then(() => {
   }
 });
 
-app.on('window-all-closed', () => {
-  // Keep running in tray (don't quit when windows close)
-});
-
-app.on('before-quit', () => {
-  idleDetector?.stop();
-  keyboardTracker?.stop();
-  stretchTimer?.stop();
-});
+// Keep running in tray when all windows close
+app.on('window-all-closed', () => {});

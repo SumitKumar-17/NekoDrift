@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_DIR = path.resolve(__dirname, '..');
-const SHOT_DIR = '/tmp/comnyang-shots';
+const SHOT_DIR = '/tmp/nekodrift-shots';
 fs.mkdirSync(SHOT_DIR, { recursive: true });
 
 const electronBin = path.join(APP_DIR, 'node_modules/electron/dist/electron');
@@ -19,7 +19,7 @@ const ss = async (page, name) => {
   return f;
 };
 
-console.log('Launching Comnyang...');
+console.log('Launching NekoDrift...');
 const app = await electron.launch({
   executablePath: electronBin,
   args: ['--no-sandbox', APP_DIR],

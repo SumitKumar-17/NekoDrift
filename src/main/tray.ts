@@ -21,11 +21,11 @@ export function createTray(callbacks: TrayCallback): Tray {
   }
 
   const tray = new Tray(icon);
-  tray.setToolTip('Comnyang 🐱');
+  tray.setToolTip('NekoDrift 🐱');
 
   const menu = Menu.buildFromTemplate([
     {
-      label: '🐱 Comnyang',
+      label: '🐱 NekoDrift',
       enabled: false,
     },
     { type: 'separator' },
@@ -39,7 +39,7 @@ export function createTray(callbacks: TrayCallback): Tray {
     },
     { type: 'separator' },
     {
-      label: 'Quit Comnyang',
+      label: 'Quit NekoDrift',
       click: callbacks.onQuit,
     },
   ]);

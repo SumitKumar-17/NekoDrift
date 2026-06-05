@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_DIR = path.resolve(__dirname, '..');
-const SHOT_DIR = process.env.SCREENSHOT_DIR || '/tmp/comnyang-shots';
+const SHOT_DIR = process.env.SCREENSHOT_DIR || '/tmp/nekodrift-shots';
 fs.mkdirSync(SHOT_DIR, { recursive: true });
 
 const electronBin = path.join(APP_DIR, 'node_modules/electron/dist/electron');
@@ -17,7 +17,7 @@ let page = null;
 const COMMANDS = {
   async launch() {
     if (app) return console.log('already launched');
-    console.log('Launching Comnyang...');
+    console.log('Launching NekoDrift...');
     app = await electron.launch({
       executablePath: electronBin,
       args: ['--no-sandbox', APP_DIR],
@@ -158,5 +158,5 @@ rl.on('line', async line => {
 
 rl.on('close', async () => { try { await COMMANDS.quit(); } catch {} process.exit(0); });
 
-console.log('Comnyang driver — "help" for commands, "launch" to start');
+console.log('NekoDrift driver — "help" for commands, "launch" to start');
 rl.prompt();

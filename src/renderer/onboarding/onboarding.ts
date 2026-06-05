@@ -3,7 +3,7 @@ import { drawCat } from '../cat/pixel-cat';
 
 declare global {
   interface Window {
-    comnyang: {
+    nekodrift: {
       getSettings: () => Promise<CatSettings>;
       saveSettings: (s: Partial<CatSettings>) => Promise<CatSettings>;
       onboardingDone: (s: Partial<CatSettings>) => void;
@@ -73,10 +73,10 @@ document.getElementById('btn-next-2')!.addEventListener('click', () => {
 
 // Step 3 — done
 document.getElementById('btn-start')!.addEventListener('click', () => {
-  window.comnyang.onboardingDone({
+  window.nekodrift.onboardingDone({
     name: userName,
     color: selectedColor,
-    catName: 'Comnyang',
+    catName: 'NekoDrift',
     stretchIntervalMin: 30,
     stretchEnabled: true,
     soundEnabled: false,

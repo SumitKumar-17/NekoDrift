@@ -5,7 +5,7 @@ import * as fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_DIR = path.resolve(__dirname, '..');
-const SHOT_DIR = '/tmp/comnyang-shots';
+const SHOT_DIR = '/tmp/nekodrift-shots';
 const electronBin = path.join(APP_DIR, 'node_modules/electron/dist/electron');
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -28,7 +28,7 @@ const catWin = app.windows().find(w => w.url().includes('cat'));
 console.log('windows:', app.windows().map(w => w.url().split('/').pop()));
 
 // Trigger open settings via IPC
-await catWin.evaluate(() => window.comnyang.openSettings());
+await catWin.evaluate(() => window.nekodrift.openSettings());
 await wait(2000);
 
 const settingsWin = app.windows().find(w => w.url().includes('settings'));

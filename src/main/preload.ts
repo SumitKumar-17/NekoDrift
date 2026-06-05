@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC, CatSettings } from '../shared/types';
 
-contextBridge.exposeInMainWorld('comnyang', {
+contextBridge.exposeInMainWorld('nekodrift', {
   // Settings
   getSettings: (): Promise<CatSettings> =>
     ipcRenderer.invoke(IPC.GET_SETTINGS),

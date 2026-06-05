@@ -3,7 +3,7 @@ import { drawCat, drawSpeechBubble } from './pixel-cat';
 
 declare global {
   interface Window {
-    comnyang: {
+    nekodrift: {
       getSettings: () => Promise<CatSettings>;
       saveSettings: (s: Partial<CatSettings>) => Promise<CatSettings>;
       dismissStretch: () => void;
@@ -24,7 +24,7 @@ declare global {
 let settings: CatSettings = {
   color: 'orange',
   name: 'hooman',
-  catName: 'Comnyang',
+  catName: 'NekoDrift',
   stretchIntervalMin: 30,
   stretchEnabled: true,
   soundEnabled: false,
@@ -113,7 +113,7 @@ const btnSnooze = document.getElementById('btn-snooze')!;
 
 btnDismiss.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
-  window.comnyang.dismissStretch();
+  window.nekodrift.dismissStretch();
   showSpeech('yay, good job! ♡', 2000);
   currentAnim = 'happy';
   setTimeout(() => { currentAnim = 'idle'; }, 3000);
@@ -121,7 +121,7 @@ btnDismiss.addEventListener('click', () => {
 
 btnSnooze.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
-  window.comnyang.snoozeStretch(5);
+  window.nekodrift.snoozeStretch(5);
   showSpeech('ok, 5 more mins... 😴', 2000);
 });
 
@@ -133,24 +133,24 @@ canvas.addEventListener('contextmenu', (e) => {
 });
 
 // ─── IPC listeners ───────────────────────────────────────────
-window.comnyang.onCatSettings((s) => {
+window.nekodrift.onCatSettings((s) => {
   settings = s;
   resize();
 });
 
-window.comnyang.onCatSpeech((msg) => {
+window.nekodrift.onCatSpeech((msg) => {
   if (msg) showSpeech(msg, 4000);
   else speechText = null;
 });
 
-window.comnyang.onStretchReminder((msg) => {
+window.nekodrift.onStretchReminder((msg) => {
   stretchMsg.textContent = msg;
   stretchBanner.classList.add('visible');
   currentAnim = 'stretch';
   setTimeout(() => { currentAnim = 'idle'; }, 5000);
 });
 
-window.comnyang.onIdleChanged((idle) => {
+window.nekodrift.onIdleChanged((idle) => {
   isIdle = idle;
   if (!idle) {
     currentAnim = 'happy';
@@ -158,13 +158,13 @@ window.comnyang.onIdleChanged((idle) => {
   }
 });
 
-window.comnyang.onTypingChanged((typing) => {
+window.nekodrift.onTypingChanged((typing) => {
   isTyping = typing;
 });
 
 // ─── Boot ────────────────────────────────────────────────────
 async function boot() {
-  settings = await window.comnyang.getSettings();
+  settings = await window.nekodrift.getSettings();
   resize();
 
   // Intro animation

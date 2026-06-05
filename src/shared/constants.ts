@@ -1,7 +1,7 @@
 export const DEFAULT_SETTINGS = {
   color: 'orange' as const,
   name: 'hooman',
-  catName: 'Comnyang',
+  catName: 'NekoDrift',
   stretchIntervalMin: 30,
   stretchEnabled: true,
   soundEnabled: true,

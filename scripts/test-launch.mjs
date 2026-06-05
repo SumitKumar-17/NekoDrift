@@ -5,12 +5,12 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_DIR = path.resolve(__dirname, '..');
-const SHOT_DIR = '/tmp/comnyang-shots';
+const SHOT_DIR = '/tmp/nekodrift-shots';
 fs.mkdirSync(SHOT_DIR, { recursive: true });
 
 const electronBin = path.join(APP_DIR, 'node_modules/electron/dist/electron');
 
-console.log('Launching Comnyang...');
+console.log('Launching NekoDrift...');
 console.log('electronBin:', electronBin);
 console.log('APP_DIR:', APP_DIR);
 

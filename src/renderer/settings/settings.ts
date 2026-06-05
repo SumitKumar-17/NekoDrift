@@ -2,7 +2,7 @@ import { CatSettings, CatColor } from '../../shared/types';
 
 declare global {
   interface Window {
-    comnyang: {
+    nekodrift: {
       getSettings: () => Promise<CatSettings>;
       saveSettings: (s: Partial<CatSettings>) => Promise<CatSettings>;
       dismissStretch: () => void;
@@ -28,7 +28,7 @@ const SIZE_LABELS: Record<number, string> = {
 let currentColor: CatColor = 'orange';
 
 async function init() {
-  const settings = await window.comnyang.getSettings();
+  const settings = await window.nekodrift.getSettings();
 
   // Populate fields
   (document.getElementById('input-name') as HTMLInputElement).value = settings.name;
@@ -63,7 +63,7 @@ async function init() {
   document.getElementById('btn-save')!.addEventListener('click', async () => {
     const updated: Partial<CatSettings> = {
       name: (document.getElementById('input-name') as HTMLInputElement).value.trim() || 'hooman',
-      catName: (document.getElementById('input-cat-name') as HTMLInputElement).value.trim() || 'Comnyang',
+      catName: (document.getElementById('input-cat-name') as HTMLInputElement).value.trim() || 'NekoDrift',
       stretchIntervalMin: Number((document.getElementById('input-interval') as HTMLInputElement).value),
       stretchEnabled: (document.getElementById('toggle-stretch') as HTMLInputElement).checked,
       alwaysOnTop: (document.getElementById('toggle-ontop') as HTMLInputElement).checked,
@@ -73,7 +73,7 @@ async function init() {
       color: currentColor,
     };
 
-    await window.comnyang.saveSettings(updated);
+    await window.nekodrift.saveSettings(updated);
 
     const msg = document.getElementById('saved-msg')!;
     msg.classList.add('show');

@@ -1,7 +1,7 @@
 {
-  "name": "comnyang",
+  "name": "nekodrift",
   "version": "1.0.0",
-  "description": "A pixel cat that lives on your desktop",
+  "description": "A pixel cat that drifts on your desktop",
   "main": "dist/main/index.js",
   "scripts": {
     "build": "node scripts/build-main.js && node scripts/build-renderer.js",
@@ -9,7 +9,8 @@
     "dev": "npm run build && electron --no-sandbox .",
     "package": "npm run build && electron-builder build --publish never",
     "package:mac": "npm run build && electron-builder build --mac --publish never",
-    "package:win": "npm run build && electron-builder build --win --publish never"
+    "package:win": "npm run build && electron-builder build --win --publish never",
+    "package:linux": "npm run build && electron-builder build --linux --publish never"
   },
   "dependencies": {
     "electron-store": "^8.2.0",
@@ -27,38 +28,55 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "com.comnyang.app",
-    "productName": "Comnyang",
-    "copyright": "Copyright © 2024 Comnyang",
+    "appId": "com.nekodrift.app",
+    "productName": "NekoDrift",
+    "copyright": "Copyright © 2024 NekoDrift",
     "files": [
       "dist/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "node_modules/electron-store/**/*",
+      "node_modules/conf/**/*",
+      "node_modules/dot-prop/**/*",
+      "node_modules/env-paths/**/*",
+      "node_modules/atomically/**/*"
     ],
+    "asar": true,
     "mac": {
       "category": "public.app-category.productivity",
       "target": [
-        "dmg",
-        "zip"
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
       ],
-      "icon": "assets/icon.icns"
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ],
       "icon": "assets/icon.ico"
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "category": "Utility"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "SumitKumar-17",
+      "repo": "nekodrift"
     }
   }
 }

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'" />
+  <title>Comnyang</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: transparent;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #stretch-banner {
+      display: none;
+      position: fixed;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.97);
+      border: 1.5px solid #f4a7b9;
+      border-radius: 14px;
+      padding: 8px 14px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #c0436a;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(244,167,185,0.4);
+      gap: 8px;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      max-width: 200px;
+      white-space: normal;
+      z-index: 100;
+    }
+    #stretch-banner.visible { display: flex; }
+    #stretch-banner .msg { font-size: 11px; color: #c0436a; }
+    #stretch-actions { display: flex; gap: 6px; margin-top: 4px; }
+    #stretch-actions button {
+      border: none;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #btn-dismiss {
+      background: #f4a7b9;
+      color: #fff;
+    }
+    #btn-snooze {
+      background: #f0f0f0;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="cat-canvas"></canvas>
+
+  <div id="stretch-banner">
+    <div class="msg" id="stretch-msg">Time to stretch!</div>
+    <div id="stretch-actions">
+      <button id="btn-dismiss">Done! 🧘</button>
+      <button id="btn-snooze">5 min later</button>
+    </div>
+  </div>
+
+  <script type="module" src="./cat.js"></script>
+</body>
+</html>

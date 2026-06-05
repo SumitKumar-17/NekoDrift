@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'" />
+  <title>Welcome to Comnyang!</title>
+  <style>
+    :root {
+      --bg: #fdf6f0;
+      --pink: #f4a7b9;
+      --lavender: #c5b4e3;
+      --peach: #f9c89b;
+      --text: #2d1b0e;
+      --muted: #7a5c48;
+      --border: #e8d5c4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+    .grad {
+      background: linear-gradient(135deg, #f4a7b9, #c5b4e3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .step { display: none; width: 100%; }
+    .step.active { display: flex; flex-direction: column; align-items: center; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: left;
+      margin-bottom: 6px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    input[type="text"] {
+      width: 100%;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: var(--pink); }
+
+    .swatch-grid {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+    .swatch-dot {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .swatch:hover .swatch-dot { transform: scale(1.15); }
+    .swatch.active .swatch-dot { border-color: var(--text); transform: scale(1.15); }
+    .swatch-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+
+    .btn {
+      width: 100%;
+      max-width: 320px;
+      padding: 14px;
+      border: none;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      background: linear-gradient(90deg, #f4a7b9, #c5b4e3);
+      color: white;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.9; transform: scale(1.01); }
+    .btn:active { transform: scale(0.98); }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+      margin-top: 20px;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border);
+      transition: background 0.2s;
+    }
+    .dot.active { background: var(--pink); }
+  </style>
+</head>
+<body>
+  <canvas id="cat-canvas" width="128" height="128"></canvas>
+
+  <!-- Step 1: Name -->
+  <div class="step active" id="step-1">
+    <h1>Hi! I'm <span class="grad">Comnyang</span> 🐾</h1>
+    <p class="sub">I'm a tiny pixel cat who'll live on your desktop.<br/>What's your name so I can greet you properly?</p>
+    <div style="width:100%;max-width:320px">
+      <label>Your name</label>
+      <input type="text" id="input-name" placeholder="e.g. Alex" maxlength="24" autofocus />
+    </div>
+    <button class="btn" id="btn-next-1">Next →</button>
+  </div>
+
+  <!-- Step 2: Color -->
+  <div class="step" id="step-2">
+    <h1>Pick my <span class="grad">coat</span> 🎨</h1>
+    <p class="sub">Choose a color that feels right.<br/>You can always change it later in settings.</p>
+    <div class="swatch-grid">
+      <div class="swatch active" data-color="orange"><div class="swatch-dot" style="background:#e8894a"></div><span class="swatch-label">Ginger</span></div>
+      <div class="swatch" data-color="gray">  <div class="swatch-dot" style="background:#9eaabb"></div><span class="swatch-label">Silver</span></div>
+      <div class="swatch" data-color="black"> <div class="swatch-dot" style="background:#2c2c3e"></div><span class="swatch-label">Midnight</span></div>
+      <div class="swatch" data-color="white"> <div class="swatch-dot" style="background:#f0ece8;border:2px solid #ddd"></div><span class="swatch-label">Cream</span></div>
+      <div class="swatch" data-color="brown"> <div class="swatch-dot" style="background:#8b5e3c"></div><span class="swatch-label">Mocha</span></div>
+      <div class="swatch" data-color="pink">  <div class="swatch-dot" style="background:#f4a7b9"></div><span class="swatch-label">Blossom</span></div>
+    </div>
+    <button class="btn" id="btn-next-2">Next →</button>
+  </div>
+
+  <!-- Step 3: Done -->
+  <div class="step" id="step-3">
+    <h1>All set, <span class="grad" id="user-name-display">hooman</span>! ♡</h1>
+    <p class="sub">I'll follow your cursor, react to your typing,<br/>and remind you to stretch every 30 minutes.<br/>Find me in the system tray anytime!</p>
+    <button class="btn" id="btn-start">Let's go! 🐱</button>
+  </div>
+
+  <div class="dots">
+    <div class="dot active" id="dot-1"></div>
+    <div class="dot" id="dot-2"></div>
+    <div class="dot" id="dot-3"></div>
+  </div>
+
+  <script type="module" src="./onboarding.js"></script>
+</body>
+</html>

@@ -2,6 +2,10 @@
   "name": "nekodrift",
   "version": "1.0.0",
   "description": "A pixel cat that drifts on your desktop",
+  "author": {
+    "name": "SumitKumar-17",
+    "email": "sumitkanpur2005@gmail.com"
+  },
   "main": "dist/main/index.js",
   "scripts": {
     "build": "node scripts/build-main.js && node scripts/build-renderer.js",

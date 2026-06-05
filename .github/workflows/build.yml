@@ -11,7 +11,37 @@ permissions:
   contents: write
 
 jobs:
+  # ── Prepare release slot before the build matrix starts ──────
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=nightly" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create / refresh nightly release
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete nightly --yes 2>/dev/null || true
+          gh release create nightly \
+            --title "NekoDrift Nightly" \
+            --notes "Latest build from \`main\` — commit ${{ github.sha }}" \
+            --prerelease \
+            --repo "$GH_REPO"
+
+  # ── Build matrix ──────────────────────────────────────────────
   build:
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -19,27 +49,27 @@ jobs:
           - os: macos-latest
             platform: mac
             label: macOS
+            artifacts: "dist-electron/*.dmg dist-electron/*.zip"
           - os: windows-latest
             platform: win
             label: Windows
+            artifacts: "dist-electron/*.exe"
           - os: ubuntu-22.04
             platform: linux
             label: Linux
+            artifacts: "dist-electron/*.AppImage dist-electron/*.deb"
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.label }})
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      # ── Linux native deps ──────────────────────────────────────
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-22.04'
         run: |
@@ -51,27 +81,22 @@ jobs:
             libglib2.0-dev libgtk-3-dev \
             librsvg2-bin imagemagick
 
-      # ── macOS native deps ──────────────────────────────────────
       - name: Install macOS dependencies
         if: matrix.os == 'macos-latest'
         run: brew install librsvg imagemagick
 
-      # ── Generate icons (non-Windows) ───────────────────────────
-      - name: Generate icons (Linux/macOS)
+      - name: Generate icons (non-Windows)
         if: matrix.os != 'windows-latest'
         run: |
-          # Regenerate PNG icons from SVG source of truth
           rsvg-convert -w 512 -h 512 assets/icon.svg -o assets/icon.png
           rsvg-convert -w 32  -h 32  assets/icon.svg -o assets/tray-icon.png
           rsvg-convert -w 22  -h 22  assets/icon.svg -o assets/tray-icon-mac.png
 
-      # ── Generate macOS .icns ───────────────────────────────────
       - name: Generate icon.icns (macOS)
         if: matrix.os == 'macos-latest'
         run: bash scripts/generate-icns.sh
 
-      # ── Generate Windows .ico ──────────────────────────────────
-      - name: Generate icon.ico (Linux step for Windows cross-build)
+      - name: Generate icon.ico (Linux)
         if: matrix.os == 'ubuntu-22.04'
         run: |
           for size in 16 32 48 256; do
@@ -79,41 +104,27 @@ jobs:
           done
           convert /tmp/icon-16.png /tmp/icon-32.png /tmp/icon-48.png /tmp/icon-256.png assets/icon.ico || true
 
-      # ── npm install ────────────────────────────────────────────
       - name: Install dependencies
         run: npm ci
 
-      # ── Build TypeScript via esbuild ───────────────────────────
       - name: Build
         run: npm run build
 
-      # ── Package (no release) ───────────────────────────────────
-      - name: Package (no publish)
-        if: "!startsWith(github.ref, 'refs/tags/')"
+      - name: Package
         run: npm run package:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      # ── Package + publish to GitHub Releases on version tags ───
-      - name: Package & Publish (release)
-        if: startsWith(github.ref, 'refs/tags/')
-        run: npx electron-builder build --${{ matrix.platform }} --publish always
+      - name: Upload to release
+        if: github.event_name == 'push'
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      # ── Upload artifacts for non-release builds ────────────────
-      - name: Upload artifacts (non-release)
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        uses: actions/upload-artifact@v4
-        with:
-          name: nekodrift-${{ matrix.label }}-${{ github.sha }}
-          path: |
-            dist-electron/*.dmg
-            dist-electron/*.zip
-            dist-electron/*.exe
-            dist-electron/*.AppImage
-            dist-electron/*.deb
-          if-no-files-found: ignore
-          retention-days: 7
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          files=$(ls ${{ matrix.artifacts }} 2>/dev/null | tr '\n' ' ')
+          if [ -n "$files" ]; then
+            gh release upload "$TAG" $files --clobber --repo "$GH_REPO"
+          fi

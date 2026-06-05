@@ -3,6 +3,7 @@ import {
   BrowserWindow,
   ipcMain,
   screen,
+  Menu,
   Tray,
   dialog,
   shell,
@@ -278,6 +279,50 @@ function setupIPC(): void {
     }
   });
 
+  // Right-click context menu on cat
+  ipcMain.on(IPC.SHOW_CONTEXT_MENU, (_event) => {
+    const s = getSettings();
+    const menu = Menu.buildFromTemplate([
+      {
+        label: s.lockedPosition ? 'Unpin position' : 'Pin here',
+        click: () => {
+          const updated = saveSettings({ lockedPosition: !s.lockedPosition });
+          catWindow?.webContents.send(IPC.CAT_SETTINGS, updated);
+        },
+      },
+      {
+        label: s.stickyNoteEnabled ? 'Remove hover note' : 'Add hover note...',
+        click: () => {
+          if (s.stickyNoteEnabled) {
+            const updated = saveSettings({ stickyNoteEnabled: false });
+            catWindow?.webContents.send(IPC.CAT_SETTINGS, updated);
+          } else {
+            createSettingsWindow();
+          }
+        },
+      },
+      { type: 'separator' },
+      { label: 'Settings...', click: createSettingsWindow },
+      {
+        label: catWindow?.isVisible() ? 'Hide cat' : 'Show cat',
+        click: () => {
+          if (catWindow?.isVisible()) catWindow.hide();
+          else catWindow?.show();
+        },
+      },
+      { type: 'separator' },
+      { label: 'Quit NekoDrift', click: quitApp },
+    ]);
+    menu.popup({ window: catWindow ?? undefined });
+  });
+
+  // Toggle position lock
+  ipcMain.on(IPC.TOGGLE_LOCK, () => {
+    const s = getSettings();
+    const updated = saveSettings({ lockedPosition: !s.lockedPosition });
+    catWindow?.webContents.send(IPC.CAT_SETTINGS, updated);
+  });
+
   // Mochi drag
   ipcMain.on(IPC.DRAG_CAT, (_event, dx: number, dy: number) => {
     if (!catWindow || catWindow.isDestroyed()) return;
@@ -421,6 +466,19 @@ function startMouseTracking(): void {
   setInterval(() => {
     if (!catWindow || catWindow.isDestroyed()) return;
     const settings = getSettings();
+
+    // When position is locked, only update eye direction — never move the window
+    if (settings.lockedPosition) {
+      const wb = catWindow.getBounds();
+      const catSize = 64 * settings.size;
+      const catCx = wb.x + wb.width / 2;
+      const catCy = wb.y + 80 + catSize * 0.2;
+      const dx = Math.max(-1, Math.min(1, (targetX - catCx) / 40));
+      const dy = Math.max(-1, Math.min(1, (targetY - catCy) / 40));
+      catWindow.webContents.send(IPC.EYE_DIR, { dx, dy });
+      return;
+    }
+
     const catSize = 64 * settings.size;
     const winW = catSize + 200;
     const winH = catSize + 200;
@@ -455,7 +513,14 @@ app.on('second-instance', () => {
 // ─── App ready ─────────────────────────────────────────────────
 app.whenReady().then(() => {
   if (isMac) {
-    app.dock?.hide();
+    // Show in dock with a useful right-click menu
+    app.dock?.setMenu(Menu.buildFromTemplate([
+      { label: 'Settings...', click: () => createSettingsWindow() },
+      { label: 'Show / Hide Cat', click: () => {
+        if (catWindow?.isVisible()) catWindow.hide();
+        else catWindow?.show();
+      }},
+    ]));
     checkAccessibilityPermission();
   }
 

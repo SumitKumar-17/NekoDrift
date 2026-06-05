@@ -14,6 +14,8 @@ declare global {
       setIgnoreMouse: (ignore: boolean) => void;
       dragCat: (dx: number, dy: number) => void;
       pomodoroControl: (action: 'start' | 'pause' | 'reset') => void;
+      showContextMenu: () => void;
+      toggleLock: () => void;
       onCatSettings: (cb: (s: CatSettings) => void) => void;
       onCatSpeech: (cb: (msg: string | null) => void) => void;
       onStretchReminder: (cb: (msg: string) => void) => void;
@@ -309,8 +311,14 @@ function render() {
     );
   }
 
-  // Fixed pinned message (shown when no transient speech)
-  if (settings.fixedMessageEnabled && settings.fixedMessage && !speechText) {
+  // Sticky note — shown only while hovering (yellow, pinned style)
+  if (settings.stickyNoteEnabled && settings.stickyNote && isHoveringCat && !speechText) {
+    drawSpeechBubble(ctx, settings.stickyNote, offsetX + catSize / 2, offsetY, scale, true);
+  }
+
+  // Fixed pinned message (shown when no transient speech and not showing sticky note)
+  if (settings.fixedMessageEnabled && settings.fixedMessage && !speechText
+      && !(settings.stickyNoteEnabled && isHoveringCat)) {
     drawSpeechBubble(ctx, settings.fixedMessage, offsetX + catSize / 2, offsetY, scale, true);
   }
 
@@ -405,6 +413,14 @@ canvas.addEventListener('pointerleave', () => {
   if (!isDragging) {
     isHoveringCat = false;
     window.nekodrift.setIgnoreMouse(true);
+  }
+});
+
+// Right-click → native context menu (pin, sticky note, settings, quit)
+canvas.addEventListener('contextmenu', (e) => {
+  if (isHoveringCat) {
+    e.preventDefault();
+    window.nekodrift.showContextMenu();
   }
 });
 

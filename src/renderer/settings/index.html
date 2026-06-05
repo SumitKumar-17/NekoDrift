@@ -5,509 +5,672 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'" />
   <title>NekoDrift Settings</title>
   <style>
+    /* ── macOS-native design system ────────────────────────────── */
     :root {
-      --bg: #fdf6f0;
-      --card: #ffffff;
-      --pink: #f4a7b9;
-      --peach: #f9c89b;
-      --lavender: #c5b4e3;
-      --mint: #9dd4c2;
-      --text: #2d1b0e;
-      --muted: #7a5c48;
-      --light: #b08c78;
-      --border: #e8d5c4;
-      --radius: 16px;
+      --bg:        #f5f5f7;
+      --card:      #ffffff;
+      --text:      #1d1d1f;
+      --secondary: #6e6e73;
+      --border:    rgba(0,0,0,0.08);
+      --accent:    #0071e3;
+      --accent-h:  #0077ed;
+      --danger:    #ff3b30;
+      --green:     #30d158;
+      --r-card:    12px;
+      --r-input:   8px;
     }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:      #1c1c1e;
+        --card:    #2c2c2e;
+        --text:    #f5f5f7;
+        --secondary:#98989d;
+        --border:  rgba(255,255,255,0.1);
+        --accent:  #0a84ff;
+        --accent-h:#409cff;
+      }
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: Inter, system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 24px;
-      min-height: 100vh;
+      font-size: 13px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
     }
-    h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
-    .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
 
-    .section {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 12px;
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+
+    .sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      padding: 20px 12px;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      overflow-y: auto;
     }
-    .section-title {
+
+    .sidebar-title {
       font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: var(--secondary);
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: var(--pink);
-      margin-bottom: 12px;
+      padding: 0 8px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--secondary);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+    .nav-item:hover { background: rgba(0,0,0,0.05); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: var(--r-card);
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--secondary);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 12px 16px 4px;
     }
     .row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 11px 16px;
       border-bottom: 1px solid var(--border);
+      min-height: 44px;
+      gap: 12px;
     }
     .row:last-child { border-bottom: none; }
-    .row-label { font-size: 13px; font-weight: 600; }
-    .row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .row-left { flex: 1; min-width: 0; }
+    .row-label { font-size: 13px; font-weight: 400; color: var(--text); }
+    .row-sub { font-size: 11px; color: var(--secondary); margin-top: 1px; }
 
-    input[type="text"], input[type="number"], select {
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 6px 10px;
+    /* ── Inputs ─────────────────────────────────────────────────── */
+    input[type="text"],
+    input[type="number"] {
+      border: 1px solid var(--border);
+      border-radius: var(--r-input);
+      padding: 5px 9px;
       font-size: 13px;
       font-family: inherit;
       background: var(--bg);
       color: var(--text);
       outline: none;
-      width: 140px;
+      width: 120px;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus {
-      border-color: var(--pink);
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
     }
-    input[type="text"].wide { width: 220px; }
+    input.wide { width: 200px; }
+    input.narrow { width: 72px; }
 
-    /* Toggle */
-    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background: #ddd; border-radius: 24px; cursor: pointer;
+    .time-row { display: flex; gap: 4px; align-items: center; }
+    .time-sep { color: var(--secondary); font-weight: 600; }
+
+    /* ── Toggle (macOS-style) ───────────────────────────────────── */
+    .toggle { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
+    .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #ddd; border-radius: 28px; cursor: pointer;
       transition: background 0.2s;
     }
-    .toggle-slider::before {
-      content: ''; position: absolute;
-      height: 18px; width: 18px; left: 3px; top: 3px;
-      background: white; border-radius: 50%; transition: transform 0.2s;
+    @media (prefers-color-scheme: dark) {
+      .toggle-track { background: #3a3a3c; }
     }
-    .toggle input:checked + .toggle-slider { background: var(--pink); }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
-
-    /* Swatches */
-    .swatch-grid { display: flex; gap: 8px; flex-wrap: wrap; }
-    .swatch {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 3px solid transparent; cursor: pointer;
-      transition: transform 0.15s, border-color 0.15s;
+    .toggle-thumb {
+      position: absolute;
+      width: 22px; height: 22px;
+      top: 3px; left: 3px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      transition: transform 0.2s, box-shadow 0.2s;
+      pointer-events: none;
     }
-    .swatch:hover { transform: scale(1.15); }
-    .swatch.active { border-color: #2d1b0e; transform: scale(1.15); }
+    .toggle input:checked ~ .toggle-track { background: var(--green); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
 
-    /* Pattern chips */
-    .pattern-grid { display: flex; gap: 6px; flex-wrap: wrap; }
-    .pattern-chip {
-      padding: 4px 10px; border-radius: 20px;
-      border: 2px solid var(--border); cursor: pointer;
-      font-size: 11px; font-weight: 700;
-      background: var(--bg); color: var(--muted);
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .pattern-chip.active { border-color: var(--pink); background: #fff0f5; color: var(--pink); }
-
-    /* Range */
+    /* ── Range ──────────────────────────────────────────────────── */
     input[type="range"] {
-      -webkit-appearance: none; width: 140px; height: 6px;
-      border-radius: 6px; background: var(--border); outline: none;
+      -webkit-appearance: none;
+      width: 120px; height: 4px;
+      border-radius: 4px;
+      background: var(--border);
+      outline: none;
     }
     input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 18px; height: 18px;
-      border-radius: 50%; background: var(--pink); cursor: pointer;
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
 
-    /* Time inputs */
-    .time-pair { display: flex; gap: 6px; align-items: center; }
-    .time-pair input { width: 60px; text-align: center; }
-    .time-colon { font-weight: 800; color: var(--muted); }
-
-    /* Pomodoro control buttons */
-    .pomo-btns { display: flex; gap: 6px; }
-    .pomo-btn {
-      border: 1.5px solid var(--border); border-radius: 8px;
-      padding: 4px 10px; font-size: 11px; font-weight: 700;
-      font-family: inherit; cursor: pointer; background: var(--bg);
-      color: var(--muted); transition: border-color 0.15s;
+    /* ── Breed presets ──────────────────────────────────────────── */
+    .breed-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 12px 16px;
     }
-    .pomo-btn:hover { border-color: var(--pink); color: var(--pink); }
-
-    .save-btn {
-      width: 100%; padding: 14px; border: none;
-      border-radius: var(--radius);
-      background: linear-gradient(90deg, #f4a7b9, #c5b4e3);
-      color: white; font-size: 15px; font-weight: 800;
-      font-family: inherit; cursor: pointer; margin-top: 8px;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    .save-btn:hover { opacity: 0.9; transform: scale(1.01); }
-    .save-btn:active { transform: scale(0.98); }
-
-    .saved-msg {
-      text-align: center; font-size: 12px; color: #2a9d8a;
-      font-weight: 600; margin-top: 8px;
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .saved-msg.show { opacity: 1; }
-
-    .claude-status {
-      font-size: 11px; color: var(--muted);
-      padding: 4px 8px; border-radius: 8px;
-      background: var(--bg); border: 1px solid var(--border);
-    }
-
-    /* Pixel pattern editor */
-    .editor-wrap {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    #pattern-editor-canvas {
-      image-rendering: pixelated;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      cursor: crosshair;
-      flex-shrink: 0;
-    }
-    .editor-controls {
+    .breed-btn {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      flex: 1;
-      min-width: 120px;
-    }
-    .palette-row {
-      display: flex;
+      align-items: center;
       gap: 6px;
-      flex-wrap: wrap;
-    }
-    .pal-swatch {
-      width: 26px; height: 26px;
-      border-radius: 6px;
-      border: 3px solid transparent;
+      padding: 10px 6px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
       cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .breed-btn:hover { border-color: var(--accent); transform: scale(1.03); }
+    .breed-btn.active { border-color: var(--accent); background: rgba(0,113,227,0.06); }
+    .breed-canvas { image-rendering: pixelated; width: 48px; height: 48px; }
+    .breed-label { font-size: 11px; font-weight: 600; color: var(--text); }
+
+    /* ── Color swatches ─────────────────────────────────────────── */
+    .swatch-row { display: flex; gap: 8px; padding: 12px 16px; flex-wrap: wrap; }
+    .swatch {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2.5px solid transparent; cursor: pointer;
       transition: transform 0.12s, border-color 0.12s;
     }
-    .pal-swatch:hover { transform: scale(1.18); }
-    .pal-swatch.active { border-color: #2d1b0e; transform: scale(1.18); }
+    .swatch:hover { transform: scale(1.18); }
+    .swatch.active { border-color: var(--text); transform: scale(1.18); }
+
+    /* ── Pattern chips ──────────────────────────────────────────── */
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 16px; }
+    .chip {
+      padding: 4px 12px; border-radius: 20px;
+      border: 1.5px solid var(--border);
+      font-size: 12px; font-weight: 500;
+      background: transparent; color: var(--secondary);
+      cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active { border-color: var(--accent); background: rgba(0,113,227,0.1); color: var(--accent); }
+
+    /* ── Pixel editor ───────────────────────────────────────────── */
+    .editor-wrap { display: flex; gap: 16px; padding: 12px 16px; flex-wrap: wrap; }
+    #pattern-editor-canvas {
+      image-rendering: pixelated;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: crosshair;
+    }
+    .editor-right { display: flex; flex-direction: column; gap: 8px; }
+    .pal-row { display: flex; gap: 5px; flex-wrap: wrap; }
+    .pal-swatch {
+      width: 24px; height: 24px; border-radius: 6px;
+      border: 2px solid transparent; cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+    .pal-swatch:hover { transform: scale(1.2); }
+    .pal-swatch.active { border-color: var(--text); }
     .pal-swatch.eraser {
-      background: repeating-linear-gradient(
-        45deg, #ddd 0px, #ddd 4px, #fff 4px, #fff 8px
-      );
+      background: repeating-linear-gradient(45deg,#ccc 0,#ccc 3px,#fff 3px,#fff 6px);
     }
-    .editor-btn {
-      border: 1.5px solid var(--border); border-radius: 8px;
-      padding: 5px 10px; font-size: 11px; font-weight: 700;
-      font-family: inherit; cursor: pointer; background: var(--bg);
-      color: var(--muted); transition: border-color 0.15s, color 0.15s;
-      text-align: center;
+    .editor-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .text-btn {
+      padding: 5px 12px; border-radius: 7px;
+      border: 1px solid var(--border);
+      font-size: 12px; font-weight: 500; font-family: inherit;
+      background: var(--bg); color: var(--secondary);
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
     }
-    .editor-btn:hover { border-color: var(--pink); color: var(--pink); }
-    .editor-hint {
-      font-size: 10px; color: var(--muted); line-height: 1.4;
+    .text-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .text-btn.primary { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Action buttons ─────────────────────────────────────────── */
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-save {
+      flex: 1; padding: 12px;
+      border: none; border-radius: var(--r-card);
+      background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
     }
+    .btn-save:hover { background: var(--accent-h); }
+    .btn-save:active { transform: scale(0.98); }
+
+    .saved-toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1d1d1f; color: #fff; font-size: 13px; font-weight: 500;
+      padding: 8px 18px; border-radius: 20px;
+      opacity: 0; transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+    }
+    .saved-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Misc ───────────────────────────────────────────────────── */
+    .tag-always-on {
+      font-size: 11px; font-weight: 500; color: var(--green);
+      background: rgba(48,209,88,0.1); padding: 3px 8px; border-radius: 6px;
+    }
+    .code-chip {
+      font-family: 'SF Mono', Menlo, monospace;
+      font-size: 11px; color: var(--secondary);
+      background: var(--bg); padding: 4px 8px;
+      border: 1px solid var(--border); border-radius: 6px;
+    }
+    .hint { font-size: 11px; color: var(--secondary); line-height: 1.5; padding: 4px 0; }
   </style>
 </head>
 <body>
-  <h1>🐱 NekoDrift</h1>
-  <p class="subtitle">Customize your desktop companion</p>
+<div class="layout">
 
-  <!-- Identity -->
-  <div class="section">
-    <div class="section-title">Identity</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Your name</div>
-        <div class="row-sub">Used in greetings &amp; reminders</div>
-      </div>
-      <input type="text" id="input-name" maxlength="24" placeholder="hooman" />
+  <!-- ── Sidebar nav ─────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-title">NekoDrift</div>
+    <div class="nav-item active" data-page="appearance">
+      <span class="nav-icon">🐱</span> Appearance
     </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Cat's name</div>
-      </div>
-      <input type="text" id="input-cat-name" maxlength="20" placeholder="NekoDrift" />
+    <div class="nav-item" data-page="position">
+      <span class="nav-icon">📌</span> Position
     </div>
-  </div>
+    <div class="nav-item" data-page="timers">
+      <span class="nav-icon">⏱</span> Timers
+    </div>
+    <div class="nav-item" data-page="notes">
+      <span class="nav-icon">🗒</span> Notes
+    </div>
+    <div class="nav-item" data-page="claude">
+      <span class="nav-icon">🤖</span> Claude
+    </div>
+    <div class="nav-item" data-page="system">
+      <span class="nav-icon">⚙️</span> System
+    </div>
+  </nav>
 
-  <!-- Appearance -->
-  <div class="section">
-    <div class="section-title">Appearance</div>
-    <div class="row">
-      <div><div class="row-label">Coat color</div></div>
-      <div class="swatch-grid">
-        <div class="swatch" data-color="orange" style="background:#e8894a" title="Ginger"></div>
-        <div class="swatch" data-color="gray"   style="background:#9eaabb" title="Silver"></div>
-        <div class="swatch" data-color="black"  style="background:#2c2c3e" title="Midnight"></div>
-        <div class="swatch" data-color="white"  style="background:#f0ece8;border:2px solid #ddd" title="Cream"></div>
-        <div class="swatch" data-color="brown"  style="background:#8b5e3c" title="Mocha"></div>
-        <div class="swatch" data-color="pink"   style="background:#f4a7b9" title="Blossom"></div>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Coat pattern</div>
-        <div class="row-sub">Markings overlay</div>
-      </div>
-      <div class="pattern-grid">
-        <div class="pattern-chip active" data-pattern="none">None</div>
-        <div class="pattern-chip" data-pattern="tuxedo">Tuxedo</div>
-        <div class="pattern-chip" data-pattern="tabby">Tabby</div>
-        <div class="pattern-chip" data-pattern="calico">Calico</div>
-        <div class="pattern-chip" data-pattern="spotted">Spotted</div>
-        <div class="pattern-chip" data-pattern="bicolor">Bicolor</div>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Cat size</div>
-        <div class="row-sub" id="size-label">Medium (2×)</div>
-      </div>
-      <input type="range" id="input-size" min="1" max="3" step="1" />
-    </div>
-  </div>
+  <!-- ── Main content ────────────────────────────────────────── -->
+  <main class="content">
 
-  <!-- Custom Pattern Editor -->
-  <div class="section">
-    <div class="section-title">🎨 Custom Coat Pattern</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
-      Paint your own markings on the cat — match your real cat's fur pattern!
-    </div>
-    <div class="editor-wrap">
-      <canvas id="pattern-editor-canvas" width="192" height="192"></canvas>
-      <div class="editor-controls">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:2px">COLOR</div>
-        <div class="palette-row" id="palette-row">
-          <div class="pal-swatch eraser active" data-idx="0" title="Erase"></div>
-          <div class="pal-swatch" data-idx="1" style="background:#1a1a2e" title="Dark"></div>
-          <div class="pal-swatch" data-idx="2" style="background:#4a4a62" title="Mid-dark"></div>
-          <div class="pal-swatch" data-idx="3" style="background:#9eaabb" title="Gray"></div>
-          <div class="pal-swatch" data-idx="4" style="background:#e8894a" title="Orange"></div>
-          <div class="pal-swatch" data-idx="5" style="background:#8b5e3c" title="Brown"></div>
-          <div class="pal-swatch" data-idx="6" style="background:#f0ece8;border:2px solid #ccc" title="Cream"></div>
-          <div class="pal-swatch" data-idx="7" style="background:#f4a7b9" title="Pink"></div>
-          <div class="pal-swatch" data-idx="8" style="background:#f4c06a" title="Gold"></div>
-          <div class="pal-swatch" data-idx="9" style="background:#2a9d8a" title="Teal"></div>
+    <!-- Appearance -->
+    <section class="page active" id="page-appearance">
+      <div class="page-title">Appearance</div>
+
+      <div class="card">
+        <div class="card-title">Identity</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Your name</div>
+            <div class="row-sub">Used in greetings and reminders</div>
+          </div>
+          <input type="text" id="input-name" maxlength="24" placeholder="hooman" />
         </div>
-        <button class="editor-btn" id="btn-editor-clear">Clear all</button>
-        <button class="editor-btn" id="btn-editor-load-base">Load current color</button>
-        <button class="editor-btn" id="btn-editor-apply">Apply to cat ✓</button>
-        <div class="editor-hint">
-          Click or drag to paint.<br/>
-          Right-click to erase.<br/>
-          This overlays your chosen color.
+        <div class="row">
+          <div class="row-left"><div class="row-label">Cat's name</div></div>
+          <input type="text" id="input-cat-name" maxlength="20" placeholder="NekoDrift" />
+        </div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Size</div>
+            <div class="row-sub" id="size-label">Medium (2×)</div>
+          </div>
+          <input type="range" id="input-size" min="1" max="3" step="1" />
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Interactions -->
-  <div class="section">
-    <div class="section-title">Interactions</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Eye follow</div>
-        <div class="row-sub">Cat eyes track your cursor</div>
+      <!-- Breed presets -->
+      <div class="card">
+        <div class="card-title">Breed</div>
+        <div class="breed-grid" id="breed-grid">
+          <!-- filled by JS -->
+        </div>
       </div>
-      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Mouse hunt</div>
-        <div class="row-sub">Pounce when you move fast</div>
-      </div>
-      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Purring pets</div>
-        <div class="row-sub">Hover slowly to pet</div>
-      </div>
-      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Mochi drag</div>
-        <div class="row-sub">Click + drag to toss the cat</div>
-      </div>
-      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Overheat mode</div>
-        <div class="row-sub">Cat overheats when you type fast</div>
-      </div>
-      <span style="font-size:11px;color:var(--mint)">Always on ✓</span>
-    </div>
-  </div>
 
-  <!-- Stretch reminders -->
-  <div class="section">
-    <div class="section-title">Stretch Reminders</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Enable reminders</div>
-        <div class="row-sub">Cat nudges you to stretch</div>
+      <div class="card">
+        <div class="card-title">Color</div>
+        <div class="swatch-row">
+          <div class="swatch" data-color="orange" style="background:#e8894a" title="Ginger"></div>
+          <div class="swatch" data-color="gray"   style="background:#9eaabb" title="Silver"></div>
+          <div class="swatch" data-color="black"  style="background:#2c2c3e" title="Midnight"></div>
+          <div class="swatch" data-color="white"  style="background:#f0ece8;outline:1px solid #ccc" title="Cream"></div>
+          <div class="swatch" data-color="brown"  style="background:#8b5e3c" title="Mocha"></div>
+          <div class="swatch" data-color="pink"   style="background:#f4a7b9" title="Sakura"></div>
+        </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-stretch" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Interval (minutes)</div>
-      </div>
-      <input type="number" id="input-interval" min="10" max="120" step="5" />
-    </div>
-  </div>
 
-  <!-- Pomodoro -->
-  <div class="section">
-    <div class="section-title">🍅 Pomodoro Timer</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Enable Pomodoro</div>
-        <div class="row-sub">Floating timer next to cat</div>
+      <div class="card">
+        <div class="card-title">Pattern</div>
+        <div class="chip-row">
+          <div class="chip active" data-pattern="none">None</div>
+          <div class="chip" data-pattern="tuxedo">Tuxedo</div>
+          <div class="chip" data-pattern="tabby">Tabby</div>
+          <div class="chip" data-pattern="calico">Calico</div>
+          <div class="chip" data-pattern="spotted">Spotted</div>
+          <div class="chip" data-pattern="bicolor">Bicolor</div>
+        </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-pomodoro" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div><div class="row-label">Focus duration (min)</div></div>
-      <input type="number" id="input-pomo-focus" min="5" max="90" step="5" value="25" />
-    </div>
-    <div class="row">
-      <div><div class="row-label">Break duration (min)</div></div>
-      <input type="number" id="input-pomo-break" min="1" max="30" step="1" value="5" />
-    </div>
-    <div class="row">
-      <div><div class="row-label">Control timer</div></div>
-      <div class="pomo-btns">
-        <button class="pomo-btn" id="btn-pomo-start">▶ Start</button>
-        <button class="pomo-btn" id="btn-pomo-pause">⏸ Pause</button>
-        <button class="pomo-btn" id="btn-pomo-reset">↺ Reset</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Fixed message -->
-  <div class="section">
-    <div class="section-title">📌 Pinned Message</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Show pinned message</div>
-        <div class="row-sub">Always-visible note above cat</div>
+      <!-- Custom pixel coat -->
+      <div class="card">
+        <div class="card-title">Custom Coat</div>
+        <div class="editor-wrap">
+          <canvas id="pattern-editor-canvas" width="192" height="192"></canvas>
+          <div class="editor-right">
+            <div style="font-size:11px;font-weight:600;color:var(--secondary)">PALETTE</div>
+            <div class="pal-row" id="palette-row">
+              <div class="pal-swatch eraser active" data-idx="0" title="Erase"></div>
+              <div class="pal-swatch" data-idx="1" style="background:#1a1a2e"></div>
+              <div class="pal-swatch" data-idx="2" style="background:#4a4a62"></div>
+              <div class="pal-swatch" data-idx="3" style="background:#9eaabb"></div>
+              <div class="pal-swatch" data-idx="4" style="background:#e8894a"></div>
+              <div class="pal-swatch" data-idx="5" style="background:#8b5e3c"></div>
+              <div class="pal-swatch" data-idx="6" style="background:#f0ece8;outline:1px solid #ccc"></div>
+              <div class="pal-swatch" data-idx="7" style="background:#f4a7b9"></div>
+              <div class="pal-swatch" data-idx="8" style="background:#f4c06a"></div>
+              <div class="pal-swatch" data-idx="9" style="background:#2a9d8a"></div>
+            </div>
+            <div class="editor-btns">
+              <button class="text-btn" id="btn-editor-clear">Clear</button>
+              <button class="text-btn" id="btn-editor-load-base">Load base</button>
+              <button class="text-btn primary" id="btn-editor-apply">Apply ✓</button>
+            </div>
+            <div class="hint">Click/drag to paint.<br/>Right-click to erase.</div>
+          </div>
+        </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-fixed-msg" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div><div class="row-label">Message</div></div>
-      <input type="text" id="input-fixed-msg" class="wide" maxlength="60" placeholder="Write something..." />
-    </div>
-  </div>
 
-  <!-- Daily reminder -->
-  <div class="section">
-    <div class="section-title">🔔 Daily Reminder</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Enable daily reminder</div>
-        <div class="row-sub">Cat meows at a set time</div>
+      <div class="card">
+        <div class="card-title">Interactions</div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Eye follow & hunt & purring & drag</div></div>
+          <span class="tag-always-on">Always on</span>
+        </div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Sound effects</div>
+            <div class="row-sub">Meow, purr, chime</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-sound" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-reminder" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div><div class="row-label">Time (24h)</div></div>
-      <div class="time-pair">
-        <input type="number" id="input-reminder-hour" min="0" max="23" value="15" />
-        <span class="time-colon">:</span>
-        <input type="number" id="input-reminder-min" min="0" max="59" value="0" />
-      </div>
-    </div>
-    <div class="row">
-      <div><div class="row-label">Message</div></div>
-      <input type="text" id="input-reminder-msg" class="wide" maxlength="60" placeholder="Hey! Check in time! 🐱" />
-    </div>
-  </div>
 
-  <!-- Claude integration -->
-  <div class="section">
-    <div class="section-title">🤖 Claude AI Integration</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Enable Claude reactions</div>
-        <div class="row-sub">Cat thinks &amp; celebrates with Claude Code</div>
+      <div class="btn-row">
+        <button class="btn-save" id="btn-save">Save</button>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-claude" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Local endpoint</div>
-        <div class="row-sub">Claude Code hooks POST here</div>
-      </div>
-      <span class="claude-status">127.0.0.1:27182</span>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Setup hooks</div>
-        <div class="row-sub">Add to ~/.claude/settings.local.json</div>
-      </div>
-      <button class="pomo-btn" id="btn-copy-hooks">Copy config</button>
-    </div>
-  </div>
+    </section>
 
-  <!-- System -->
-  <div class="section">
-    <div class="section-title">System</div>
-    <div class="row">
-      <div>
-        <div class="row-label">Always on top</div>
-        <div class="row-sub">Cat stays above all windows</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-ontop" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Launch at login</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-login" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="row">
-      <div>
-        <div class="row-label">Sound effects</div>
-        <div class="row-sub">Soft meow sounds</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="toggle-sound" />
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-  </div>
+    <!-- Position -->
+    <section class="page" id="page-position">
+      <div class="page-title">Position</div>
 
-  <button class="save-btn" id="btn-save">Save Settings 🐾</button>
-  <div class="saved-msg" id="saved-msg">✓ Settings saved!</div>
+      <div class="card">
+        <div class="card-title">Lock</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Lock position</div>
+            <div class="row-sub">Stop cursor-follow — cat stays put. Right-click cat to pin/unpin quickly.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-lock" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
 
-  <script type="module" src="./settings.js"></script>
+      <div class="btn-row">
+        <button class="btn-save" id="btn-save-pos">Save</button>
+      </div>
+    </section>
+
+    <!-- Timers -->
+    <section class="page" id="page-timers">
+      <div class="page-title">Timers</div>
+
+      <div class="card">
+        <div class="card-title">Stretch Reminders</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Enable</div>
+            <div class="row-sub">Cat nudges you to stretch</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-stretch" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Interval (minutes)</div></div>
+          <input type="number" id="input-interval" class="narrow" min="10" max="120" step="5" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pomodoro</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Enable</div>
+            <div class="row-sub">Floating pixel timer next to cat</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-pomodoro" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Focus (min)</div></div>
+          <input type="number" id="input-pomo-focus" class="narrow" min="5" max="90" step="5" />
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Break (min)</div></div>
+          <input type="number" id="input-pomo-break" class="narrow" min="1" max="30" step="1" />
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Controls</div></div>
+          <div style="display:flex;gap:6px">
+            <button class="text-btn" id="btn-pomo-start">▶</button>
+            <button class="text-btn" id="btn-pomo-pause">⏸</button>
+            <button class="text-btn" id="btn-pomo-reset">↺</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Daily Reminder</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Enable</div>
+            <div class="row-sub">Cat meows at a set time each day</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-reminder" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Time (24h)</div></div>
+          <div class="time-row">
+            <input type="number" id="input-reminder-hour" class="narrow" min="0" max="23" />
+            <span class="time-sep">:</span>
+            <input type="number" id="input-reminder-min" class="narrow" min="0" max="59" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Message</div></div>
+          <input type="text" id="input-reminder-msg" class="wide" maxlength="60" placeholder="Hey! Check in time!" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" id="btn-save-timers">Save</button>
+      </div>
+    </section>
+
+    <!-- Notes -->
+    <section class="page" id="page-notes">
+      <div class="page-title">Notes</div>
+
+      <div class="card">
+        <div class="card-title">Hover Note</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Show on hover</div>
+            <div class="row-sub">Appears as a sticky note when you hover the cat</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-sticky" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Note text</div></div>
+          <input type="text" id="input-sticky-note" class="wide" maxlength="80" placeholder="Your note here..." />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pinned Message</div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Always visible</div>
+            <div class="row-sub">Shown above cat all the time</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-fixed-msg" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Message</div></div>
+          <input type="text" id="input-fixed-msg" class="wide" maxlength="60" placeholder="Write something..." />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" id="btn-save-notes">Save</button>
+      </div>
+    </section>
+
+    <!-- Claude -->
+    <section class="page" id="page-claude">
+      <div class="page-title">Claude</div>
+
+      <div class="card">
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Enable Claude reactions</div>
+            <div class="row-sub">Cat thinks and celebrates with Claude Code</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-claude" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Endpoint</div></div>
+          <span class="code-chip">127.0.0.1:27182</span>
+        </div>
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Hook config</div>
+            <div class="row-sub">Add to ~/.claude/settings.local.json</div>
+          </div>
+          <button class="text-btn" id="btn-copy-hooks">Copy</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" id="btn-save-claude">Save</button>
+      </div>
+    </section>
+
+    <!-- System -->
+    <section class="page" id="page-system">
+      <div class="page-title">System</div>
+
+      <div class="card">
+        <div class="row">
+          <div class="row-left">
+            <div class="row-label">Always on top</div>
+            <div class="row-sub">Cat stays above all windows</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-ontop" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-left"><div class="row-label">Launch at login</div></div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-login" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" id="btn-save-sys">Save</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="saved-toast" id="saved-toast">Settings saved</div>
+
+<script type="module" src="./settings.js"></script>
 </body>
 </html>

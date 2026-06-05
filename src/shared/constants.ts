@@ -12,6 +12,9 @@ export const DEFAULT_SETTINGS: CatSettings = {
   alwaysOnTop: true,
   showOnAllDesktops: true,
   startOnLogin: false,
+  lockedPosition: false,
+  stickyNote: '',
+  stickyNoteEnabled: false,
   pomodoroEnabled: false,
   pomodoroFocusMin: 25,
   pomodoroBreakMin: 5,
@@ -24,6 +27,16 @@ export const DEFAULT_SETTINGS: CatSettings = {
   claudeIntegration: true,
   customPixels: '0'.repeat(256),
 };
+
+// Named cat breed presets
+export const CAT_PRESETS = [
+  { id: 'orange',   label: 'Orange',   color: 'orange' as const, pattern: 'none'   as const },
+  { id: 'siamese',  label: 'Siamese',  color: 'white'  as const, pattern: 'tabby'  as const },
+  { id: 'mackerel', label: 'Mackerel', color: 'gray'   as const, pattern: 'tabby'  as const },
+  { id: 'tuxedo',   label: 'Tuxedo',   color: 'black'  as const, pattern: 'tuxedo' as const },
+  { id: 'calico',   label: 'Calico',   color: 'white'  as const, pattern: 'calico' as const },
+  { id: 'sakura',   label: 'Sakura',   color: 'pink'   as const, pattern: 'none'   as const },
+] as const;
 
 export const IDLE_THRESHOLD_MS = 60_000 * 3;
 export const TYPING_COOLDOWN_MS = 1_500;

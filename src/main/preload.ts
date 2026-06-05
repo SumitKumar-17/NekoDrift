@@ -67,4 +67,7 @@ contextBridge.exposeInMainWorld('nekodrift', {
   onHeatLevel: (cb: (level: number) => void) => {
     ipcRenderer.on(IPC.HEAT_LEVEL, (_e, level) => cb(level));
   },
+
+  showContextMenu: () => ipcRenderer.send(IPC.SHOW_CONTEXT_MENU),
+  toggleLock: () => ipcRenderer.send(IPC.TOGGLE_LOCK),
 });

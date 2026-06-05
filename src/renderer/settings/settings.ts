@@ -1,5 +1,6 @@
 import { CatSettings, CatColor, CatPattern } from '../../shared/types';
-import { EDITOR_PALETTE, drawCatGhost } from '../cat/pixel-cat';
+import { CAT_PRESETS } from '../../shared/constants';
+import { EDITOR_PALETTE, drawCat, drawCatGhost } from '../cat/pixel-cat';
 
 declare global {
   interface Window {
@@ -14,6 +15,8 @@ declare global {
       setIgnoreMouse: (ignore: boolean) => void;
       dragCat: (dx: number, dy: number) => void;
       pomodoroControl: (action: 'start' | 'pause' | 'reset') => void;
+      showContextMenu: () => void;
+      toggleLock: () => void;
       onCatSettings: (cb: (s: CatSettings) => void) => void;
       onCatSpeech: (cb: (msg: string | null) => void) => void;
       onStretchReminder: (cb: (msg: string) => void) => void;
@@ -29,42 +32,32 @@ declare global {
   }
 }
 
-const SIZE_LABELS: Record<number, string> = {
-  1: 'Small (1×)',
-  2: 'Medium (2×)',
-  3: 'Large (3×)',
-};
-
 const CLAUDE_HOOKS_CONFIG = `{
   "hooks": {
     "PreToolUse": [{
       "matcher": ".*",
-      "hooks": [{
-        "type": "command",
-        "command": "curl -sf -X POST http://127.0.0.1:27182/api/ai-thinking 2>/dev/null || true"
-      }]
+      "hooks": [{ "type": "command", "command": "curl -sf -X POST http://127.0.0.1:27182/api/ai-thinking 2>/dev/null || true" }]
     }],
     "PostToolUse": [{
       "matcher": ".*",
-      "hooks": [{
-        "type": "command",
-        "command": "curl -sf -X POST http://127.0.0.1:27182/api/ai-done 2>/dev/null || true"
-      }]
+      "hooks": [{ "type": "command", "command": "curl -sf -X POST http://127.0.0.1:27182/api/ai-done 2>/dev/null || true" }]
     }]
   }
 }`;
+
+const SIZE_LABELS: Record<number, string> = { 1: 'Small (1×)', 2: 'Medium (2×)', 3: 'Large (3×)' };
 
 let currentColor: CatColor = 'orange';
 let currentPattern: CatPattern = 'none';
 
 // ─── Pixel Pattern Editor ─────────────────────────────────────
-const CELL = 12; // px per grid cell — 12 × 16 = 192px canvas
+const CELL = 12;
 
 class PatternEditor {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private pixels: number[]; // 256 values (16×16), index into EDITOR_PALETTE
-  private selectedIdx = 0;  // 0 = eraser
+  private pixels: number[];
+  private selectedIdx = 0;
   private painting = false;
 
   constructor() {
@@ -87,10 +80,7 @@ class PatternEditor {
     return this.pixels.map(v => v.toString()).join('');
   }
 
-  clear() {
-    this.pixels.fill(0);
-    this.render();
-  }
+  clear() { this.pixels.fill(0); this.render(); }
 
   setColor(idx: number) {
     this.selectedIdx = idx;
@@ -99,48 +89,33 @@ class PatternEditor {
     });
   }
 
-  private cellAt(clientX: number, clientY: number): { gx: number; gy: number } | null {
+  private cellAt(cx: number, cy: number) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    const gx = Math.floor(x / CELL);
-    const gy = Math.floor(y / CELL);
+    const gx = Math.floor((cx - rect.left) / CELL);
+    const gy = Math.floor((cy - rect.top) / CELL);
     if (gx < 0 || gx >= 16 || gy < 0 || gy >= 16) return null;
     return { gx, gy };
   }
 
-  private paint(clientX: number, clientY: number, erase = false) {
-    const cell = this.cellAt(clientX, clientY);
+  private paint(cx: number, cy: number, erase = false) {
+    const cell = this.cellAt(cx, cy);
     if (!cell) return;
     this.pixels[cell.gy * 16 + cell.gx] = erase ? 0 : this.selectedIdx;
     this.render();
   }
 
   private setupEvents() {
-    this.canvas.addEventListener('mousedown', (e) => {
-      this.painting = true;
-      this.paint(e.clientX, e.clientY, e.button === 2);
-    });
-    this.canvas.addEventListener('mousemove', (e) => {
-      if (!this.painting) return;
-      this.paint(e.clientX, e.clientY, e.buttons === 2);
-    });
+    this.canvas.addEventListener('mousedown', e => { this.painting = true; this.paint(e.clientX, e.clientY, e.button === 2); });
+    this.canvas.addEventListener('mousemove', e => { if (this.painting) this.paint(e.clientX, e.clientY, e.buttons === 2); });
     this.canvas.addEventListener('mouseup', () => { this.painting = false; });
     this.canvas.addEventListener('mouseleave', () => { this.painting = false; });
-    this.canvas.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      this.paint(e.clientX, e.clientY, true);
-    });
+    this.canvas.addEventListener('contextmenu', e => { e.preventDefault(); this.paint(e.clientX, e.clientY, true); });
   }
 
   render() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Ghost cat reference
     drawCatGhost(ctx, currentColor, CELL);
-
-    // Painted pixels
     ctx.imageSmoothingEnabled = false;
     for (let i = 0; i < 256; i++) {
       const idx = this.pixels[i];
@@ -152,175 +127,230 @@ class PatternEditor {
       ctx.fillStyle = color;
       ctx.fillRect(gx * CELL, gy * CELL, CELL, CELL);
     }
-
-    // Grid overlay
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= 16; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * CELL, 0);
-      ctx.lineTo(i * CELL, 16 * CELL);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, i * CELL);
-      ctx.lineTo(16 * CELL, i * CELL);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, 16 * CELL); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(16 * CELL, i * CELL); ctx.stroke();
     }
   }
 }
 
-let editor: PatternEditor;
+// ─── Breed preset preview canvases ────────────────────────────
+function buildBreedGrid() {
+  const grid = document.getElementById('breed-grid')!;
+  grid.innerHTML = '';
 
-async function init() {
-  // Init pixel editor first (needs DOM ready)
-  editor = new PatternEditor();
+  CAT_PRESETS.forEach(preset => {
+    const btn = document.createElement('button');
+    btn.className = 'breed-btn';
+    btn.dataset.id = preset.id;
 
-  const settings = await window.nekodrift.getSettings();
+    const cv = document.createElement('canvas');
+    cv.className = 'breed-canvas';
+    cv.width = 64;
+    cv.height = 64;
+    const bctx = cv.getContext('2d')!;
+    drawCat(bctx, { color: preset.color, pattern: preset.pattern, animation: 'idle', frame: 30, scale: 4 });
 
-  // Populate identity
-  (document.getElementById('input-name') as HTMLInputElement).value = settings.name;
-  (document.getElementById('input-cat-name') as HTMLInputElement).value = settings.catName;
+    const lbl = document.createElement('div');
+    lbl.className = 'breed-label';
+    lbl.textContent = preset.label;
 
-  // Appearance
-  currentColor = settings.color;
-  currentPattern = settings.pattern || 'none';
-  updateSwatches();
-  updatePatternChips();
-  (document.getElementById('input-size') as HTMLInputElement).value = String(settings.size);
-  (document.getElementById('size-label') as HTMLElement).textContent = SIZE_LABELS[settings.size];
-
-  // Stretch
-  (document.getElementById('toggle-stretch') as HTMLInputElement).checked = settings.stretchEnabled;
-  (document.getElementById('input-interval') as HTMLInputElement).value = String(settings.stretchIntervalMin);
-
-  // Pomodoro
-  (document.getElementById('toggle-pomodoro') as HTMLInputElement).checked = settings.pomodoroEnabled;
-  (document.getElementById('input-pomo-focus') as HTMLInputElement).value = String(settings.pomodoroFocusMin);
-  (document.getElementById('input-pomo-break') as HTMLInputElement).value = String(settings.pomodoroBreakMin);
-
-  // Fixed message
-  (document.getElementById('toggle-fixed-msg') as HTMLInputElement).checked = settings.fixedMessageEnabled;
-  (document.getElementById('input-fixed-msg') as HTMLInputElement).value = settings.fixedMessage || '';
-
-  // Daily reminder
-  (document.getElementById('toggle-reminder') as HTMLInputElement).checked = settings.reminderEnabled;
-  (document.getElementById('input-reminder-hour') as HTMLInputElement).value = String(settings.reminderHour ?? 15);
-  (document.getElementById('input-reminder-min') as HTMLInputElement).value = String(settings.reminderMinute ?? 0);
-  (document.getElementById('input-reminder-msg') as HTMLInputElement).value = settings.reminderMessage || '';
-
-  // Claude integration
-  (document.getElementById('toggle-claude') as HTMLInputElement).checked = settings.claudeIntegration ?? true;
-
-  // Load pixel pattern editor
-  if (settings.customPixels && settings.customPixels.length === 256) {
-    editor.load(settings.customPixels);
-  }
-
-  // Pixel editor controls
-  document.querySelectorAll('.pal-swatch').forEach((el) => {
-    el.addEventListener('click', () => editor.setColor(Number((el as HTMLElement).dataset.idx)));
-  });
-  document.getElementById('btn-editor-clear')!.addEventListener('click', () => editor.clear());
-  document.getElementById('btn-editor-load-base')!.addEventListener('click', () => {
-    editor.clear(); // reload ghost with current color
-    editor.render();
-  });
-  document.getElementById('btn-editor-apply')!.addEventListener('click', async () => {
-    const updated = await window.nekodrift.saveSettings({ customPixels: editor.export() });
-    const btn = document.getElementById('btn-editor-apply')!;
-    btn.textContent = 'Applied! ✓';
-    setTimeout(() => { btn.textContent = 'Apply to cat ✓'; }, 2000);
-  });
-
-  // System
-  (document.getElementById('toggle-ontop') as HTMLInputElement).checked = settings.alwaysOnTop;
-  (document.getElementById('toggle-login') as HTMLInputElement).checked = settings.startOnLogin;
-  (document.getElementById('toggle-sound') as HTMLInputElement).checked = settings.soundEnabled;
-
-  // ── Swatch click ──
-  document.querySelectorAll('.swatch').forEach((el) => {
-    el.addEventListener('click', () => {
-      currentColor = (el as HTMLElement).dataset.color as CatColor;
-      updateSwatches();
-      editor.render(); // refresh ghost reference
-    });
-  });
-
-  // ── Pattern chip click ──
-  document.querySelectorAll('.pattern-chip').forEach((el) => {
-    el.addEventListener('click', () => {
-      currentPattern = (el as HTMLElement).dataset.pattern as CatPattern;
+    btn.append(cv, lbl);
+    btn.addEventListener('click', () => {
+      currentColor = preset.color;
+      currentPattern = preset.pattern;
+      updateColorSwatches();
       updatePatternChips();
+      updateBreedButtons(preset.id);
+      editor.render();
     });
-  });
-
-  // ── Size slider ──
-  const sizeInput = document.getElementById('input-size') as HTMLInputElement;
-  sizeInput.addEventListener('input', () => {
-    (document.getElementById('size-label') as HTMLElement).textContent =
-      SIZE_LABELS[Number(sizeInput.value)];
-  });
-
-  // ── Pomodoro controls ──
-  document.getElementById('btn-pomo-start')!.addEventListener('click', () =>
-    window.nekodrift.pomodoroControl('start'));
-  document.getElementById('btn-pomo-pause')!.addEventListener('click', () =>
-    window.nekodrift.pomodoroControl('pause'));
-  document.getElementById('btn-pomo-reset')!.addEventListener('click', () =>
-    window.nekodrift.pomodoroControl('reset'));
-
-  // ── Copy Claude hooks config ──
-  document.getElementById('btn-copy-hooks')!.addEventListener('click', () => {
-    navigator.clipboard.writeText(CLAUDE_HOOKS_CONFIG).then(() => {
-      const btn = document.getElementById('btn-copy-hooks')!;
-      btn.textContent = 'Copied! ✓';
-      setTimeout(() => { btn.textContent = 'Copy config'; }, 2000);
-    });
-  });
-
-  // ── Save ──
-  document.getElementById('btn-save')!.addEventListener('click', async () => {
-    const updated: Partial<CatSettings> = {
-      customPixels: editor.export(),
-      name: (document.getElementById('input-name') as HTMLInputElement).value.trim() || 'hooman',
-      catName: (document.getElementById('input-cat-name') as HTMLInputElement).value.trim() || 'NekoDrift',
-      color: currentColor,
-      pattern: currentPattern,
-      size: Number((document.getElementById('input-size') as HTMLInputElement).value),
-      stretchEnabled: (document.getElementById('toggle-stretch') as HTMLInputElement).checked,
-      stretchIntervalMin: Number((document.getElementById('input-interval') as HTMLInputElement).value),
-      pomodoroEnabled: (document.getElementById('toggle-pomodoro') as HTMLInputElement).checked,
-      pomodoroFocusMin: Number((document.getElementById('input-pomo-focus') as HTMLInputElement).value),
-      pomodoroBreakMin: Number((document.getElementById('input-pomo-break') as HTMLInputElement).value),
-      fixedMessageEnabled: (document.getElementById('toggle-fixed-msg') as HTMLInputElement).checked,
-      fixedMessage: (document.getElementById('input-fixed-msg') as HTMLInputElement).value.trim(),
-      reminderEnabled: (document.getElementById('toggle-reminder') as HTMLInputElement).checked,
-      reminderHour: Number((document.getElementById('input-reminder-hour') as HTMLInputElement).value),
-      reminderMinute: Number((document.getElementById('input-reminder-min') as HTMLInputElement).value),
-      reminderMessage: (document.getElementById('input-reminder-msg') as HTMLInputElement).value.trim() || 'Hey! Check in time! 🐱',
-      claudeIntegration: (document.getElementById('toggle-claude') as HTMLInputElement).checked,
-      alwaysOnTop: (document.getElementById('toggle-ontop') as HTMLInputElement).checked,
-      startOnLogin: (document.getElementById('toggle-login') as HTMLInputElement).checked,
-      soundEnabled: (document.getElementById('toggle-sound') as HTMLInputElement).checked,
-    };
-
-    await window.nekodrift.saveSettings(updated);
-
-    const msg = document.getElementById('saved-msg')!;
-    msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 2500);
+    grid.appendChild(btn);
   });
 }
 
-function updateSwatches() {
-  document.querySelectorAll('.swatch').forEach((el) => {
+function updateBreedButtons(activeId?: string) {
+  document.querySelectorAll('.breed-btn').forEach(el => {
+    const btn = el as HTMLElement;
+    const isActive = activeId
+      ? btn.dataset.id === activeId
+      : false;
+    btn.classList.toggle('active', isActive);
+  });
+}
+
+function updateColorSwatches() {
+  document.querySelectorAll('.swatch').forEach(el => {
     el.classList.toggle('active', (el as HTMLElement).dataset.color === currentColor);
   });
 }
 
 function updatePatternChips() {
-  document.querySelectorAll('.pattern-chip').forEach((el) => {
+  document.querySelectorAll('.chip').forEach(el => {
     el.classList.toggle('active', (el as HTMLElement).dataset.pattern === currentPattern);
+  });
+}
+
+// ─── Sidebar navigation ───────────────────────────────────────
+function setupNav() {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const pageId = (el as HTMLElement).dataset.page!;
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById(`page-${pageId}`)?.classList.add('active');
+    });
+  });
+}
+
+// ─── Toast ────────────────────────────────────────────────────
+function showToast() {
+  const t = document.getElementById('saved-toast')!;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── Collect all settings from form ──────────────────────────
+function collectSettings(): Partial<CatSettings> {
+  const v = (id: string) => (document.getElementById(id) as HTMLInputElement).value;
+  const checked = (id: string) => (document.getElementById(id) as HTMLInputElement).checked;
+  return {
+    name:               v('input-name').trim() || 'hooman',
+    catName:            v('input-cat-name').trim() || 'NekoDrift',
+    color:              currentColor,
+    pattern:            currentPattern,
+    size:               Number(v('input-size')),
+    soundEnabled:       checked('toggle-sound'),
+    lockedPosition:     checked('toggle-lock'),
+    stickyNoteEnabled:  checked('toggle-sticky'),
+    stickyNote:         v('input-sticky-note').trim(),
+    fixedMessageEnabled: checked('toggle-fixed-msg'),
+    fixedMessage:       v('input-fixed-msg').trim(),
+    stretchEnabled:     checked('toggle-stretch'),
+    stretchIntervalMin: Number(v('input-interval')),
+    pomodoroEnabled:    checked('toggle-pomodoro'),
+    pomodoroFocusMin:   Number(v('input-pomo-focus')),
+    pomodoroBreakMin:   Number(v('input-pomo-break')),
+    reminderEnabled:    checked('toggle-reminder'),
+    reminderHour:       Number(v('input-reminder-hour')),
+    reminderMinute:     Number(v('input-reminder-min')),
+    reminderMessage:    v('input-reminder-msg').trim() || 'Hey! Check in time!',
+    claudeIntegration:  checked('toggle-claude'),
+    alwaysOnTop:        checked('toggle-ontop'),
+    startOnLogin:       checked('toggle-login'),
+    customPixels:       editor.export(),
+  };
+}
+
+let editor: PatternEditor;
+
+async function init() {
+  setupNav();
+  buildBreedGrid();
+  editor = new PatternEditor();
+
+  const s = await window.nekodrift.getSettings();
+
+  currentColor = s.color;
+  currentPattern = s.pattern || 'none';
+  updateColorSwatches();
+  updatePatternChips();
+  updateBreedButtons();
+  if (s.customPixels?.length === 256) editor.load(s.customPixels);
+
+  // Identity
+  (document.getElementById('input-name') as HTMLInputElement).value = s.name;
+  (document.getElementById('input-cat-name') as HTMLInputElement).value = s.catName;
+  (document.getElementById('input-size') as HTMLInputElement).value = String(s.size);
+  (document.getElementById('size-label') as HTMLElement).textContent = SIZE_LABELS[s.size];
+
+  // Position
+  (document.getElementById('toggle-lock') as HTMLInputElement).checked = s.lockedPosition ?? false;
+
+  // Notes
+  (document.getElementById('toggle-sticky') as HTMLInputElement).checked = s.stickyNoteEnabled ?? false;
+  (document.getElementById('input-sticky-note') as HTMLInputElement).value = s.stickyNote || '';
+  (document.getElementById('toggle-fixed-msg') as HTMLInputElement).checked = s.fixedMessageEnabled ?? false;
+  (document.getElementById('input-fixed-msg') as HTMLInputElement).value = s.fixedMessage || '';
+
+  // Timers
+  (document.getElementById('toggle-stretch') as HTMLInputElement).checked = s.stretchEnabled;
+  (document.getElementById('input-interval') as HTMLInputElement).value = String(s.stretchIntervalMin);
+  (document.getElementById('toggle-pomodoro') as HTMLInputElement).checked = s.pomodoroEnabled;
+  (document.getElementById('input-pomo-focus') as HTMLInputElement).value = String(s.pomodoroFocusMin);
+  (document.getElementById('input-pomo-break') as HTMLInputElement).value = String(s.pomodoroBreakMin);
+  (document.getElementById('toggle-reminder') as HTMLInputElement).checked = s.reminderEnabled;
+  (document.getElementById('input-reminder-hour') as HTMLInputElement).value = String(s.reminderHour ?? 15);
+  (document.getElementById('input-reminder-min') as HTMLInputElement).value = String(s.reminderMinute ?? 0);
+  (document.getElementById('input-reminder-msg') as HTMLInputElement).value = s.reminderMessage || '';
+
+  // Claude
+  (document.getElementById('toggle-claude') as HTMLInputElement).checked = s.claudeIntegration ?? true;
+
+  // System
+  (document.getElementById('toggle-ontop') as HTMLInputElement).checked = s.alwaysOnTop;
+  (document.getElementById('toggle-login') as HTMLInputElement).checked = s.startOnLogin;
+  (document.getElementById('toggle-sound') as HTMLInputElement).checked = s.soundEnabled;
+
+  // Size slider label
+  document.getElementById('input-size')!.addEventListener('input', (e) => {
+    (document.getElementById('size-label') as HTMLElement).textContent =
+      SIZE_LABELS[Number((e.target as HTMLInputElement).value)];
+  });
+
+  // Color swatches
+  document.querySelectorAll('.swatch').forEach(el => {
+    el.addEventListener('click', () => {
+      currentColor = (el as HTMLElement).dataset.color as CatColor;
+      updateColorSwatches();
+      updateBreedButtons();
+      editor.render();
+    });
+  });
+
+  // Pattern chips
+  document.querySelectorAll('.chip').forEach(el => {
+    el.addEventListener('click', () => {
+      currentPattern = (el as HTMLElement).dataset.pattern as CatPattern;
+      updatePatternChips();
+      updateBreedButtons();
+    });
+  });
+
+  // Pixel editor palette
+  document.querySelectorAll('.pal-swatch').forEach(el => {
+    el.addEventListener('click', () => editor.setColor(Number((el as HTMLElement).dataset.idx)));
+  });
+  document.getElementById('btn-editor-clear')!.addEventListener('click', () => editor.clear());
+  document.getElementById('btn-editor-load-base')!.addEventListener('click', () => { editor.clear(); editor.render(); });
+  document.getElementById('btn-editor-apply')!.addEventListener('click', async () => {
+    await window.nekodrift.saveSettings({ customPixels: editor.export() });
+    showToast();
+  });
+
+  // Pomodoro controls
+  document.getElementById('btn-pomo-start')!.addEventListener('click', () => window.nekodrift.pomodoroControl('start'));
+  document.getElementById('btn-pomo-pause')!.addEventListener('click', () => window.nekodrift.pomodoroControl('pause'));
+  document.getElementById('btn-pomo-reset')!.addEventListener('click', () => window.nekodrift.pomodoroControl('reset'));
+
+  // Copy Claude hooks config
+  document.getElementById('btn-copy-hooks')!.addEventListener('click', () => {
+    navigator.clipboard.writeText(CLAUDE_HOOKS_CONFIG).then(() => {
+      const btn = document.getElementById('btn-copy-hooks')!;
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  });
+
+  // Save buttons (all pages share the same logic)
+  ['btn-save', 'btn-save-pos', 'btn-save-timers', 'btn-save-notes', 'btn-save-claude', 'btn-save-sys'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', async () => {
+      await window.nekodrift.saveSettings(collectSettings());
+      showToast();
+    });
   });
 }
 

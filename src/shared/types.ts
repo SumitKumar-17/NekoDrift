@@ -1,29 +1,43 @@
+// ─── Sprite abstraction ────────────────────────────────────────
+// All desktop sprites implement this interface.
+// Today it's a cat. Future: dog, duck, robot, etc.
+export interface ISpriteRenderer {
+  readonly id: string;
+  draw(ctx: CanvasRenderingContext2D, opts: SpriteDrawOptions): void;
+  getAnimations(): readonly string[];
+  getColors?(): readonly string[];
+}
+
+export interface SpriteDrawOptions {
+  animation: string;
+  frame: number;
+  scale: number;
+  eyeDir?: EyeDir;
+  heatLevel?: number;
+  wobble?: number;
+  mood?: string;
+  // Per-sprite extras (ignored by sprites that don't use them)
+  [key: string]: unknown;
+}
+
+// ─── Cat types ─────────────────────────────────────────────────
 export type CatColor = 'orange' | 'gray' | 'black' | 'white' | 'brown' | 'pink';
 
 export type CatPattern = 'none' | 'tuxedo' | 'tabby' | 'calico' | 'spotted' | 'bicolor';
 
 export type CatAnimation =
-  | 'idle'
-  | 'walk'
-  | 'run'
-  | 'sit'
-  | 'sleep'
-  | 'type'
-  | 'stretch'
-  | 'happy'
-  | 'surprised'
-  | 'hunt'
-  | 'purr'
-  | 'overheat'
-  | 'paper'
-  | 'think'
-  | 'jump';
+  | 'idle' | 'walk' | 'run' | 'sit' | 'sleep'
+  | 'type' | 'stretch' | 'happy' | 'surprised'
+  | 'hunt' | 'purr' | 'overheat' | 'paper' | 'think' | 'jump';
 
 export interface EyeDir {
   dx: number; // -1 to 1
-  dy: number; // -1 to 1
+  dy: number;
 }
 
+export type CatMood = 'happy' | 'content' | 'tired' | 'lonely';
+
+// ─── Settings ──────────────────────────────────────────────────
 export interface CatSettings {
   color: CatColor;
   pattern: CatPattern;
@@ -36,11 +50,16 @@ export interface CatSettings {
   alwaysOnTop: boolean;
   showOnAllDesktops: boolean;
   startOnLogin: boolean;
+  // Position lock — stop cursor-follow, stay put
+  lockedPosition: boolean;
+  // Sticky note — shown when hovering the cat
+  stickyNote: string;
+  stickyNoteEnabled: boolean;
   // Pomodoro
   pomodoroEnabled: boolean;
   pomodoroFocusMin: number;
   pomodoroBreakMin: number;
-  // Fixed message
+  // Pinned message — always visible above cat
   fixedMessage: string;
   fixedMessageEnabled: boolean;
   // Daily reminder
@@ -48,21 +67,13 @@ export interface CatSettings {
   reminderMessage: string;
   reminderHour: number;
   reminderMinute: number;
-  // Claude integration
+  // Claude Code integration
   claudeIntegration: boolean;
-  // Custom pixel pattern (256-char string, each char = palette index 0-9, 0=transparent)
+  // Custom pixel coat (256-char string, each char = palette index 0-9, 0=transparent)
   customPixels: string;
 }
 
-export type CatMood = 'happy' | 'content' | 'tired' | 'lonely';
-
-export interface AppState {
-  settings: CatSettings;
-  lastActivity: number;
-  isIdle: boolean;
-  isTyping: boolean;
-}
-
+// ─── State objects ─────────────────────────────────────────────
 export interface PomodoroState {
   mode: 'focus' | 'break' | 'idle';
   remainingMs: number;
@@ -74,6 +85,7 @@ export interface AiState {
   done: boolean;
 }
 
+// ─── IPC channel names ─────────────────────────────────────────
 export const IPC = {
   // Main → Renderer
   CAT_ANIMATE:        'cat:animate',
@@ -88,6 +100,8 @@ export const IPC = {
   AI_STATE:           'ai:state',
   SCROLL_EVENT:       'scroll:event',
   REMINDER_TRIGGER:   'reminder:trigger',
+  SHAKE_EVENT:        'cat:shake',
+  HEAT_LEVEL:         'cat:heat',
 
   // Renderer → Main
   GET_SETTINGS:       'settings:get',
@@ -100,6 +114,6 @@ export const IPC = {
   SET_IGNORE_MOUSE:   'mouse:ignore',
   DRAG_CAT:           'cat:drag',
   POMODORO_CONTROL:   'pomodoro:control',
-  SHAKE_EVENT:        'cat:shake',
-  HEAT_LEVEL:         'cat:heat',
+  SHOW_CONTEXT_MENU:  'cat:context-menu',
+  TOGGLE_LOCK:        'cat:toggle-lock',
 } as const;

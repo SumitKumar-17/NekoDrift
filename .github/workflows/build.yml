@@ -10,38 +10,64 @@ on:
 permissions:
   contents: write
 
+# ── Step 1: Create/refresh the nightly release slot ─────────────
+# Runs only on main-branch pushes (not tags). Tagged releases are
+# created by electron-builder --publish always in the build job.
 jobs:
-  # ── Prepare release slot before the build matrix starts ──────
   prepare:
+    if: "github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
     steps:
-      - name: Determine release tag
-        id: tag
+      - uses: actions/checkout@v4
+
+      - name: Read version + short SHA
+        id: meta
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=nightly" >> $GITHUB_OUTPUT
-          fi
+          VERSION=$(node -p "require('./package.json').version")
+          SHA="${{ github.sha }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHA:0:7}" >> $GITHUB_OUTPUT
 
       - name: Create / refresh nightly release
-        if: "!startsWith(github.ref, 'refs/tags/')"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
         run: |
-          gh release delete nightly --yes 2>/dev/null || true
+          gh release delete nightly --yes --repo ${{ github.repository }} 2>/dev/null || true
           gh release create nightly \
-            --title "NekoDrift Nightly" \
-            --notes "Latest build from \`main\` — commit ${{ github.sha }}" \
-            --prerelease \
-            --repo "$GH_REPO"
+            --repo ${{ github.repository }} \
+            --title "NekoDrift v${{ steps.meta.outputs.version }} — Nightly" \
+            --notes "$(cat <<'NOTES'
+          ## Nightly Build
 
-  # ── Build matrix ──────────────────────────────────────────────
+          Automatically built from `main`.
+
+          | | |
+          |---|---|
+          | **Version** | ${{ steps.meta.outputs.version }} |
+          | **Commit** | [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |
+          | **Triggered by** | ${{ github.actor }} |
+
+          > This release is overwritten on every push to `main`.
+          > For a stable release, use a versioned tag.
+
+          ### Download
+          | Platform | File |
+          |---|---|
+          | macOS (Apple Silicon + Intel) | `.dmg` |
+          | Windows | `.exe` (installer) |
+          | Linux | `.AppImage` or `.deb` |
+          NOTES
+          )" \
+            --prerelease
+
+  # ── Step 2: Build on every matrix ─────────────────────────────
   build:
-    needs: prepare
+    # For main-branch pushes, wait for prepare to finish first.
+    # For tags and PRs, run independently (no release slot needed).
+    needs: [prepare]
+    if: always()
     strategy:
       fail-fast: false
       matrix:
@@ -49,15 +75,12 @@ jobs:
           - os: macos-latest
             platform: mac
             label: macOS
-            artifacts: "dist-electron/*.dmg dist-electron/*.zip"
           - os: windows-latest
             platform: win
             label: Windows
-            artifacts: "dist-electron/*.exe"
           - os: ubuntu-22.04
             platform: linux
             label: Linux
-            artifacts: "dist-electron/*.AppImage dist-electron/*.deb"
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.label }})
@@ -70,10 +93,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install Linux dependencies
+      # ── Platform deps ────────────────────────────────────────
+      - name: Linux — system libraries
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          sudo apt-get update
+          sudo apt-get update -q
           sudo apt-get install -y \
             libx11-dev libxtst-dev libpng-dev \
             libxcb-xfixes0-dev libxcb-image0-dev \
@@ -81,11 +105,12 @@ jobs:
             libglib2.0-dev libgtk-3-dev \
             librsvg2-bin imagemagick
 
-      - name: Install macOS dependencies
+      - name: macOS — brew tools
         if: matrix.os == 'macos-latest'
         run: brew install librsvg imagemagick
 
-      - name: Generate icons (non-Windows)
+      # ── Icon generation ──────────────────────────────────────
+      - name: Generate PNG icons (non-Windows)
         if: matrix.os != 'windows-latest'
         run: |
           rsvg-convert -w 512 -h 512 assets/icon.svg -o assets/icon.png
@@ -104,27 +129,76 @@ jobs:
           done
           convert /tmp/icon-16.png /tmp/icon-32.png /tmp/icon-48.png /tmp/icon-256.png assets/icon.ico || true
 
-      - name: Install dependencies
+      # ── Build ────────────────────────────────────────────────
+      - name: Install npm dependencies
         run: npm ci
 
-      - name: Build
+      - name: Compile TypeScript
         run: npm run build
 
-      - name: Package
+      # ── Package & publish ────────────────────────────────────
+
+      # Tagged release: electron-builder creates the GitHub Release and
+      # uploads artifacts directly — one step, proper release metadata.
+      - name: Package + publish (tag → versioned release)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npx electron-builder build --${{ matrix.platform }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # Non-tag push: package locally, then upload to the nightly slot.
+      # We do NOT use --publish here because the release was already
+      # created by the prepare job with custom notes.
+      - name: Package (nightly)
+        if: "github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')"
         run: npm run package:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload to release
-        if: github.event_name == 'push'
+      # Upload artifacts to the nightly release.
+      # Key fixes vs previous version:
+      #   - shopt -s nullglob: glob expands to empty array (not literal string) when no match
+      #   - array syntax "${files[@]}": each element quoted, handles spaces in .exe names
+      - name: Upload artifacts → nightly
+        if: "github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')"
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          files=$(ls ${{ matrix.artifacts }} 2>/dev/null | tr '\n' ' ')
-          if [ -n "$files" ]; then
-            gh release upload "$TAG" $files --clobber --repo "$GH_REPO"
+          shopt -s nullglob
+          files=(
+            dist-electron/*.dmg
+            dist-electron/*.zip
+            dist-electron/*.exe
+            dist-electron/*.AppImage
+            dist-electron/*.deb
+          )
+          echo "Artifacts found: ${#files[@]}"
+          for f in "${files[@]}"; do echo "  → $f"; done
+
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No artifacts — listing dist-electron/:"
+            ls -la dist-electron/ || true
+            exit 1
           fi
+
+          gh release upload nightly "${files[@]}" \
+            --clobber \
+            --repo ${{ github.repository }}
+
+      # PR: just upload build artifacts for review — no release.
+      - name: Upload artifacts → PR check
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nekodrift-${{ matrix.label }}-pr${{ github.event.pull_request.number }}
+          path: |
+            dist-electron/*.dmg
+            dist-electron/*.zip
+            dist-electron/*.exe
+            dist-electron/*.AppImage
+            dist-electron/*.deb
+          if-no-files-found: ignore
+          retention-days: 3

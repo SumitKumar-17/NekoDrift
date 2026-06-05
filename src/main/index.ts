@@ -26,7 +26,7 @@ let keyboardTracker: KeyboardTracker;
 let stretchTimer: StretchTimer;
 
 const isDev = process.env.NODE_ENV === 'development';
-const DIST = path.join(app.getAppPath(), 'dist/renderer/renderer');
+const DIST = path.join(app.getAppPath(), 'dist/renderer');
 
 function rendererPath(file: string): string {
   return `file://${path.join(DIST, file)}`;
@@ -51,7 +51,7 @@ function createCatWindow(): void {
     hasShadow: false,
     roundedCorners: false,
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'dist/main/main/preload.js'),
+      preload: path.join(app.getAppPath(), 'dist/main/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -88,7 +88,7 @@ function createSettingsWindow(): void {
     title: 'Comnyang Settings',
     show: false,
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'dist/main/main/preload.js'),
+      preload: path.join(app.getAppPath(), 'dist/main/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -109,7 +109,7 @@ function createOnboardingWindow(): void {
     title: 'Welcome to Comnyang!',
     show: false,
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'dist/main/main/preload.js'),
+      preload: path.join(app.getAppPath(), 'dist/main/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },

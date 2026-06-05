@@ -6,7 +6,7 @@ export class KeyboardTracker {
   private callback: TypingCallback;
   private isTyping = false;
   private cooldownTimer: ReturnType<typeof setTimeout> | null = null;
-  private uiohook: any = null;
+  private hookActive = false;
 
   constructor(callback: TypingCallback) {
     this.callback = callback;
@@ -14,31 +14,27 @@ export class KeyboardTracker {
 
   async start(): Promise<void> {
     try {
-      // Dynamically import uiohook-napi (native module)
-      const { uIOhook } = await import('uiohook-napi');
-      this.uiohook = uIOhook;
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { uIOhook } = require('uiohook-napi');
 
-      uIOhook.on('keydown', () => {
-        this.onKeyPress();
-      });
-
+      uIOhook.on('keydown', () => this.onKeyPress());
       uIOhook.start();
+      this.hookActive = true;
+      console.log('[KeyboardTracker] uiohook-napi started');
     } catch (err) {
-      // uiohook may fail in some environments — fallback gracefully
-      console.warn('uiohook-napi not available, keyboard tracking disabled:', err);
+      console.warn('[KeyboardTracker] uiohook-napi unavailable, keyboard tracking disabled');
     }
   }
 
   stop(): void {
-    try {
-      if (this.uiohook) {
-        this.uiohook.stop();
-      }
-    } catch (_) {}
-
-    if (this.cooldownTimer) {
-      clearTimeout(this.cooldownTimer);
+    if (this.hookActive) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { uIOhook } = require('uiohook-napi');
+        uIOhook.stop();
+      } catch (_) {}
     }
+    if (this.cooldownTimer) clearTimeout(this.cooldownTimer);
   }
 
   private onKeyPress(): void {
@@ -46,16 +42,10 @@ export class KeyboardTracker {
       this.isTyping = true;
       this.callback(true);
     }
-
-    // Reset cooldown on every keypress
     if (this.cooldownTimer) clearTimeout(this.cooldownTimer);
     this.cooldownTimer = setTimeout(() => {
       this.isTyping = false;
       this.callback(false);
     }, TYPING_COOLDOWN_MS);
-  }
-
-  getIsTyping(): boolean {
-    return this.isTyping;
   }
 }

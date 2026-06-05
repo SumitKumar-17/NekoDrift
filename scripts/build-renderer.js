@@ -12,6 +12,8 @@ const entries = [
   { in: 'src/renderer/cat/cat.ts',               out: 'cat/cat' },
   { in: 'src/renderer/settings/settings.ts',     out: 'settings/settings' },
   { in: 'src/renderer/onboarding/onboarding.ts', out: 'onboarding/onboarding' },
+  { in: 'src/renderer/sprite/sprite.ts',         out: 'sprite/sprite' },
+  { in: 'src/renderer/manager/manager.ts',       out: 'manager/manager' },
 ];
 
 async function build() {

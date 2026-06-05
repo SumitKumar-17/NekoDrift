@@ -3,6 +3,7 @@ import path from 'path';
 
 type TrayCallback = {
   onOpenSettings: () => void;
+  onOpenManager: () => void;
   onQuit: () => void;
   onToggleCat: () => void;
 };
@@ -58,6 +59,10 @@ export function createTray(callbacks: TrayCallback): Tray {
       label: 'Settings...',
       click: callbacks.onOpenSettings,
       accelerator: isMac ? 'Cmd+,' : undefined,
+    },
+    {
+      label: 'Sprite Manager...',
+      click: callbacks.onOpenManager,
     },
     { type: 'separator' },
     {

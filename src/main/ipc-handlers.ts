@@ -10,17 +10,20 @@ import {
   getPomodoroTimer, setPomodoroTimer,
   getMessageReminder, setMessageReminder,
 } from './services';
+import { addSprite, removeSprite, listSprites } from './sprite-manager';
+import { SpriteType } from '../shared/types';
 
 export interface IpcDeps {
   getCatWindow: () => BrowserWindow | null;
   createSettingsWindow: () => void;
+  createManagerWindow: () => void;
   closeOnboarding: () => void;
   startServices: () => void;
   quitApp: () => void;
 }
 
 export function setupIPC(deps: IpcDeps): void {
-  const { getCatWindow, createSettingsWindow, quitApp } = deps;
+  const { getCatWindow, createSettingsWindow, createManagerWindow, quitApp } = deps;
   const send = (channel: string, ...args: unknown[]) =>
     getCatWindow()?.webContents.send(channel, ...args);
 
@@ -175,4 +178,10 @@ export function setupIPC(deps: IpcDeps): void {
     else if (action === 'pause') pt.pause();
     else { pt.reset(); setPomodoroTimer(null); }
   });
+
+  // ─── Sprite management ─────────────────────────────────────
+  ipcMain.handle(IPC.SPRITE_ADD, (_event, type: SpriteType) => addSprite(type));
+  ipcMain.handle(IPC.SPRITE_REMOVE, (_event, id: string) => removeSprite(id));
+  ipcMain.handle(IPC.SPRITE_LIST, () => listSprites());
+  ipcMain.on(IPC.OPEN_MANAGER, () => createManagerWindow());
 }

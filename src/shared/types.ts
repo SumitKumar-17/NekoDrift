@@ -85,6 +85,22 @@ export interface AiState {
   done: boolean;
 }
 
+// ─── Multi-sprite types ────────────────────────────────────────
+export type SpriteType = 'cat' | 'pikachu' | 'eevee' | 'gengar' | 'snorlax';
+
+export interface SpriteConfig {
+  id: string;
+  type: SpriteType;
+  lockedPosition: boolean;
+  size: number;
+}
+
+export interface SpriteInfo {
+  id: string;
+  type: SpriteType;
+  lockedPosition: boolean;
+}
+
 // ─── IPC channel names ─────────────────────────────────────────
 export const IPC = {
   // Main → Renderer
@@ -116,4 +132,13 @@ export const IPC = {
   POMODORO_CONTROL:   'pomodoro:control',
   SHOW_CONTEXT_MENU:  'cat:context-menu',
   TOGGLE_LOCK:        'cat:toggle-lock',
+
+  // Multi-sprite management
+  SPRITE_ADD:         'sprite:add',
+  SPRITE_REMOVE:      'sprite:remove',
+  SPRITE_LIST:        'sprite:list',
+  SPRITE_CONFIG:      'sprite:config',
+  SPRITE_EYE_DIR:     'sprite:eye-dir',
+  SPRITE_STATE:       'sprite:state',
+  OPEN_MANAGER:       'window:open-manager',
 } as const;

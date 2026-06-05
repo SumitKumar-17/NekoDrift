@@ -13,10 +13,12 @@ export function rendererPath(file: string): string {
 let catWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let onboardingWindow: BrowserWindow | null = null;
+let managerWindow: BrowserWindow | null = null;
 
 export function getCatWindow(): BrowserWindow | null { return catWindow; }
 export function getSettingsWindow(): BrowserWindow | null { return settingsWindow; }
 export function getOnboardingWindow(): BrowserWindow | null { return onboardingWindow; }
+export function getManagerWindow(): BrowserWindow | null { return managerWindow; }
 
 export function createCatWindow(): void {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -106,4 +108,31 @@ export function createOnboardingWindow(): void {
   onboardingWindow.loadURL(rendererPath('onboarding/index.html'));
   onboardingWindow.once('ready-to-show', () => onboardingWindow?.show());
   onboardingWindow.on('closed', () => { onboardingWindow = null; });
+}
+
+export function createManagerWindow(): void {
+  if (managerWindow && !managerWindow.isDestroyed()) {
+    managerWindow.focus();
+    return;
+  }
+
+  managerWindow = new BrowserWindow({
+    width: 340,
+    height: 480,
+    minWidth: 280,
+    resizable: true,
+    title: 'NekoDrift — Sprite Manager',
+    show: false,
+    alwaysOnTop: true,
+    ...(isMac ? { titleBarStyle: 'hiddenInset' } : {}),
+    webPreferences: {
+      preload: PRELOAD,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  managerWindow.loadURL(rendererPath('manager/index.html'));
+  managerWindow.once('ready-to-show', () => managerWindow?.show());
+  managerWindow.on('closed', () => { managerWindow = null; });
 }

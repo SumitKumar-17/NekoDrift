@@ -3,12 +3,13 @@ import { isFirstRun } from './store';
 import { createTray } from './tray';
 import { isMac, checkAccessibilityPermission } from './platform';
 import {
-  createCatWindow, createSettingsWindow, createOnboardingWindow,
-  getCatWindow, getSettingsWindow, getOnboardingWindow,
+  createCatWindow, createSettingsWindow, createOnboardingWindow, createManagerWindow,
+  getCatWindow, getSettingsWindow, getOnboardingWindow, getManagerWindow,
 } from './window-manager';
 import { startServices, stopAll } from './services';
 import { startMouseTracking } from './mouse-tracker';
 import { setupIPC } from './ipc-handlers';
+import { destroyAllSprites } from './sprite-manager';
 
 // ─── Single instance lock ──────────────────────────────────────
 if (!app.requestSingleInstanceLock()) {
@@ -20,9 +21,11 @@ let tray: Tray | null = null;
 
 function quitApp(): void {
   stopAll();
+  destroyAllSprites();
   try { getCatWindow()?.destroy(); } catch (_) {}
   try { getSettingsWindow()?.destroy(); } catch (_) {}
   try { getOnboardingWindow()?.destroy(); } catch (_) {}
+  try { getManagerWindow()?.destroy(); } catch (_) {}
   try { tray?.destroy(); tray = null; } catch (_) {}
   app.exit(0);
 }
@@ -50,6 +53,7 @@ app.whenReady().then(() => {
   setupIPC({
     getCatWindow,
     createSettingsWindow,
+    createManagerWindow,
     closeOnboarding: () => getOnboardingWindow()?.close(),
     startServices: () => startServices(getCatWindow),
     quitApp,
@@ -59,6 +63,7 @@ app.whenReady().then(() => {
 
   tray = createTray({
     onOpenSettings: createSettingsWindow,
+    onOpenManager: createManagerWindow,
     onQuit: quitApp,
     onToggleCat: () => {
       const cw = getCatWindow();

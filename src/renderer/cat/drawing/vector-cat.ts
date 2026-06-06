@@ -197,6 +197,7 @@ function _drawNormal(
   ctx.scale(1, bodySquish);
   fill(ctx, pal.body, 1, () => { ctx.ellipse(0, 0, u(4.2), u(3.3), 0, 0, Math.PI * 2); });
   fill(ctx, pal.belly, 1, () => { ctx.ellipse(0, u(0.85), u(2.85), u(2.1), 0, 0, Math.PI * 2); });
+  stroke(ctx, darkenHex(pal.body), u(0.28), 0.22, () => { ctx.ellipse(0, 0, u(4.2), u(3.3), 0, 0, Math.PI * 2); });
   ctx.restore();
 
   _drawEarsAndHead(ctx, pal, u, by, earPink);
@@ -226,6 +227,7 @@ function _drawEarsAndHead(ctx: C, pal: any, u: (n: number) => number, by: number
   });
   // Head
   fill(ctx, pal.body, 1, () => { ctx.arc(u(8), u(4.1 + by), u(3.5), 0, Math.PI * 2); });
+  stroke(ctx, darkenHex(pal.body), u(0.28), 0.2, () => { ctx.arc(u(8), u(4.1 + by), u(3.5), 0, Math.PI * 2); });
 }
 
 // ── Shared: face (eyes, nose, mouth, whiskers) ────────────────
@@ -254,8 +256,9 @@ function _drawFace(
       ctx.quadraticCurveTo(u(rx), u(ey - 0.7), u(rx + 0.9), u(ey + 0.4));
     });
   } else if (animation === 'surprised') {
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(lx), u(ey), u(1.35), 0, Math.PI * 2); });
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(rx), u(ey), u(1.35), 0, Math.PI * 2); });
+    const irisColor = pal.iris ?? pal.eye;
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(lx), u(ey), u(1.35), 0, Math.PI * 2); });
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(rx), u(ey), u(1.35), 0, Math.PI * 2); });
     fill(ctx, '#ffffff', 1, () => { ctx.arc(u(lx - 0.45), u(ey - 0.42), u(0.48), 0, Math.PI * 2); });
     fill(ctx, '#ffffff', 1, () => { ctx.arc(u(rx - 0.45), u(ey - 0.42), u(0.48), 0, Math.PI * 2); });
   } else if (animation === 'overheat') {
@@ -270,8 +273,9 @@ function _drawFace(
       ctx.moveTo(u(rx + 0.72), u(ey - 0.72)); ctx.lineTo(u(rx - 0.72), u(ey + 0.72));
     });
   } else if (animation === 'type') {
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(lx), u(ey + 0.3), u(1.0), 0, Math.PI * 2); });
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(rx), u(ey + 0.3), u(1.0), 0, Math.PI * 2); });
+    const irisColor = pal.iris ?? pal.eye;
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(lx), u(ey + 0.3), u(1.0), 0, Math.PI * 2); });
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(rx), u(ey + 0.3), u(1.0), 0, Math.PI * 2); });
     // Upper lid covers top half (dreamy)
     fill(ctx, pal.body, 1, () => { ctx.rect(u(lx - 1.2), u(ey - 0.8), u(2.4), u(1.1)); });
     fill(ctx, pal.body, 1, () => { ctx.rect(u(rx - 1.2), u(ey - 0.8), u(2.4), u(1.1)); });
@@ -279,8 +283,9 @@ function _drawFace(
     fill(ctx, '#ffffff', 0.88, () => { ctx.arc(u(lx + ex), u(ey + 0.25), u(0.32), 0, Math.PI * 2); });
     fill(ctx, '#ffffff', 0.88, () => { ctx.arc(u(rx + ex), u(ey + 0.25), u(0.32), 0, Math.PI * 2); });
   } else if (animation === 'think') {
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(lx), u(ey), u(1.0), 0, Math.PI * 2); });
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(rx), u(ey), u(1.0), 0, Math.PI * 2); });
+    const irisColor = pal.iris ?? pal.eye;
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(lx), u(ey), u(1.0), 0, Math.PI * 2); });
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(rx), u(ey), u(1.0), 0, Math.PI * 2); });
     fill(ctx, '#1a1a1a', 1, () => { ctx.arc(u(lx), u(ey), u(0.52), 0, Math.PI * 2); });
     fill(ctx, '#1a1a1a', 1, () => { ctx.arc(u(rx), u(ey), u(0.52), 0, Math.PI * 2); });
     fill(ctx, 'rgba(255,255,255,0.9)', 1, () => { ctx.arc(u(lx - 0.22), u(ey - 0.26), u(0.23), 0, Math.PI * 2); });
@@ -290,18 +295,46 @@ function _drawFace(
       ctx.moveTo(u(rx - 0.8), u(ey - 1.4)); ctx.lineTo(u(rx + 0.8), u(ey - 1.1));
     });
   } else {
-    const ex = eyeDir ? eyeDir.dx * 0.33 : 0;
+    const ex  = eyeDir ? eyeDir.dx * 0.33 : 0;
     const eyd = eyeDir ? eyeDir.dy * 0.22 : 0;
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(lx), u(ey), u(1.02), 0, Math.PI * 2); });
-    fill(ctx, pal.eye, 1, () => { ctx.arc(u(rx), u(ey), u(1.02), 0, Math.PI * 2); });
+    const irisColor = pal.iris ?? pal.eye;
+    // Iris (colored)
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(lx), u(ey), u(1.02), 0, Math.PI * 2); });
+    fill(ctx, irisColor, 1, () => { ctx.arc(u(rx), u(ey), u(1.02), 0, Math.PI * 2); });
+    // Pupil
     fill(ctx, '#1a1a1a', 1, () => { ctx.arc(u(lx + ex), u(ey + eyd), u(0.57), 0, Math.PI * 2); });
     fill(ctx, '#1a1a1a', 1, () => { ctx.arc(u(rx + ex), u(ey + eyd), u(0.57), 0, Math.PI * 2); });
+    // Primary eye shine
     fill(ctx, 'rgba(255,255,255,0.92)', 1, () => { ctx.arc(u(lx - 0.22 + ex), u(ey - 0.27 + eyd), u(0.28), 0, Math.PI * 2); });
     fill(ctx, 'rgba(255,255,255,0.92)', 1, () => { ctx.arc(u(rx - 0.22 + ex), u(ey - 0.27 + eyd), u(0.28), 0, Math.PI * 2); });
+    // Secondary small shine (bottom-right)
+    fill(ctx, 'rgba(255,255,255,0.52)', 1, () => { ctx.arc(u(lx + 0.38 + ex), u(ey + 0.35 + eyd), u(0.15), 0, Math.PI * 2); });
+    fill(ctx, 'rgba(255,255,255,0.52)', 1, () => { ctx.arc(u(rx + 0.38 + ex), u(ey + 0.35 + eyd), u(0.15), 0, Math.PI * 2); });
+    // Upper eyelid arc (gives the classic cat-eye shape)
+    stroke(ctx, '#1a1a1a', u(0.2), 0.65, () => {
+      ctx.moveTo(u(lx - 1.05), u(ey - 0.22));
+      ctx.quadraticCurveTo(u(lx), u(ey - 1.18), u(lx + 1.05), u(ey - 0.22));
+    });
+    stroke(ctx, '#1a1a1a', u(0.2), 0.65, () => {
+      ctx.moveTo(u(rx - 1.05), u(ey - 0.22));
+      ctx.quadraticCurveTo(u(rx), u(ey - 1.18), u(rx + 1.05), u(ey - 0.22));
+    });
   }
 
-  // Nose
-  fill(ctx, earPink, 1, () => { ctx.ellipse(u(8), u(5.65 + by), u(0.44), u(0.31), 0, 0, Math.PI * 2); });
+  // Rosy cheeks (subtle blush)
+  if (animation !== 'sleep') {
+    fill(ctx, earPink, 0.2, () => { ctx.ellipse(u(5.5), u(ey + 1.3), u(1.15), u(0.7), 0, 0, Math.PI * 2); });
+    fill(ctx, earPink, 0.2, () => { ctx.ellipse(u(10.5), u(ey + 1.3), u(1.15), u(0.7), 0, 0, Math.PI * 2); });
+  }
+
+  // Nose — small inverted triangle
+  fill(ctx, earPink, 1, () => {
+    const nx = u(8), ny = u(5.65 + by), ns = u(0.42);
+    ctx.moveTo(nx, ny + ns * 0.62);
+    ctx.lineTo(nx - ns, ny - ns * 0.42);
+    ctx.lineTo(nx + ns, ny - ns * 0.42);
+    ctx.closePath();
+  });
 
   // Mouth
   const my = 6.1 + by;
@@ -327,12 +360,12 @@ function _drawFace(
   if (animation !== 'sleep') {
     const wy = 5.45 + by;
     const wc = '#a09080';
-    const ww = u(0.07);
+    const ww = u(0.12);
     [[-0.32, 1.2], [0.05, 1.0], [0.42, 1.2]].forEach(([dy, ext]) => {
-      stroke(ctx, wc, ww, 0.42, () => {
+      stroke(ctx, wc, ww, 0.55, () => {
         ctx.moveTo(u(6.0), u(wy + dy)); ctx.lineTo(u(6 - ext - 4), u(wy + dy - 0.28));
       });
-      stroke(ctx, wc, ww, 0.42, () => {
+      stroke(ctx, wc, ww, 0.55, () => {
         ctx.moveTo(u(10.0), u(wy + dy)); ctx.lineTo(u(10 + ext + 4), u(wy + dy - 0.28));
       });
     });

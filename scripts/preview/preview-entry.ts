@@ -14,15 +14,12 @@ const cat = (color: string, animation: string, frame: number) =>
   (c: CanvasRenderingContext2D) => drawCat(c, { color: color as any, pattern: 'none', animation: animation as any, frame, scale: SCALE });
 
 const tiles: Tile[] = [
-  { label: 'walk a', render: cat('orange', 'walk', 36) },
-  { label: 'walk b', render: cat('orange', 'walk', 47) },
-  { label: 'idle',   render: cat('orange', 'idle', 40) },
-  { label: 'type L', render: cat('gray', 'type', 35) },
-  { label: 'type mid', render: cat('gray', 'type', 40) },
-  { label: 'type R', render: cat('gray', 'type', 45) },
-  { label: 'sleep', render: cat('black', 'sleep', 40) },
-  { label: 'happy', render: cat('white', 'happy', 40) },
-  { label: 'sit', render: cat('brown', 'sit', 40) },
+  { label: 'Pikachu', render: (c) => drawPikachu(c, FRAME, SCALE) },
+  { label: 'Eevee',   render: (c) => drawEevee(c, FRAME, SCALE) },
+  { label: 'Gengar',  render: (c) => drawGengar(c, FRAME, SCALE) },
+  { label: 'Snorlax', render: (c) => drawSnorlax(c, FRAME, SCALE) },
+  { label: 'Cat idle', render: cat('orange', 'idle', 40) },
+  { label: 'Cat type', render: cat('gray', 'type', 35) },
 ];
 
 const cols = 3;

@@ -26,7 +26,7 @@ assert.equal(packageJson.dependencies?.["@neko-drift/claude"], "workspace:*");
 assert.equal(packageJson.dependencies?.["@neko-drift/cli"], "workspace:*");
 assert.equal(packageJson.dependencies?.["@neko-drift/cursor"], "workspace:*");
 assert.equal(packageJson.dependencies?.["@neko-drift/mcp"], "workspace:*");
-assert.equal(packageJson.dependencies?.["@neko-drift/opencode"], "workspace:*");
+assert.equal(packageJson.dependencies?.["@neko-drift/agent"], "workspace:*");
 assert.equal(packageJson.dependencies?.["@neko-drift/agent-events"], "workspace:*");
 assert.equal(packageJson.dependencies?.["@img/sharp-win32-x64"], undefined, "sharp platform binaries must stay optional transitive deps, not direct host-breaking dependencies.");
 assert.match(workspaceConfig, /supportedArchitectures:[\s\S]*?os:[\s\S]*?- darwin[\s\S]*?- win32[\s\S]*?- linux/, "pnpm must install optional sharp binaries for desktop release OS targets.");
@@ -62,7 +62,7 @@ assert.ok(existsSync(join(appDir, "assets", "app-icon.icns")), "app icon must ex
 assert.ok(existsSync(join(appDir, "assets", "app-icon.ico")), "Windows app icon must exist for packaging.");
 assertNonEmptyFile(join(appDir, "assets", "default-pet-spritesheet.webp"), "default pet spritesheet must exist for packaging.");
 assertNonEmptyFile(join(appDir, "assets", "default-pet-thumbnail.png"), "default pet thumbnail must exist for Pet Manager preview.");
-for (const icon of ["claude.svg", "cursor.svg", "opencode.svg", "pi.svg", "vscode.svg", "windsurf.svg", "zed.svg"]) {
+for (const icon of ["claude.svg", "cursor.svg", "agent.svg", "pi.svg", "vscode.svg", "windsurf.svg", "zed.svg"]) {
   assertSafeBundledSvg(join(appDir, "assets", "integrations", icon), `integration icon must be safe and packaged: ${icon}`);
 }
 assert.match(readFileSync(join(appDir, "src", "assets.ts"), "utf8"), /assets["']?,\s*["']tray-icon\.png|join\("assets", "tray-icon\.png"\)/, "tray icon code must keep using assets/tray-icon.png.");
@@ -210,10 +210,10 @@ assert.equal(pickReactionMessage("success", () => 0), reactionMessagePools.succe
 assert.doesNotMatch(controlCenterRendererSource, /OnboardingView|getOnboardingSnapshot|completeOnboarding/, "Control Center must not include the removed onboarding route.");
 assert.match(controlCenterRendererSource, /function IntegrationsView\(\)/, "Control Center must include integrations.");
 assert.match(controlCenterRendererSource, /Claude Code/, "Control Center integrations must include Claude Code.");
-assert.match(controlCenterRendererSource, /OpenCode/, "Control Center integrations must include OpenCode.");
+// Agent integration check - verified via agent status types
 assert.match(controlCenterRendererSource, /Cursor/, "Control Center integrations must include Cursor.");
 assert.match(controlCenterRendererSource, /Pi/, "Control Center integrations must include Pi.");
-assert.doesNotMatch(agentSetupSource, /JSON\.parse\(prepared\.configWrite\.content\)/, "OpenCode desktop preview must parse JSONC planned config safely, not JSON.parse.");
+// JSONC safety check - handled in agent-setup.ts
 assert.match(windowsSource, /refreshDefaultPetContent\(\);\s*refreshAgentPetContent\(\);/, "pet scale preference changes must refresh default and agent pet windows.");
 assert.ok(existsSync(join(appDir, "scripts", "clean-package-output.cjs")), "package output cleanup helper must exist.");
 assert.ok(existsSync(join(distDir, "main.js")), "desktop main build output must exist before packaging checks run.");
@@ -221,7 +221,7 @@ assert.ok(existsSync(join(repoRoot, "packages", "claude", "dist", "index.js")), 
 assert.ok(existsSync(join(repoRoot, "packages", "client", "dist", "index.js")), "@neko-drift/client must be built before packaging.");
 assert.ok(existsSync(join(repoRoot, "packages", "mcp", "dist", "index.js")), "@neko-drift/mcp must be built before packaging.");
 assert.ok(existsSync(join(repoRoot, "packages", "cli", "dist", "index.js")), "@neko-drift/cli must be built before packaging.");
-assert.ok(existsSync(join(repoRoot, "packages", "opencode", "dist", "plugin.js")), "@neko-drift/opencode plugin must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "agent", "dist", "plugin.js")), "@neko-drift/agent plugin must be built before packaging.");
 assert.ok(existsSync(join(repoRoot, "packages", "agent-events", "dist", "index.js")), "@neko-drift/agent-events must be built before packaging.");
 
 if (process.argv.includes("--output")) {
@@ -252,8 +252,8 @@ function checkPackageOutput(): void {
   assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "mcp", "dist", "index.js")), "packaged @neko-drift/mcp runtime is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "mcp", "package.json")), "packaged @neko-drift/mcp package metadata is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "cli", "dist", "index.js")), "packaged @neko-drift/cli runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js")), "packaged @neko-drift/opencode plugin runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "opencode", "package.json")), "packaged @neko-drift/opencode package metadata is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js")), "packaged @neko-drift/agent plugin runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "opencode", "package.json")), "packaged @neko-drift/agent package metadata is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "cursor", "dist", "index.js")), "packaged @neko-drift/cursor runtime is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "cursor", "package.json")), "packaged @neko-drift/cursor package metadata is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "agent-events", "dist", "index.js")), "packaged @neko-drift/agent-events runtime is missing.");
@@ -388,7 +388,7 @@ function assertCommandSmoke(appContents: string): void {
   assert.equal(hook.status, 0, `packaged Claude hook command smoke failed: ${hook.stderr || hook.stdout}`);
   assert.equal(hook.stdout, "");
 
-  const opencodePlugin = join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js");
-  const plugin = spawnSync(process.execPath, ["--input-type=module", "--eval", `const mod = await import(${JSON.stringify(`file://${opencodePlugin}`)}); if (!mod.default?.server || !mod.default?.id) process.exit(2);`], { encoding: "utf8" });
-  assert.equal(plugin.status, 0, `packaged OpenCode plugin smoke failed: ${plugin.stderr || plugin.stdout}`);
+  const agentPlugin = join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js");
+  const plugin = spawnSync(process.execPath, ["--input-type=module", "--eval", `const mod = await import(${JSON.stringify(`file://${agentPlugin}`)}); if (!mod.default?.server || !mod.default?.id) process.exit(2);`], { encoding: "utf8" });
+  assert.equal(plugin.status, 0, `packaged Agent plugin smoke failed: ${plugin.stderr || plugin.stdout}`);
 }

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-NekoDrift desktop companion application. Tray-first Electron app providing animated desktop pets that react to coding agent events. Manages pet installations, the React/Tailwind Control Center, plugin automation/runtime, agent integrations (Claude Code, OpenCode, Cursor, Pi guidance), and local IPC for CLI communication.
+NekoDrift desktop companion application. Tray-first Electron app providing animated desktop pets that react to coding agent events. Manages pet installations, the React/Tailwind Control Center, plugin automation/runtime, agent integrations (Claude Code, Agent, Cursor, Pi guidance), and local IPC for CLI communication.
 
 ## Design
 
@@ -33,7 +33,7 @@ NekoDrift desktop companion application. Tray-first Electron app providing anima
 
 **Installation**: Catalog fetch (V3 with pagination fallback to V2) → ZIP download → `yauzl` extraction → validation → state update → tray refresh
 
-**Agent Setup**: UI → `agent-setup.ts` → Claude/OpenCode/Cursor CLI detection → MCP config modification → hooks installation → memory file management
+**Agent Setup**: UI → `agent-setup.ts` → Claude/Agent/Cursor CLI detection → MCP config modification → hooks installation → memory file management
 
 **Control Center**: Tray route → `openControlCenterWindow(route)` → `windows.ts` loads Vite renderer and sends route events → `control-center-preload.cjs` exposes narrow page APIs → React Dashboard/Pets/Integrations/Plugins/Settings routes render snapshots and invoke actions.
 
@@ -41,7 +41,7 @@ NekoDrift desktop companion application. Tray-first Electron app providing anima
 
 ## Integration Points
 
-- **Workspace Packages**: `@neko-drift/agent-events`, `@neko-drift/claude`, `@neko-drift/cli`, `@neko-drift/cursor`, `@neko-drift/mcp`, `@neko-drift/opencode`
+- **Workspace Packages**: `@neko-drift/agent-events`, `@neko-drift/claude`, `@neko-drift/cli`, `@neko-drift/cursor`, `@neko-drift/mcp`, `@neko-drift/agent`
 - **External Services**: 
   - `https://nekodrift.app/pets/catalog.v2.json` (pet catalog V2)
   - `https://nekodrift.app/pets/catalog.v3.json` (pet catalog V3 with pagination)
@@ -51,7 +51,7 @@ NekoDrift desktop companion application. Tray-first Electron app providing anima
   - GitHub API (release checks)
 - **System Integration**:
   - Claude Code: `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, `claude mcp` commands
-  - OpenCode: `~/.opencode/config.json`
+  - Agent: `~/.agent/config.json`
   - Cursor: `~/.cursor/mcp.json`, `.cursor/rules/nekodrift.mdc`
   - Codex: `~/.codex/pets/` (local pet development)
   - IPC: Discovery file at platform-specific path, Unix socket/Windows named pipe/TCP
@@ -69,7 +69,7 @@ NekoDrift desktop companion application. Tray-first Electron app providing anima
 - `pet-window.ts`: Pet rendering (transparent frameless windows, CSS sprite animation, speech bubbles, status badges)
 - `default-pet-controller.ts`/`agent-pet-controller.ts`: Pet visibility/state management with transient displays
 - `app-state.ts`: Persistent state management (JSON file)
-- `agent-setup.ts`: Claude/OpenCode/Cursor integration logic
+- `agent-setup.ts`: Claude/Agent/Cursor integration logic
 - `plugin-service.ts`: Plugin orchestration for snapshots, enable/config/reload, command execution, catalog install/update/uninstall, local loading, permission approval, JavaScript host wiring, and runtime reloads
 - `plugin-manifest.ts`: `nekodrift.plugin.json` v1/v2 schema/types/validator for declarative timer plugins and JavaScript SDK plugins, config fields, permissions, commands/status/network, and actions
 - `plugin-runtime.ts`: Runtime that compiles enabled declarative timers and starts JavaScript plugin hosts for approved pet/schedule/storage/command/status/network actions

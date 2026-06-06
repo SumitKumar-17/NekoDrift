@@ -7,12 +7,12 @@ import { app } from "electron";
 import { buildClaudeMcpGetCommand, buildClaudeMcpPreview, classifyClaudeMcpStatus, createNekoDriftHookSettingsPreview, doctorClaudeHooks, installClaudeHooks, mapAsarPathToUnpacked, uninstallClaudeHooks, type ClaudeCommandSpec, type ClaudeHookDoctorResult, type ClaudeMcpPreview, type NekoDriftCommandMode, type ParsedClaudeMcpEntry } from "@neko-drift/claude";
 import { buildCursorRulesPreview, classifyCursorMcpStatus, executeCursorMcpWrite, getCursorGlobalMcpPath, planCursorMcpInstall, planCursorMcpRemove, planCursorMcpReplace, readCursorMcpConfig, type CursorMcpStatusResult } from "@neko-drift/cursor";
 import { buildNekoDriftOnlyPreview, type RedactedPreview } from "@neko-drift/cursor";
-import { doctorOpenCodeGlobalSetup, getGlobalOpenCodeConfigDir, parseOpenCodeConfig, prepareOpenCodeGlobalRemove, prepareOpenCodeGlobalSetup, writePreparedOpenCodeGlobalRemove, writePreparedOpenCodeGlobalSetup } from "@neko-drift/opencode";
+import { doctorAgentGlobalSetup, getGlobalAgentConfigDir, parseAgentConfig, prepareAgentGlobalRemove, prepareAgentGlobalSetup, writePreparedAgentGlobalRemove, writePreparedAgentGlobalSetup } from "@neko-drift/agent";
 
 import { getAppStateSnapshot, updatePreferences, type InstalledPetState, type NekoDriftStateV1 } from "./app-state.js";
 import { doctorClaudeNekoDriftMemory, installClaudeNekoDriftMemory, uninstallClaudeNekoDriftMemory, type ClaudeNekoDriftMemoryStatus } from "./claude-memory.js";
 
-export type AgentSetupAction = "configure" | "replace" | "remove" | "install-memory" | "doctor-hooks" | "install-hooks" | "uninstall-hooks" | "opencode-install" | "opencode-remove" | "cursor-install" | "cursor-replace" | "cursor-remove";
+export type AgentSetupAction = "configure" | "replace" | "remove" | "install-memory" | "doctor-hooks" | "install-hooks" | "uninstall-hooks" | "agent-install" | "agent-remove" | "cursor-install" | "cursor-replace" | "cursor-remove";
 export type JournalAction = "configure" | "update" | "replace" | "remove";
 
 export interface AgentSetupPetOption {
@@ -43,8 +43,8 @@ export interface AgentSetupSnapshot {
   readonly status: ClaudeCodeStatus;
   readonly hookStatus: ClaudeHookDoctorResult;
   readonly memoryStatus: ClaudeNekoDriftMemoryStatus;
-  readonly opencodeStatus: OpenCodeSetupStatus;
-  readonly opencodePreview: OpenCodeSetupPreview;
+  readonly agentStatus: AgentSetupStatus;
+  readonly agentPreview: AgentSetupPreview;
   readonly cursorStatus: CursorSetupStatus;
   readonly cursorPreview: CursorSetupPreview;
   readonly commandPaths: AgentSetupCommandPaths;
@@ -55,10 +55,10 @@ export interface AgentSetupSnapshot {
 export interface AgentSetupCommandPaths {
   readonly claude: string;
   readonly node: string;
-  readonly opencode: string;
+  readonly agent: string;
 }
 
-export interface OpenCodeSetupStatus {
+export interface AgentSetupStatus {
   readonly state: "configured" | "needs_setup" | "not_detected" | "error";
   readonly label: string;
   readonly details: string;
@@ -67,7 +67,7 @@ export interface OpenCodeSetupStatus {
   readonly canRemove: boolean;
 }
 
-export interface OpenCodeSetupPreview {
+export interface AgentSetupPreview {
   readonly global: true;
   readonly configDir: string;
   readonly configPath: string;
@@ -138,7 +138,7 @@ export async function getAgentSetupSnapshot(selectedPetId?: unknown, commandMode
   const hookStatus = { ...rawHookStatus, settingsPath: formatUserPath(rawHookStatus.settingsPath) ?? rawHookStatus.settingsPath, backupPath: formatUserPath(rawHookStatus.backupPath) };
   const rawMemoryStatus = doctorClaudeNekoDriftMemory(app.getPath("home"));
   const memoryStatus = { ...rawMemoryStatus, claudeMdPath: formatUserPath(rawMemoryStatus.claudeMdPath) ?? rawMemoryStatus.claudeMdPath, openPetsMemoryPath: formatUserPath(rawMemoryStatus.openPetsMemoryPath) ?? rawMemoryStatus.openPetsMemoryPath };
-  const opencode = await getOpenCodeSetup(commandMode, petId);
+  const agentResult = await getAgentSetup(commandMode, petId);
   const cursor = await getCursorSetup(commandMode, petId);
 
   return {
@@ -150,8 +150,8 @@ export async function getAgentSetupSnapshot(selectedPetId?: unknown, commandMode
     status,
     hookStatus,
     memoryStatus,
-    opencodeStatus: opencode.status,
-    opencodePreview: opencode.preview,
+    agentStatus: agentResult.status,
+    agentPreview: agentResult.preview,
     cursorStatus: cursor.status,
     cursorPreview: cursor.preview,
     commandPaths: getAgentSetupCommandPaths(),
@@ -163,12 +163,12 @@ export async function getAgentSetupSnapshot(selectedPetId?: unknown, commandMode
 export function updateAgentSetupCommandPaths(patch: unknown): AgentSetupCommandPaths {
   if (!isRecord(patch)) throw new Error("Invalid command path settings.");
   for (const key of Object.keys(patch)) {
-    if (key !== "claude" && key !== "node" && key !== "opencode") throw new Error("Invalid command path setting.");
+    if (key !== "claude" && key !== "node" && key !== "agent") throw new Error("Invalid command path setting.");
   }
   const updates: Writable<Partial<NekoDriftStateV1["preferences"]>> = {};
   if ("claude" in patch) updates.claudeCommandPath = normalizeOptionalCommandPath(patch.claude, "Claude");
   if ("node" in patch) updates.nodeCommandPath = normalizeOptionalCommandPath(patch.node, "Node.js");
-  if ("opencode" in patch) updates.opencodeCommandPath = normalizeOptionalCommandPath(patch.opencode, "OpenCode");
+  if ("agent" in patch) updates.agentCommandPath = normalizeOptionalCommandPath(patch.agent, "Agent");
   updatePreferences(updates);
   return getAgentSetupCommandPaths();
 }
@@ -249,8 +249,8 @@ function createHookErrorStatus(message: string): ClaudeHookDoctorResult {
 }
 
 async function runAction(action: AgentSetupAction, selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
-  if (action === "opencode-install") return installOpenCodeGlobal(selectedPetId, commandMode);
-  if (action === "opencode-remove") return removeOpenCodeGlobal();
+  if (action === "agent-install") return installAgentGlobal(selectedPetId, commandMode);
+  if (action === "agent-remove") return removeAgentGlobal();
   if (action === "cursor-install") return installCursorGlobal(selectedPetId, commandMode);
   if (action === "cursor-replace") return replaceCursorGlobal(selectedPetId, commandMode);
   if (action === "cursor-remove") return removeCursorGlobal();
@@ -335,21 +335,21 @@ async function runAction(action: AgentSetupAction, selectedPetId: string | undef
   return { ok: true, action, message: `Replaced Claude Code NekoDrift MCP entry.${summarizeMemoryMessages(removed.message, added.message)}`, changed: true };
 }
 
-async function getOpenCodeSetup(commandMode: NekoDriftCommandMode, selectedPetId: string | undefined): Promise<{ readonly status: OpenCodeSetupStatus; readonly preview: OpenCodeSetupPreview }> {
-  const configDir = getGlobalOpenCodeConfigDir(process.env, app.getPath("home"), process.platform);
+async function getAgentSetup(commandMode: NekoDriftCommandMode, selectedPetId: string | undefined): Promise<{ readonly status: AgentSetupStatus; readonly preview: AgentSetupPreview }> {
+  const configDir = getGlobalAgentConfigDir(process.env, app.getPath("home"), process.platform);
   const petId = selectedPetId || undefined;
   const cliVersion = getCliPackageVersion();
-  const pluginVersion = getOpenCodePackageVersion();
+  const pluginVersion = getAgentPackageVersion();
   const cliEntryPath = commandMode === "published" ? undefined : getDesktopCliEntryPath(commandMode);
-  const prepared = safePrepareOpenCode(configDir, petId, cliVersion, pluginVersion, commandMode, cliEntryPath);
-  const detected = await runCommand({ command: getPreferredOpenCodeCommand(), args: ["--version"] });
-  const globalState = doctorOpenCodeGlobalSetup(configDir);
+  const prepared = safePrepareAgent(configDir, petId, cliVersion, pluginVersion, commandMode, cliEntryPath);
+  const detected = await runCommand({ command: getPreferredAgentCommand(), args: ["--version"] });
+  const globalState = doctorAgentGlobalSetup(configDir);
   const configured = globalState.status === "installed";
   return {
     status: {
       state: globalState.status === "error" || globalState.status === "custom" || globalState.status === "conflict" ? "error" : configured ? "configured" : detected.ok ? "needs_setup" : "not_detected",
       label: configured ? "Installed" : globalState.status === "custom" || globalState.status === "conflict" ? "Needs attention" : detected.ok ? "Ready" : "Not detected",
-      details: globalState.status === "custom" || globalState.status === "conflict" || globalState.status === "error" ? globalState.message : configured ? globalState.message : detected.ok ? "OpenCode was detected. Desktop setup writes global OpenCode config." : getPreferredOpenCodeCommand() === (process.platform === "win32" ? "opencode.cmd" : "opencode") ? "OpenCode was not found on PATH. You can still preview setup, but OpenCode must be installed to use it." : "OpenCode did not run from the saved command path. You can still preview setup, but OpenCode must be installed to use it.",
+      details: globalState.status === "custom" || globalState.status === "conflict" || globalState.status === "error" ? globalState.message : configured ? globalState.message : detected.ok ? "Agent was detected. Desktop setup writes global agent config." : "Agent was not found on PATH. You can still preview setup, but the agent must be installed to use it.",
       configDir: formatUserPath(configDir) ?? configDir,
       canInstall: prepared.ok && !configured,
       canRemove: configured,
@@ -360,7 +360,7 @@ async function getOpenCodeSetup(commandMode: NekoDriftCommandMode, selectedPetId
       configPath: prepared.ok ? (formatUserPath(prepared.configPath) ?? prepared.configPath) : "",
       cleanupConfigPaths: prepared.ok ? prepared.cleanupConfigPaths.map((path) => formatUserPath(path) ?? path) : [],
       mcpCommand: prepared.ok ? prepared.command : [],
-      plugin: prepared.ok ? prepared.plugin : (petId ? [`@neko-drift/opencode@${pluginVersion}`, { pet: petId }] : `@neko-drift/opencode@${pluginVersion}`),
+      plugin: prepared.ok ? prepared.plugin : (petId ? [`@neko-drift/agent@${pluginVersion}`, { pet: petId }] : `@neko-drift/agent@${pluginVersion}`),
       instructionPath: prepared.ok ? (formatUserPath(prepared.instructionPath) ?? prepared.instructionPath) : "",
       configPreview: prepared.ok ? prepared.configPreview : {},
     },
@@ -442,7 +442,7 @@ function getAgentSetupCommandPaths(): AgentSetupCommandPaths {
   return {
     claude: preferences.claudeCommandPath ?? "",
     node: preferences.nodeCommandPath ?? "",
-    opencode: preferences.opencodeCommandPath ?? "",
+    agent: preferences.agentCommandPath ?? "",
   };
 }
 
@@ -454,8 +454,8 @@ function getPreferredNodeCommand(): string {
   return getAppStateSnapshot().preferences.nodeCommandPath || "node";
 }
 
-function getPreferredOpenCodeCommand(): string {
-  return getAppStateSnapshot().preferences.opencodeCommandPath || (process.platform === "win32" ? "opencode.cmd" : "opencode");
+function getPreferredAgentCommand(): string {
+  return getAppStateSnapshot().preferences.agentCommandPath || "agent";
 }
 
 function normalizeOptionalCommandPath(value: unknown, label: string): string | undefined {
@@ -480,42 +480,42 @@ function quoteCommandForDisplay(command: string): string {
   return /\s/.test(command) ? JSON.stringify(command) : command;
 }
 
-function safePrepareOpenCode(configDir: string, selectedPetId: string | undefined, cliVersion: string, pluginVersion: string, commandMode: NekoDriftCommandMode, cliEntryPath: string | undefined): { readonly ok: true; readonly command: readonly string[]; readonly configPath: string; readonly cleanupConfigPaths: readonly string[]; readonly instructionPath: string; readonly plugin: readonly unknown[] | string; readonly configPreview: Record<string, unknown> } | { readonly ok: false; readonly message: string } {
+function safePrepareAgent(configDir: string, selectedPetId: string | undefined, cliVersion: string, pluginVersion: string, commandMode: NekoDriftCommandMode, cliEntryPath: string | undefined): { readonly ok: true; readonly command: readonly string[]; readonly configPath: string; readonly cleanupConfigPaths: readonly string[]; readonly instructionPath: string; readonly plugin: readonly unknown[] | string; readonly configPreview: Record<string, unknown> } | { readonly ok: false; readonly message: string } {
   try {
-    const prepared = prepareOpenCodeGlobalSetup({ configDir, petId: selectedPetId || undefined, cliVersion, pluginVersion, commandMode, cliEntryPath });
-    const parsed = parseOpenCodeConfig(prepared.configWrite.content);
+    const prepared = prepareAgentGlobalSetup({ configDir, petId: selectedPetId || undefined, cliVersion, pluginVersion, commandMode, cliEntryPath });
+    const parsed = parseAgentConfig(prepared.configWrite.content);
     if (!parsed.ok) return { ok: false, message: parsed.message };
     const config = parsed.value as { mcp?: { nekodrift?: { command?: readonly string[] } }; plugin?: readonly unknown[] };
     const plugin = Array.isArray(config.plugin) ? config.plugin[config.plugin.length - 1] : undefined;
     return { ok: true, command: config.mcp?.nekodrift?.command ?? [], configPath: prepared.configPath, cleanupConfigPaths: prepared.cleanupConfigWrites.map((write) => write.targetPath), instructionPath: prepared.instructionPath, plugin: plugin === undefined ? [] : (plugin as readonly unknown[] | string), configPreview: parsed.value };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "OpenCode setup preview failed." };
+    return { ok: false, message: error instanceof Error ? error.message : "Agent setup preview failed." };
   }
 }
 
-async function installOpenCodeGlobal(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
+async function installAgentGlobal(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
   if (commandMode === "bundled") {
     const node = await runCommand({ command: getPreferredNodeCommand(), args: ["--version"] });
-    if (!node.ok) return { ok: false, action: "opencode-install", message: `Node.js is required for packaged NekoDrift commands. Open OpenCode configuration, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, changed: false };
+    if (!node.ok) return { ok: false, action: "agent-install", message: `Node.js is required for packaged NekoDrift commands. Open Agent configuration, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, changed: false };
   }
   try {
-    const configDir = getGlobalOpenCodeConfigDir(process.env, app.getPath("home"), process.platform);
-    const prepared = prepareOpenCodeGlobalSetup({ configDir, petId: selectedPetId || undefined, cliVersion: getCliPackageVersion(), pluginVersion: getOpenCodePackageVersion(), commandMode, cliEntryPath: commandMode === "published" ? undefined : getDesktopCliEntryPath(commandMode) });
-    writePreparedOpenCodeGlobalSetup(prepared);
-    return { ok: true, action: "opencode-install", message: `Installed global OpenCode NekoDrift setup. Config: ${formatUserPath(prepared.configPath) ?? prepared.configPath}. Instructions: ${formatUserPath(prepared.instructionPath) ?? prepared.instructionPath}.`, changed: true };
+    const configDir = getGlobalAgentConfigDir(process.env, app.getPath("home"), process.platform);
+    const prepared = prepareAgentGlobalSetup({ configDir, petId: selectedPetId || undefined, cliVersion: getCliPackageVersion(), pluginVersion: getAgentPackageVersion(), commandMode, cliEntryPath: commandMode === "published" ? undefined : getDesktopCliEntryPath(commandMode) });
+    writePreparedAgentGlobalSetup(prepared);
+    return { ok: true, action: "agent-install", message: `Installed global NekoDrift Agent setup. Config: ${formatUserPath(prepared.configPath) ?? prepared.configPath}. Instructions: ${formatUserPath(prepared.instructionPath) ?? prepared.instructionPath}.`, changed: true };
   } catch (error) {
-    return { ok: false, action: "opencode-install", message: error instanceof Error ? error.message : "OpenCode setup failed.", changed: false };
+    return { ok: false, action: "agent-install", message: error instanceof Error ? error.message : "Agent setup failed.", changed: false };
   }
 }
 
-async function removeOpenCodeGlobal(): Promise<AgentSetupActionResult> {
+async function removeAgentGlobal(): Promise<AgentSetupActionResult> {
   try {
-    const configDir = getGlobalOpenCodeConfigDir(process.env, app.getPath("home"), process.platform);
-    const prepared = prepareOpenCodeGlobalRemove(configDir);
-    writePreparedOpenCodeGlobalRemove(prepared);
-    return { ok: true, action: "opencode-remove", message: prepared.configWrites.length > 0 ? "Removed global OpenCode NekoDrift setup." : "Global OpenCode NekoDrift setup was already absent.", changed: prepared.configWrites.length > 0 };
+    const configDir = getGlobalAgentConfigDir(process.env, app.getPath("home"), process.platform);
+    const prepared = prepareAgentGlobalRemove(configDir);
+    writePreparedAgentGlobalRemove(prepared);
+    return { ok: true, action: "agent-remove", message: prepared.configWrites.length > 0 ? "Removed global NekoDrift Agent setup." : "Global NekoDrift Agent setup was already absent.", changed: prepared.configWrites.length > 0 };
   } catch (error) {
-    return { ok: false, action: "opencode-remove", message: error instanceof Error ? error.message : "OpenCode removal failed.", changed: false };
+    return { ok: false, action: "agent-remove", message: error instanceof Error ? error.message : "Agent removal failed.", changed: false };
   }
 }
 
@@ -588,8 +588,8 @@ function getCliPackageVersion(): string {
   return getWorkspacePackageVersion("@neko-drift/cli");
 }
 
-function getOpenCodePackageVersion(): string {
-  return getWorkspacePackageVersion("@neko-drift/opencode");
+function getAgentPackageVersion(): string {
+  return getWorkspacePackageVersion("@neko-drift/agent");
 }
 
 function getWorkspacePackageVersion(packageName: string): string {

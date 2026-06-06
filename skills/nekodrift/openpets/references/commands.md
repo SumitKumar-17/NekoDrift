@@ -8,7 +8,7 @@ nekodrift status
 nekodrift pets
 nekodrift install <pet-id>
 nekodrift configure --agent claude --pet <pet-id> --cwd <project-path> --yes
-nekodrift configure --agent opencode --pet <pet-id> --cwd <project-path> --yes
+nekodrift configure --agent agent --pet <pet-id> --cwd <project-path> --yes
 nekodrift configure --agent cursor --pet <pet-id> --cwd <project-path> --yes
 nekodrift mcp --pet <pet-id>
 ```

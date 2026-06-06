@@ -26,15 +26,15 @@ nekodrift configure --agent claude --pet <pet-id> --cwd <project-path> --yes
 
 Claude hooks are optional and should not be changed without user approval.
 
-## OpenCode
+## Agent
 
 Use the CLI configure flow:
 
 ```bash
-nekodrift configure --agent opencode --pet <pet-id> --cwd <project-path> --yes
+nekodrift configure --agent agent --pet <pet-id> --cwd <project-path> --yes
 ```
 
-OpenCode usually requires restart after config changes.
+Agent usually requires restart after config changes.
 
 ## Cursor and other MCP clients
 

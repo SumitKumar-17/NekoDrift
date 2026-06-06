@@ -21,7 +21,7 @@ Agent/client
 
 - MCP exposes `nekodrift_status`, `nekodrift_react`, and `nekodrift_say`.
 - CLI performs setup, pet installation, status checks, and MCP server launch.
-- Claude/OpenCode integrations add the right MCP/plugin/hook configuration and instructions.
+- Claude/Agent integrations add the right MCP/plugin/hook configuration and instructions.
 - The desktop app owns pet display, catalog installs, IPC, and routing to the selected/default pet.
 
 ## Privacy note

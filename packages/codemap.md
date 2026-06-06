@@ -10,7 +10,7 @@ Provides modular, reusable components for the NekoDrift ecosystem:
 - **client**: Core IPC client for communicating with NekoDrift desktop app
 - **cli**: Main CLI tool for configuring agents and managing pets
 - **mcp**: MCP server implementation for agent integration
-- **opencode**: OpenCode editor integration (plugin, config management)
+- **agent**: Agent editor integration (plugin, config management)
 - **claude**: Claude Code integration (hooks, MCP config)
 - **cursor**: Cursor editor integration (MCP config, project rules)
 - **pi**: Pi coding-agent extension integration (event hooks, slash commands)
@@ -36,7 +36,7 @@ Provides modular, reusable components for the NekoDrift ecosystem:
 ```
 CLI Entry (packages/cli/src/index.ts)
     ├── Configures Claude → @neko-drift/claude
-    ├── Configures OpenCode → @neko-drift/opencode
+    ├── Configures Agent → @neko-drift/agent
     ├── Configures Cursor → @neko-drift/cursor
     ├── Spawns MCP server → @neko-drift/mcp
     └── Uses IPC client → @neko-drift/client
@@ -45,7 +45,7 @@ MCP Server (packages/mcp/src/index.ts)
     ├── Registers tools (status, react, say)
     └── Communicates via @neko-drift/client
 
-OpenCode Plugin (packages/opencode/src/plugin.ts)
+Agent Plugin (packages/agent/src/plugin.ts)
     └── Hooks into editor events → @neko-drift/client
 
 Claude Hooks (packages/claude/src/hooks.ts)
@@ -61,17 +61,17 @@ Pi Extension (packages/pi/src/extension.ts)
 ## Integration Points
 
 **Inter-Package Dependencies**:
-- `cli` depends on: `client`, `claude`, `mcp`, `opencode`, `cursor`
+- `cli` depends on: `client`, `claude`, `mcp`, `agent`, `cursor`
 - `mcp` depends on: `client`
 - `claude` depends on: `client`, `agent-events`
-- `opencode` depends on: `client`, `agent-events`
+- `agent` depends on: `client`, `agent-events`
 - `cursor` depends on: `client`
 - `pi` depends on: `client`, `agent-events` and declares optional `@earendil-works/pi-coding-agent` peer support
 - `install-pet` depends on: `client`
 
 **External Integrations**:
 - `@modelcontextprotocol/sdk` - MCP protocol implementation
-- `jsonc-parser` - JSON with comments parsing for OpenCode configs
+- `jsonc-parser` - JSON with comments parsing for agent configs
 - `yauzl` - ZIP extraction for pet downloads
 - `zod` - Schema validation in MCP tools
 

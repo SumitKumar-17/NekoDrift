@@ -1,9 +1,8 @@
-name: Build & Release
+name: Auto Version & Release
 
 on:
   push:
     branches: [main]
-    tags: ['v*.*.*']
   pull_request:
     branches: [main]
 
@@ -11,52 +10,106 @@ permissions:
   contents: write
 
 jobs:
-  # ── Nightly slot (main-branch pushes only, not tags) ──────────────────────
-  prepare-nightly:
-    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+  # ── Auto version bump — runs on every main push (skips release commits) ──
+  version:
+    if: |
+      github.event_name == 'push' &&
+      !startsWith(github.event.head_commit.message, 'chore: release v')
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.meta.outputs.version }}
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use GITHUB_TOKEN — pushes made with this token don't re-trigger workflows
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Read version
-        id: meta
+      - name: Configure git
         run: |
-          VERSION=$(node -p "require('./apps/desktop/package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create / refresh nightly release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine bump type and compute new version
+        id: bump
         run: |
-          gh release delete nightly --yes --repo ${{ github.repository }} 2>/dev/null || true
-          gh release create nightly \
-            --repo ${{ github.repository }} \
-            --title "NekoDrift — Nightly (v${{ steps.meta.outputs.version }})" \
-            --notes "## Nightly Build
+          set -e
 
-Automatically built from the \`main\` branch — updated on every push.
+          # If the HEAD commit is already tagged, reuse that tag (no new bump)
+          EXISTING_TAG=$(git tag --points-at HEAD 2>/dev/null | grep '^v' | sort -V | tail -1)
+          if [ -n "$EXISTING_TAG" ]; then
+            VERSION="${EXISTING_TAG#v}"
+            echo "HEAD already tagged as $EXISTING_TAG — using existing version"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "tag=$EXISTING_TAG" >> "$GITHUB_OUTPUT"
+            echo "already_tagged=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-| | |
-|---|---|
-| **Version** | v${{ steps.meta.outputs.version }} |
-| **Commit** | [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |
+          CURRENT=$(node -p "require('./apps/desktop/package.json').version")
 
-### Downloads
-| Platform | Installer | Portable |
-|---|---|---|
-| 🍎 macOS (Universal) | \`.dmg\` | \`.zip\` |
-| 🪟 Windows | \`-setup.exe\` | \`-portable.exe\` |
-| 🐧 Linux | \`.AppImage\` | \`.deb\` / \`.rpm\` |
+          # Collect commits since the last semver tag
+          LAST_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s%n%b" 2>/dev/null)
+          else
+            COMMITS=$(git log --pretty=format:"%s%n%b" 2>/dev/null)
+          fi
 
-> Nightly builds may be unstable. For stable releases see the [Releases page](../../releases)." \
-            --prerelease
+          # Determine bump type using Conventional Commits conventions:
+          #   feat:     → minor bump
+          #   BREAKING CHANGE or ! suffix → major bump
+          #   anything else → patch bump
+          BUMP="patch"
+          if echo "$COMMITS" | grep -qiE "^feat(\([^)]+\))?[!]?:"; then
+            BUMP="minor"
+          fi
+          if echo "$COMMITS" | grep -qiE "(^|\n)BREAKING CHANGE" || \
+             echo "$COMMITS" | grep -qiE "^[a-z]+(\([^)]+\))!:"; then
+            BUMP="major"
+          fi
 
-  # ── Build matrix ──────────────────────────────────────────────────────────
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          if   [ "$BUMP" = "major" ]; then NEW="$((MAJOR+1)).0.0"
+          elif [ "$BUMP" = "minor" ]; then NEW="${MAJOR}.$((MINOR+1)).0"
+          else                             NEW="${MAJOR}.${MINOR}.$((PATCH+1))"
+          fi
+
+          # Update apps/desktop/package.json
+          node -e "
+            const fs = require('fs');
+            const p = 'apps/desktop/package.json';
+            const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+            pkg.version = '$NEW';
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          echo "Bumped $CURRENT → $NEW  (${BUMP} bump, last tag: ${LAST_TAG:-none})"
+          echo "version=$NEW"  >> "$GITHUB_OUTPUT"
+          echo "tag=v$NEW"     >> "$GITHUB_OUTPUT"
+          echo "already_tagged=false" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag, and push
+        if: steps.bump.outputs.already_tagged != 'true'
+        run: |
+          git add apps/desktop/package.json
+          git commit -m "chore: release v${{ steps.bump.outputs.version }}"
+          git tag "v${{ steps.bump.outputs.version }}"
+          git push origin main
+          git push origin "v${{ steps.bump.outputs.version }}"
+
+  # ── Build matrix — 3 platforms in parallel ────────────────────────────────
   build:
-    needs: [prepare-nightly]
-    if: always()
+    # For main push: run only after a successful version job.
+    # For PRs: run directly (version job is skipped on PRs).
+    needs: [version]
+    if: |
+      always() && (
+        (github.event_name == 'push'         && needs.version.result == 'success') ||
+        (github.event_name == 'pull_request')
+      )
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +128,10 @@ Automatically built from the \`main\` branch — updated on every push.
     name: Build — ${{ matrix.label }}
 
     steps:
+      # Check out the newly-created release tag (or PR head)
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && needs.version.outputs.tag || github.sha }}
 
       # ── Node + pnpm ──────────────────────────────────────────────────────
       - uses: actions/setup-node@v4
@@ -109,7 +165,7 @@ Automatically built from the \`main\` branch — updated on every push.
           rsvg-convert -w 512 -h 512 assets/icon.svg -o apps/desktop/assets/app-icon.png
           rsvg-convert -w 22  -h 22  assets/icon.svg -o apps/desktop/assets/tray-icon.png
 
-      - name: Generate app-icon.ico (Linux step, committed into repo for Windows)
+      - name: Generate app-icon.ico (Linux — also commits baseline for Windows)
         if: matrix.os == 'ubuntu-22.04'
         run: |
           for size in 16 24 32 48 64 128 256; do
@@ -129,10 +185,8 @@ Automatically built from the \`main\` branch — updated on every push.
             rsvg-convert -w $((size * 2)) -h $((size * 2)) assets/icon.svg \
               -o "/tmp/nekodrift.iconset/icon_${size}x${size}@2x.png"
           done
-          iconutil -c icns /tmp/nekodrift.iconset \
-            -o apps/desktop/assets/app-icon.icns
+          iconutil -c icns /tmp/nekodrift.iconset -o apps/desktop/assets/app-icon.icns
 
-      # Windows: use the pre-committed app-icon.ico from the repo
       - name: Copy committed .ico for Windows build
         if: matrix.os == 'windows-latest'
         shell: bash
@@ -151,9 +205,9 @@ Automatically built from the \`main\` branch — updated on every push.
 
       # ── Package + publish ────────────────────────────────────────────────
 
-      # Tagged release → proper versioned GitHub Release (not pre-release)
+      # Main-branch push → package and publish to a versioned GitHub Release
       - name: Package + publish versioned release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push'
         working-directory: apps/desktop
         run: |
           node scripts/clean-package-output.cjs
@@ -162,9 +216,9 @@ Automatically built from the \`main\` branch — updated on every push.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      # Main-branch push → package then upload to nightly slot
-      - name: Package (nightly)
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+      # PR → upload as workflow artifact for inspection (no release created)
+      - name: Upload PR artifact
+        if: github.event_name == 'pull_request'
         working-directory: apps/desktop
         run: |
           node scripts/clean-package-output.cjs
@@ -173,34 +227,6 @@ Automatically built from the \`main\` branch — updated on every push.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload artifacts → nightly release
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          shopt -s nullglob
-          files=(
-            apps/desktop/dist-electron/*.dmg
-            apps/desktop/dist-electron/*.zip
-            apps/desktop/dist-electron/*.exe
-            apps/desktop/dist-electron/*.AppImage
-            apps/desktop/dist-electron/*.deb
-            apps/desktop/dist-electron/*.rpm
-            apps/desktop/dist-electron/*.tar.gz
-          )
-          echo "Artifacts found: ${#files[@]}"
-          for f in "${files[@]}"; do echo "  → $f"; done
-          if [[ ${#files[@]} -eq 0 ]]; then
-            echo "No artifacts — listing dist-electron/:"
-            ls -la apps/desktop/dist-electron/ || true
-            exit 1
-          fi
-          gh release upload nightly "${files[@]}" \
-            --clobber \
-            --repo ${{ github.repository }}
-
-      # PR → upload as workflow artifact (no release)
       - name: Upload artifacts → PR check
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4

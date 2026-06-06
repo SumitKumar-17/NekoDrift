@@ -17,7 +17,7 @@ nekodrift status
 nekodrift pets
 ```
 
-4. Did the user restart Claude/OpenCode/MCP client after config changes?
+4. Did the user restart Claude/Agent/MCP client after config changes?
 5. Is the correct project path configured?
 6. Is the selected pet id installed?
 7. Can the machine reach `nekodrift.app` and `zip.nekodrift.app` for catalog/zip downloads?

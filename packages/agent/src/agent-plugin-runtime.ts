@@ -5,14 +5,14 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createNekoDriftClient, type NekoDriftClient, type NekoDriftReaction } from "@neko-drift/client";
 import { pickHookSpeech, type HookSpeechCategory, validateHookSpeech } from "@neko-drift/agent-events";
 
-import { validateNekoDriftPetArg } from "./opencode-previews.js";
+import { validateNekoDriftPetArg } from "./agent-previews.js";
 
-export interface OpenCodePluginOptions {
+export interface AgentPluginOptions {
   readonly pet?: string;
   readonly debug?: boolean;
 }
 
-export interface OpenCodePluginRuntimeOptions extends OpenCodePluginOptions {
+export interface AgentPluginRuntimeOptions extends AgentPluginOptions {
   readonly clientFactory?: () => NekoDriftClient;
   readonly schedule?: (work: () => Promise<void>) => void;
   readonly now?: () => number;
@@ -21,12 +21,12 @@ export interface OpenCodePluginRuntimeOptions extends OpenCodePluginOptions {
   readonly debugLog?: (message: string) => void;
 }
 
-export interface OpenCodePluginDecision {
+export interface AgentPluginDecision {
   readonly reaction?: NekoDriftReaction;
   readonly speechCategory?: HookSpeechCategory;
 }
 
-export type OpenCodeHooks = {
+export type AgentHooks = {
   readonly event: (input: { readonly event: unknown }) => void;
   readonly "chat.message": (input: unknown, output: unknown) => void;
   readonly "tool.execute.before": (input: { readonly tool?: string }, output: { readonly args?: unknown }) => void;
@@ -37,7 +37,7 @@ const speechCooldownMs = 20_000;
 const permissionCooldownMs = 3_000;
 const reactionCooldownMs = 10_000;
 
-export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptions = {}): OpenCodeHooks {
+export function createNekoDriftAgentHooks(options: AgentPluginRuntimeOptions = {}): AgentHooks {
   const pet = options.pet === undefined ? undefined : validateNekoDriftPetArg(options.pet);
   const clientFactory = options.clientFactory ?? (() => createNekoDriftClient({ connectTimeoutMs: 500, responseTimeoutMs: 500 }));
   const schedule = options.schedule ?? defaultSchedule;
@@ -46,7 +46,7 @@ export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptio
   let client: NekoDriftClient | undefined;
   let lease: { readonly leaseId: string; readonly expiresAt?: number } | undefined;
 
-  const run = (decision: OpenCodePluginDecision | undefined): void => {
+  const run = (decision: AgentPluginDecision | undefined): void => {
     if (!decision?.reaction) return;
     const reaction = decision.reaction;
     try {
@@ -64,11 +64,11 @@ export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptio
           }
           await client.react(reaction, { leaseId });
         } catch (error) {
-          debugLog(`NekoDrift OpenCode plugin ignored error: ${sanitizeDebugError(error)}`);
+          debugLog(`NekoDrift Agent plugin ignored error: ${sanitizeDebugError(error)}`);
         }
       });
     } catch (error) {
-      debugLog(`NekoDrift OpenCode plugin scheduling ignored error: ${sanitizeDebugError(error)}`);
+      debugLog(`NekoDrift Agent plugin scheduling ignored error: ${sanitizeDebugError(error)}`);
     }
   };
 
@@ -79,7 +79,7 @@ export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptio
       lease = { leaseId: next.leaseId, expiresAt: next.expiresAt };
       return next.leaseId;
     } catch (error) {
-      debugLog(`NekoDrift OpenCode lease unavailable: ${sanitizeDebugError(error)}`);
+      debugLog(`NekoDrift Agent lease unavailable: ${sanitizeDebugError(error)}`);
       return undefined;
     }
   };
@@ -87,9 +87,9 @@ export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptio
   return {
     event(input) {
       try {
-        run(classifyOpenCodeBusEvent(input.event));
+        run(classifyAgentBusEvent(input.event));
       } catch (error) {
-        debugLog(`NekoDrift OpenCode event ignored error: ${sanitizeDebugError(error)}`);
+        debugLog(`NekoDrift Agent event ignored error: ${sanitizeDebugError(error)}`);
       }
     },
     "chat.message"() {
@@ -98,7 +98,7 @@ export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptio
     "tool.execute.before"(input, output) {
       const tool = typeof input.tool === "string" ? input.tool : "";
       if (shouldIgnoreNekoDriftTool(tool)) return;
-      run({ reaction: classifyOpenCodeToolReaction(tool, output.args) });
+      run({ reaction: classifyAgentToolReaction(tool, output.args) });
     },
     "tool.execute.after"() {
       // Intentionally quiet for now; session.error/session.status events provide less noisy completion signals.
@@ -106,14 +106,14 @@ export function createNekoDriftOpenCodeHooks(options: OpenCodePluginRuntimeOptio
   };
 }
 
-export function classifyOpenCodeToolReaction(toolName: string, args?: unknown): NekoDriftReaction | undefined {
+export function classifyAgentToolReaction(toolName: string, args?: unknown): NekoDriftReaction | undefined {
   const normalized = toolName.toLowerCase();
   if (/edit|write|patch|apply_patch/.test(normalized)) return "editing";
   if (/bash|shell|terminal/.test(normalized)) return isTestLikeToolArgs(args) ? "testing" : undefined;
   return undefined;
 }
 
-export function classifyOpenCodeBusEvent(event: unknown): OpenCodePluginDecision | undefined {
+export function classifyAgentBusEvent(event: unknown): AgentPluginDecision | undefined {
   const type = getEventType(event);
   if (type === "permission.asked") return shouldIgnoreNekoDriftTool(getEventPermission(event) ?? "") ? undefined : { reaction: "waiting", speechCategory: "permission" };
   if (type === "session.error") return { reaction: "error", speechCategory: "error" };
@@ -126,22 +126,22 @@ export function shouldIgnoreNekoDriftTool(toolName: string): boolean {
   return /(?:^|[_:-])nekodrift_(?:nekodrift_)?(?:status|say|react)$/.test(normalized) || /^nekodrift_(?:status|say|react)$/.test(normalized);
 }
 
-export function getDefaultOpenCodeThrottlePath(): string {
-  if (process.platform === "win32") return join(process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local"), "NekoDrift", "opencode-hook-throttle.json");
+export function getDefaultAgentThrottlePath(): string {
+  if (process.platform === "win32") return join(process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local"), "NekoDrift", "agent-hook-throttle.json");
   const stateHome = process.env.XDG_STATE_HOME || join(homedir(), ".local", "state");
-  if (stateHome) return join(stateHome, "nekodrift", "opencode-hook-throttle.json");
-  return join(tmpdir(), `nekodrift-${safeUid()}`, "opencode-hook-throttle.json");
+  if (stateHome) return join(stateHome, "nekodrift", "agent-hook-throttle.json");
+  return join(tmpdir(), `nekodrift-${safeUid()}`, "agent-hook-throttle.json");
 }
 
-function shouldSendSpeech(category: HookSpeechCategory, options: OpenCodePluginRuntimeOptions): boolean {
+function shouldSendSpeech(category: HookSpeechCategory, options: AgentPluginRuntimeOptions): boolean {
   const now = options.now?.() ?? Date.now();
   const cooldown = category === "permission" ? permissionCooldownMs : speechCooldownMs;
-  return shouldSendThrottleKey(category, cooldown, now, options.throttlePath ?? getDefaultOpenCodeThrottlePath());
+  return shouldSendThrottleKey(category, cooldown, now, options.throttlePath ?? getDefaultAgentThrottlePath());
 }
 
-function shouldSendReaction(reaction: NekoDriftReaction, options: OpenCodePluginRuntimeOptions): boolean {
+function shouldSendReaction(reaction: NekoDriftReaction, options: AgentPluginRuntimeOptions): boolean {
   const now = options.now?.() ?? Date.now();
-  return shouldSendThrottleKey(`reaction:${reaction}`, reactionCooldownMs, now, options.throttlePath ?? getDefaultOpenCodeThrottlePath());
+  return shouldSendThrottleKey(`reaction:${reaction}`, reactionCooldownMs, now, options.throttlePath ?? getDefaultAgentThrottlePath());
 }
 
 function shouldSendThrottleKey(key: string, cooldown: number, now: number, path: string): boolean {

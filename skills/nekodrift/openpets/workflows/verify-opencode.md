@@ -1,6 +1,6 @@
-# Verify OpenCode
+# Verify Agent
 
-Use this workflow when the user asks whether OpenCode is connected to NekoDrift.
+Use this workflow when the user asks whether Agent is connected to NekoDrift.
 
 ## Steps
 
@@ -8,24 +8,24 @@ Use this workflow when the user asks whether OpenCode is connected to NekoDrift.
 2. For project-local setup, configure with:
 
 ```bash
-nekodrift configure --agent opencode --pet <pet-id> --cwd <project-path> --yes
+nekodrift configure --agent agent --pet <pet-id> --cwd <project-path> --yes
 ```
 
 3. Check likely project files if needed:
 
 ```text
-<project>/.opencode/opencode.jsonc
-<project>/.opencode/nekodrift.md
+<project>/.agent/agent.jsonc
+<project>/.agent/nekodrift.md
 ```
 
 4. Check likely global files if needed:
 
 ```text
-~/.config/opencode/opencode.json
-~/.config/opencode/opencode.jsonc
+~/.config/agent/agent.json
+~/.config/agent/agent.jsonc
 ```
 
-5. Ask the user to quit and restart OpenCode.
+5. Ask the user to quit and restart Agent.
 6. Verify with `nekodrift_status` or:
 
 ```bash
@@ -36,5 +36,5 @@ If the CLI is not installed globally, replace `nekodrift` with `npx -y @neko-dri
 
 ## Notes
 
-- OpenCode config is loaded at startup; changes are not usually hot-reloaded.
-- Prefer the NekoDrift CLI configure command over manually editing OpenCode config.
+- Agent config is loaded at startup; changes are not usually hot-reloaded.
+- Prefer the NekoDrift CLI configure command over manually editing Agent config.

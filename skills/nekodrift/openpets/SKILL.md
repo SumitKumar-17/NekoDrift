@@ -1,6 +1,6 @@
 ---
 name: nekodrift
-description: Use when the user asks to install, configure, verify, troubleshoot, or understand NekoDrift; install or select a pet; connect Claude Code, OpenCode, Cursor, Codex, or MCP clients; configure a project to use a specific pet; or debug nekodrift_status, nekodrift_react, or nekodrift_say.
+description: Use when the user asks to install, configure, verify, troubleshoot, or understand NekoDrift; install or select a pet; connect Claude Code, Agent, Cursor, Codex, or MCP clients; configure a project to use a specific pet; or debug nekodrift_status, nekodrift_react, or nekodrift_say.
 license: MIT
 ---
 
@@ -12,7 +12,7 @@ Use this skill to help users onboard quickly and safely:
 
 - install or verify the NekoDrift desktop app
 - install pets from the public catalog
-- configure Claude Code, OpenCode, Cursor, Codex, or another MCP client
+- configure Claude Code, Agent, Cursor, Codex, or another MCP client
 - configure a project to use a specific pet
 - validate `nekodrift_status`, `nekodrift_react`, and `nekodrift_say`
 - explain how NekoDrift works
@@ -49,7 +49,7 @@ Do not imply the desktop app installs a shell command by itself. The `nekodrift`
 ## Mental model
 
 ```text
-Claude/OpenCode/Codex/Cursor/MCP client
+Claude/Agent/Codex/Cursor/MCP client
   -> NekoDrift MCP, plugin, hook, or CLI
   -> @neko-drift/client
   -> local IPC discovery/token
@@ -65,7 +65,7 @@ NekoDrift requires the desktop app to be installed and running for live pet cont
 - User asks to install a pet: follow `workflows/install-pet.md`.
 - User asks to configure a project or agent: follow `workflows/configure-project.md`.
 - User asks to verify Claude Code: follow `workflows/verify-claude.md`.
-- User asks to verify OpenCode: follow `workflows/verify-opencode.md`.
+- User asks to verify Agent: follow `workflows/verify-agent.md`.
 - User asks about MCP or tool availability: follow `workflows/verify-mcp.md`.
 - User reports something broken: follow `workflows/troubleshoot.md`.
 - User asks how NekoDrift works: follow `workflows/explain-architecture.md`.
@@ -77,7 +77,7 @@ NekoDrift requires the desktop app to be installed and running for live pet cont
 - Confirm the project path before project-local configuration.
 - Confirm the pet id before installing or selecting a pet, and make sure it is installed before configuring a project to use it.
 - Do not put secrets, private logs, private paths, source code, URLs, credentials, or sensitive text into pet speech.
-- Restart Claude Code, OpenCode, or other MCP clients after config changes.
+- Restart Claude Code, Agent, or other MCP clients after config changes.
 - Do not promise the desktop app is installed or running; verify it.
 - If setup still fails after normal troubleshooting, encourage the user to report a bug at the NekoDrift GitHub repository: https://github.com/alvinunreal/nekodrift/issues
 
@@ -89,7 +89,7 @@ nekodrift status
 nekodrift pets
 nekodrift install <pet-id>
 nekodrift configure --agent claude --pet <pet-id> --cwd <project-path> --yes
-nekodrift configure --agent opencode --pet <pet-id> --cwd <project-path> --yes
+nekodrift configure --agent agent --pet <pet-id> --cwd <project-path> --yes
 nekodrift configure --agent cursor --pet <pet-id> --cwd <project-path> --yes
 nekodrift mcp --pet <pet-id>
 ```

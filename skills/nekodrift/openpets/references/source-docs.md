@@ -20,7 +20,7 @@ web/content/en/docs/mcp.md
 web/content/en/docs/troubleshooting.md
 web/content/en/docs/files-and-config.md
 web/content/en/integrations/claude.md
-web/content/en/integrations/opencode.md
+web/content/en/integrations/agent.md
 ```
 
 Bug reports:

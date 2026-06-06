@@ -10,12 +10,12 @@ import { fileURLToPath } from "node:url";
 import { allowedReactions, createNekoDriftClient, NekoDriftClientError, type NekoDriftPetListItem, type NekoDriftReaction } from "@neko-drift/client";
 import { claudeHookEvents, openPetsHookMarker, removeNekoDriftHooks, runClaudeHookFromStdin, validateNekoDriftPetArg } from "@neko-drift/claude";
 import { buildCursorRulesPreview, buildNekoDriftOnlyPreview, classifyCursorMcpStatus, classifyCursorRulesStatus, executeCursorMcpWrite, executeCursorRulesWrite, getCursorProjectMcpPath, getCursorProjectRulesPath, planCursorMcpInstall, planCursorMcpReplace, planCursorRulesInstall, planCursorRulesRemove, planCursorRulesReplace, readCursorMcpConfig, readCursorNekoDriftRules } from "@neko-drift/cursor";
-import { prepareOpenCodeProjectSetup, writePreparedOpenCodeProjectSetup } from "@neko-drift/opencode";
+import { prepareAgentProjectSetup, writePreparedAgentProjectSetup } from "@neko-drift/agent";
 
 export const cliPackageName = "@neko-drift/cli";
 
 interface ConfigureOptions {
-  readonly agent: "claude" | "opencode" | "cursor";
+  readonly agent: "claude" | "agent" | "cursor";
   readonly petId?: string;
   readonly cwd: string;
   readonly yes: boolean;
@@ -166,8 +166,8 @@ export async function configureProject(options: ConfigureOptions): Promise<void>
     await configureCursorProject(options, projectDir);
     return;
   }
-  if (options.agent === "opencode") {
-    await configureOpenCodeProject(options, projectDir);
+  if (options.agent === "agent") {
+    await configureAgentProject(options, projectDir);
     return;
   }
   assertClaudeAvailable();
@@ -275,12 +275,12 @@ function removeCursorRulesOnly(projectDir: string, rulesPath: string): void {
   process.stdout.write(`Removed NekoDrift Cursor rules from ${projectDir}.\n${plan.backupPath ? `Backup: ${plan.backupPath}\n` : ""}Cursor may use changed rules in a new or refreshed chat.\n`);
 }
 
-async function configureOpenCodeProject(options: ConfigureOptions, projectDir: string): Promise<void> {
+async function configureAgentProject(options: ConfigureOptions, projectDir: string): Promise<void> {
   const client = createNekoDriftClient();
   const selectedPet = await resolveConfiguredPet(client, options.petId);
   const packageVersion = getPackageVersion();
-  const prepared = prepareOpenCodeProjectSetup({ projectDir, petId: selectedPet.id, cliVersion: packageVersion, commandMode: options.localDev ? "local" : "published", cliEntryPath: options.localDev ? fileURLToPath(import.meta.url) : undefined });
-  writePreparedOpenCodeProjectSetup(prepared);
+  const prepared = prepareAgentProjectSetup({ projectDir, petId: selectedPet.id, cliVersion: packageVersion, commandMode: options.localDev ? "local" : "published", cliEntryPath: options.localDev ? fileURLToPath(import.meta.url) : undefined });
+  writePreparedAgentProjectSetup(prepared);
   process.stdout.write(`NekoDrift configured for OpenCode in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\nConfig: ${prepared.configPath}\nInstructions: ${prepared.instructionPath}\nWarning: .opencode config/instructions can be committed and include the selected pet id.\nRestart OpenCode in this project to load NekoDrift.\n`);
 }
 
@@ -321,7 +321,7 @@ export function parseConfigureArgs(args: readonly string[]): ConfigureOptions {
     else if (arg.startsWith("--cwd=")) cwd = arg.slice("--cwd=".length);
     else throw new CliError(`Unknown configure option: ${arg}`);
   }
-  if (agent !== "claude" && agent !== "opencode" && agent !== "cursor") throw new CliError(`Unsupported agent: ${agent}. Supported agents: claude, opencode, cursor.`);
+  if (agent !== "claude" && agent !== "agent" && agent !== "cursor") throw new CliError(`Unsupported agent: ${agent}. Supported agents: claude, agent, cursor.`);
   if (cursorRulesMode && agent !== "cursor") throw new CliError("Cursor rules flags require --agent cursor.");
   return { agent, petId, cwd, yes, force, localDev, cursorRulesMode };
 }
@@ -563,7 +563,7 @@ function getPackageVersion(): string {
 }
 
 function printUsage(): void {
-  process.stdout.write("Usage:\n  nekodrift status\n  nekodrift pets\n  nekodrift react <reaction>\n  nekodrift say <message> [--reaction <reaction>]\n  nekodrift install <pet-id>\n  nekodrift configure [--agent claude|opencode|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n  nekodrift mcp [--pet <id>]\n  nekodrift hook --nekodrift-managed [--pet <id>]\n\nRun `nekodrift <command> --help` for command options.\n");
+  process.stdout.write("Usage:\n  nekodrift status\n  nekodrift pets\n  nekodrift react <reaction>\n  nekodrift say <message> [--reaction <reaction>]\n  nekodrift install <pet-id>\n  nekodrift configure [--agent claude|agent|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n  nekodrift mcp [--pet <id>]\n  nekodrift hook --nekodrift-managed [--pet <id>]\n\nRun `nekodrift <command> --help` for command options.\n");
 }
 
 function printInstallUsage(): void {
@@ -587,7 +587,7 @@ function printSayUsage(): void {
 }
 
 function printConfigureUsage(): void {
-  process.stdout.write("Usage:\n  nekodrift configure [--agent claude|opencode|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n\nOptions:\n  --pet <id>           Pet id to use for this project. If omitted, prompts with installed pets. Cursor --rules-only/--remove-rules do not need a pet.\n  --agent <agent>      Agent to configure: claude, opencode, or cursor. Defaults to claude.\n  --cwd <path>         Project directory to configure. Defaults to current directory. Cursor uses <cwd>/.cursor/mcp.json and <cwd>/.cursor/rules/nekodrift.mdc; global Cursor setup is not enabled here.\n  --with-rules         For Cursor, install MCP config and project rules after preflighting both writes.\n  --rules-only         For Cursor, install/update only .cursor/rules/nekodrift.mdc.\n  --remove-rules       For Cursor, remove only managed .cursor/rules/nekodrift.mdc.\n  --yes, -y            Accepted for scripts; no confirmation prompt is shown.\n  --force              Replace supported managed entries where applicable. Required for conflicting Cursor rules.\n  --replace            Alias for --force.\n  --local-dev          Use local development command paths where supported.\n  -h, --help           Show this help.\n");
+  process.stdout.write("Usage:\n  nekodrift configure [--agent claude|agent|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n\nOptions:\n  --pet <id>           Pet id to use for this project. If omitted, prompts with installed pets. Cursor --rules-only/--remove-rules do not need a pet.\n  --agent <agent>      Agent to configure: claude, agent, or cursor. Defaults to claude.\n  --cwd <path>         Project directory to configure. Defaults to current directory. Cursor uses <cwd>/.cursor/mcp.json and <cwd>/.cursor/rules/nekodrift.mdc; global Cursor setup is not enabled here.\n  --with-rules         For Cursor, install MCP config and project rules after preflighting both writes.\n  --rules-only         For Cursor, install/update only .cursor/rules/nekodrift.mdc.\n  --remove-rules       For Cursor, remove only managed .cursor/rules/nekodrift.mdc.\n  --yes, -y            Accepted for scripts; no confirmation prompt is shown.\n  --force              Replace supported managed entries where applicable. Required for conflicting Cursor rules.\n  --replace            Alias for --force.\n  --local-dev          Use local development command paths where supported.\n  -h, --help           Show this help.\n");
 }
 
 function printMcpUsage(): void {

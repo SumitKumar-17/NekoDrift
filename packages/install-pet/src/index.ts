@@ -77,7 +77,7 @@ interface NekoDriftState {
     readonly petScale: number;
     readonly onboardingCompleted: boolean;
     readonly claudeCommandPath?: string;
-    readonly opencodeCommandPath?: string;
+    readonly agentCommandPath?: string;
   };
   readonly pets: {
     readonly installed: readonly InstalledPetState[];
@@ -473,7 +473,7 @@ function normalizeState(value: unknown, userData: string): NekoDriftState {
       petScale: typeof preferences.petScale === "number" ? preferences.petScale : 1,
       onboardingCompleted: typeof preferences.onboardingCompleted === "boolean" ? preferences.onboardingCompleted : false,
       claudeCommandPath: typeof preferences.claudeCommandPath === "string" ? preferences.claudeCommandPath : undefined,
-      opencodeCommandPath: typeof preferences.opencodeCommandPath === "string" ? preferences.opencodeCommandPath : undefined,
+      agentCommandPath: typeof preferences.agentCommandPath === "string" ? preferences.agentCommandPath : undefined,
     },
     pets: { installed: [builtInPet, ...installed] },
     defaultPet: isRecord(record.defaultPet) ? record.defaultPet : {},

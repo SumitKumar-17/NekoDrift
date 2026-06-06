@@ -10,7 +10,7 @@ Main CLI entry point (625 lines). Command routing, argument parsing, project con
 
 **Commands:**
 - `install <pet-id>` - Install pet via running desktop app
-- `configure` - Interactive project setup for Claude, OpenCode, or Cursor
+- `configure` - Interactive project setup for Claude, Agent, or Cursor
 - `status` - Check NekoDrift desktop app connectivity
 - `pets` - List installed pets
 - `react <reaction>` - Send reaction to desktop app
@@ -21,7 +21,7 @@ Main CLI entry point (625 lines). Command routing, argument parsing, project con
 **Configuration Flow:**
 - `configureProject()` - Main entry for project setup
 - `configureCursorProject()` - Cursor MCP + rules configuration
-- `configureOpenCodeProject()` - OpenCode config setup
+- `configureAgentProject()` - Agent config setup
 - Claude: Hook settings + MCP via `claude mcp add-json`
 
 **Safety Checks:**
@@ -48,7 +48,7 @@ Contract validation and integration tests (281 lines). Runtime assertions for CL
 - Pet resolution (explicit vs interactive)
 - Project hook installation and updates
 - Claude MCP integration (mocked)
-- OpenCode project configuration scenarios
+- Agent project configuration scenarios
 - Cursor project configuration (MCP + rules)
 - Error handling and edge cases
 
@@ -59,9 +59,9 @@ Contract validation and integration tests (281 lines). Runtime assertions for CL
 - Backup creation verification
 
 **Integration Tests:**
-- OpenCode: Top-level vs `.opencode/` config precedence
-- OpenCode: Existing config preservation
-- OpenCode: Custom MCP conflict detection
+- Agent: Top-level vs `.agent/` config precedence
+- Agent: Existing config preservation
+- Agent: Custom MCP conflict detection
 - Cursor: MCP config installation
 - Cursor: Rules-only and remove-rules modes
 - Cursor: Conflict detection with --force

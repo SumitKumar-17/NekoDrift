@@ -2,19 +2,19 @@ import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readF
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { executePlannedWrite, getProjectOpenCodeConfigPaths, parseOpenCodeConfig, planOpenCodeConfigWrite, readOpenCodeConfigFile, updateOpenCodeConfigText, type PlannedWrite } from "./opencode-config.js";
-import { buildOpenCodeInstructionPath, buildOpenCodeMcpEntry, buildOpenCodePluginPreview, validateNekoDriftPetArg, type OpenCodeCommandMode } from "./opencode-previews.js";
-import { classifyOpenCodeInstructionsStatus, classifyOpenCodeMcpStatus, classifyOpenCodePluginStatus, isManagedNekoDriftMcpEntry, isManagedNekoDriftPluginEntry } from "./opencode-status.js";
+import { executePlannedWrite, getProjectAgentConfigPaths, parseAgentConfig, planAgentConfigWrite, readAgentConfigFile, updateAgentConfigText, type PlannedWrite } from "./agent-config.js";
+import { buildAgentInstructionPath, buildAgentMcpEntry, buildAgentPluginPreview, validateNekoDriftPetArg, type AgentCommandMode } from "./agent-previews.js";
+import { classifyAgentInstructionsStatus, classifyAgentMcpStatus, classifyAgentPluginStatus, isManagedNekoDriftMcpEntry, isManagedNekoDriftPluginEntry } from "./agent-status.js";
 
-export interface PrepareOpenCodeProjectSetupOptions {
+export interface PrepareAgentProjectSetupOptions {
   readonly projectDir: string;
   readonly petId: string;
   readonly cliVersion: string;
-  readonly commandMode?: OpenCodeCommandMode;
+  readonly commandMode?: AgentCommandMode;
   readonly cliEntryPath?: string;
 }
 
-export interface PreparedOpenCodeProjectSetup {
+export interface PreparedAgentProjectSetup {
   readonly projectDir: string;
   readonly petId: string;
   readonly configPath: string;
@@ -34,46 +34,46 @@ const maxInstructionBytes = 1024 * 1024;
 const nekoDriftStart = "<!-- NEKODRIFT:START -->";
 const nekoDriftEnd = "<!-- NEKODRIFT:END -->";
 
-export function prepareOpenCodeProjectSetup(options: PrepareOpenCodeProjectSetupOptions): PreparedOpenCodeProjectSetup {
+export function prepareAgentProjectSetup(options: PrepareAgentProjectSetupOptions): PreparedAgentProjectSetup {
   const petId = validateNekoDriftPetArg(options.petId);
-  const paths = getProjectOpenCodeConfigPaths(options.projectDir);
+  const paths = getProjectAgentConfigPaths(options.projectDir);
   const existingConfigs = paths.candidates.flatMap((path) => {
     if (!existsSync(path)) return [];
-    assertSafeProjectLocalPath(options.projectDir, path, "OpenCode config");
-    const parsed = readOpenCodeConfigFile(path);
+    assertSafeProjectLocalPath(options.projectDir, path, "Agent config");
+    const parsed = readAgentConfigFile(path);
     if (!parsed.ok) throw new Error(parsed.message);
     return [{ path, config: parsed.value }];
   });
   const configs = existingConfigs.map((entry) => entry.config);
-  const instructionRelPath = buildOpenCodeInstructionPath("project");
+  const instructionRelPath = buildAgentInstructionPath("project");
   const instructionPath = join(options.projectDir, instructionRelPath);
-  assertSafeProjectLocalPath(options.projectDir, instructionPath, "OpenCode instruction");
+  assertSafeProjectLocalPath(options.projectDir, instructionPath, "Agent instruction");
   const instructionContent = existsSync(instructionPath) ? readSafeInstructionFile(instructionPath) : "";
-  const mcpStatus = classifyOpenCodeMcpStatus(configs, { cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
-  const instructionStatus = classifyOpenCodeInstructionsStatus(configs, "project", undefined, { [instructionRelPath]: instructionContent });
-  const pluginStatus = classifyOpenCodePluginStatus(configs, petId, options.cliVersion);
+  const mcpStatus = classifyAgentMcpStatus(configs, { cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
+  const instructionStatus = classifyAgentInstructionsStatus(configs, "project", undefined, { [instructionRelPath]: instructionContent });
+  const pluginStatus = classifyAgentPluginStatus(configs, petId, options.cliVersion);
   for (const status of [mcpStatus, instructionStatus, pluginStatus]) {
-    if (status.status === "custom" || status.status === "conflict" || status.status === "error") throw new Error(`${status.message} Edit or remove the custom NekoDrift OpenCode entry, then rerun setup.`);
+    if (status.status === "custom" || status.status === "conflict" || status.status === "error") throw new Error(`${status.message} Edit or remove the custom NekoDrift Agent entry, then rerun setup.`);
   }
 
   const selectedPath = selectWriteTarget(paths.candidates, existingConfigs, paths.defaultCreatePath);
   const selectedText = existsSync(selectedPath) ? readFileSync(selectedPath, "utf8") : "{}\n";
-  const parsedSelected = parseOpenCodeConfig(selectedText);
+  const parsedSelected = parseAgentConfig(selectedText);
   if (!parsedSelected.ok) throw new Error(parsedSelected.message);
   const nextConfig = buildNextConfig(parsedSelected.value, petId, options);
-  const nextText = updateOpenCodeConfigText(selectedText, [
+  const nextText = updateAgentConfigText(selectedText, [
     { path: ["mcp"], value: nextConfig.mcp },
     { path: ["instructions"], value: nextConfig.instructions },
     { path: ["plugin"], value: nextConfig.plugin },
   ]);
   if (typeof nextText !== "string") throw new Error(nextText.message);
-  const configWrite = planOpenCodeConfigWrite(options.projectDir, selectedPath, nextText);
+  const configWrite = planAgentConfigWrite(options.projectDir, selectedPath, nextText);
   if ("ok" in configWrite) throw new Error(configWrite.message);
   const instructionWrite = planInstructionWrite(options.projectDir, instructionPath, upsertNekoDriftInstructionBlock(instructionContent));
   return { projectDir: options.projectDir, petId, configPath: selectedPath, instructionPath, configWrite, instructionWrite };
 }
 
-export function writePreparedOpenCodeProjectSetup(prepared: PreparedOpenCodeProjectSetup): void {
+export function writePreparedAgentProjectSetup(prepared: PreparedAgentProjectSetup): void {
   executeTextWrite(prepared.instructionWrite);
   executePlannedWrite(prepared.configWrite);
 }
@@ -82,12 +82,12 @@ export function createNekoDriftInstructionBlock(): string {
   return `${nekoDriftStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${nekoDriftEnd}\n`;
 }
 
-function buildNextConfig(config: Record<string, unknown>, petId: string, options: PrepareOpenCodeProjectSetupOptions): { readonly mcp: Record<string, unknown>; readonly instructions: readonly string[]; readonly plugin: readonly unknown[] } {
+function buildNextConfig(config: Record<string, unknown>, petId: string, options: PrepareAgentProjectSetupOptions): { readonly mcp: Record<string, unknown>; readonly instructions: readonly string[]; readonly plugin: readonly unknown[] } {
   const mcp = isRecord(config.mcp) ? { ...config.mcp } : {};
-  mcp.nekodrift = buildOpenCodeMcpEntry({ cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
-  const instructionPath = buildOpenCodeInstructionPath("project");
+  mcp.nekodrift = buildAgentMcpEntry({ cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
+  const instructionPath = buildAgentInstructionPath("project");
   const instructions = [...new Set([...(Array.isArray(config.instructions) ? config.instructions.filter((entry): entry is string => typeof entry === "string") : []), instructionPath])];
-  const pluginSpec = buildOpenCodePluginPreview(petId, options.cliVersion);
+  const pluginSpec = buildAgentPluginPreview(petId, options.cliVersion);
   const plugin = [...(Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedNekoDriftPluginEntry(entry)) : []), pluginSpec];
   return { mcp, instructions, plugin };
 }
@@ -95,22 +95,22 @@ function buildNextConfig(config: Record<string, unknown>, petId: string, options
 function selectWriteTarget(candidates: readonly string[], existing: readonly { readonly path: string; readonly config: Record<string, unknown> }[], fallback: string): string {
   const owners = existing.filter((entry) => hasManagedNekoDriftEntry(entry.config)).map((entry) => entry.path);
   const uniqueOwners = [...new Set(owners)];
-  if (uniqueOwners.length > 1) throw new Error("OpenCode has NekoDrift entries in multiple config files. Remove duplicates, then rerun setup.");
+  if (uniqueOwners.length > 1) throw new Error("Agent has NekoDrift entries in multiple config files. Remove duplicates, then rerun setup.");
   if (uniqueOwners.length === 1) return uniqueOwners[0] ?? fallback;
   return candidates.find((candidate) => existing.some((entry) => entry.path === candidate)) ?? fallback;
 }
 
 function planInstructionWrite(projectDir: string, targetPath: string, content: string): PlannedTextWrite {
-  assertSafeProjectLocalPath(projectDir, targetPath, "OpenCode instruction");
+  assertSafeProjectLocalPath(projectDir, targetPath, "Agent instruction");
   if (existsSync(targetPath)) {
     const stat = lstatSync(targetPath);
-    if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("OpenCode instruction path must be a safe regular file.");
-    if (stat.size > maxInstructionBytes) throw new Error("OpenCode instruction file is too large.");
+    if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("Agent instruction path must be a safe regular file.");
+    if (stat.size > maxInstructionBytes) throw new Error("Agent instruction file is too large.");
   }
   const parent = dirname(targetPath);
   if (existsSync(parent)) {
     const stat = lstatSync(parent);
-    if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("OpenCode instruction directory is unsafe.");
+    if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Agent instruction directory is unsafe.");
   }
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
   return { targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.nekodrift-backup-${stamp}.md` : undefined, tempPath: join(parent, `.nekodrift-${stamp}.tmp`), content };
@@ -120,15 +120,15 @@ function executeTextWrite(plan: PlannedTextWrite): void {
   const parent = dirname(plan.targetPath);
   if (existsSync(parent)) {
     const parentStat = lstatSync(parent);
-    if (parentStat.isSymbolicLink() || !parentStat.isDirectory()) throw new Error("OpenCode instruction directory is unsafe.");
+    if (parentStat.isSymbolicLink() || !parentStat.isDirectory()) throw new Error("Agent instruction directory is unsafe.");
   }
   if (existsSync(plan.targetPath)) {
     const targetStat = lstatSync(plan.targetPath);
-    if (targetStat.isSymbolicLink() || !targetStat.isFile()) throw new Error("OpenCode instruction path must be a safe regular file.");
-    if (targetStat.size > maxInstructionBytes) throw new Error("OpenCode instruction file is too large.");
+    if (targetStat.isSymbolicLink() || !targetStat.isFile()) throw new Error("Agent instruction path must be a safe regular file.");
+    if (targetStat.size > maxInstructionBytes) throw new Error("Agent instruction file is too large.");
   }
-  if (plan.backupPath && dirname(plan.backupPath) !== parent) throw new Error("OpenCode instruction backup path is unsafe.");
-  if (dirname(plan.tempPath) !== parent) throw new Error("OpenCode instruction temp path is unsafe.");
+  if (plan.backupPath && dirname(plan.backupPath) !== parent) throw new Error("Agent instruction backup path is unsafe.");
+  if (dirname(plan.tempPath) !== parent) throw new Error("Agent instruction temp path is unsafe.");
   mkdirSync(dirname(plan.targetPath), { recursive: true, mode: 0o700 });
   if (plan.backupPath && existsSync(plan.targetPath)) {
     const backup = openSync(plan.backupPath, "wx", 0o600);
@@ -142,8 +142,8 @@ function executeTextWrite(plan: PlannedTextWrite): void {
 
 function readSafeInstructionFile(path: string): string {
   const stat = lstatSync(path);
-  if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("OpenCode instruction path must be a safe regular file.");
-  if (stat.size > maxInstructionBytes) throw new Error("OpenCode instruction file is too large.");
+  if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("Agent instruction path must be a safe regular file.");
+  if (stat.size > maxInstructionBytes) throw new Error("Agent instruction file is too large.");
   return readFileSync(path, "utf8");
 }
 
@@ -168,7 +168,7 @@ function upsertNekoDriftInstructionBlock(source: string): string {
 
 function hasManagedNekoDriftEntry(config: Record<string, unknown>): boolean {
   if (isRecord(config.mcp) && isManagedNekoDriftMcpEntry(config.mcp.nekodrift)) return true;
-  if (Array.isArray(config.instructions) && config.instructions.some((entry) => entry === buildOpenCodeInstructionPath("project"))) return true;
+  if (Array.isArray(config.instructions) && config.instructions.some((entry) => entry === buildAgentInstructionPath("project"))) return true;
   if (Array.isArray(config.plugin) && config.plugin.some(isManagedNekoDriftPluginEntry)) return true;
   return false;
 }

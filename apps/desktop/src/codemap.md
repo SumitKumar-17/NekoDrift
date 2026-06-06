@@ -63,7 +63,7 @@ windows.ts (IPC handlers)
     │   ├── configure/replace/remove (MCP commands)
     │   ├── install-memory (claude-memory.ts)
     │   └── install-hooks/uninstall-hooks/doctor-hooks (@neko-drift/claude)
-    ├── OpenCode global config management (@neko-drift/opencode)
+    ├── Agent global config management (@neko-drift/agent)
     └── Cursor global MCP config management (@neko-drift/cursor)
 ```
 
@@ -123,14 +123,14 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only nek
 
 - **To packages/**:
   - `@neko-drift/claude`: `buildClaudeMcpPreview`, `installClaudeHooks`, `doctorClaudeHooks`, etc.
-  - `@neko-drift/opencode`: `prepareOpenCodeGlobalSetup`, `doctorOpenCodeGlobalSetup`
+  - `@neko-drift/agent`: `prepareAgentGlobalSetup`, `doctorAgentGlobalSetup`
   - `@neko-drift/cursor`: `planCursorMcpInstall`, `executeCursorMcpWrite`, `buildCursorRulesPreview`, etc.
   - `@neko-drift/cli`: Version lookup for bundled mode
 
 - **To System**:
-  - File system: `app.getPath("userData")`, `userData/plugins/`, `userData/plugins-dev/`, plugin storage JSON, `~/.codex/pets/`, `~/.claude/`, `~/.opencode/`
+  - File system: `app.getPath("userData")`, `userData/plugins/`, `userData/plugins-dev/`, plugin storage JSON, `~/.codex/pets/`, `~/.claude/`, `~/.agent/`
   - Network: `fetch()` to nekodrift.app, GitHub API, plugin catalog at `https://nekodrift.app/plugins/catalog.v1.json`, plugin ZIPs restricted to `https://zip.nekodrift.app/plugins/`
-  - Processes: `spawn()` for `claude`, `opencode`, `node`
+  - Processes: `spawn()` for `claude`, `agent`, `node`
 
 ## Key Modules
 
@@ -188,7 +188,7 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only nek
 - `plugin-sdk-bridge.ts`: Permission-checked JavaScript plugin SDK for pet speech/reactions, one-shot/repeating/daily schedules, storage with quotas, config listeners, commands, status, logs, and HTTPS-only public-host fetch.
 
 **Agent Integration**:
-- `agent-setup.ts`: Claude/OpenCode/Cursor detection, MCP configuration, hooks management, action journaling
+- `agent-setup.ts`: Claude/Agent/Cursor detection, MCP configuration, hooks management, action journaling
 - `claude-memory.ts`: Claude instructions file management (`~/.claude/nekodrift.md`)
 - `update-checker.ts`: GitHub release polling, update status
 - `update-version.ts`: Version parsing and comparison
@@ -208,7 +208,7 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only nek
 | CLI via IPC | `local-ipc.ts` | `pet.react`, `pet.say`, `lease.*` |
 | `lease-manager.ts` | `agent-pet-controller.ts` | Show/close agent pets |
 | `windows.ts` | Renderer | State snapshots via IPC invoke |
-| `agent-setup.ts` | Claude/OpenCode/Cursor CLI | MCP add/remove, config writes |
+| `agent-setup.ts` | Claude/Agent/Cursor CLI | MCP add/remove, config writes |
 | All modules | `logger.ts` | Structured logs to `userData/logs/nekodrift.log` |
 | Plugin catalog | `plugin-catalog.ts`/`plugin-service.ts` | Discoverable plugin metadata filtered by app version and install state |
 | Plugin ZIP/local folder | `plugin-package.ts`/`plugin-local-loader.ts` | Validated manifest snapshot installed under `userData/plugins*` |

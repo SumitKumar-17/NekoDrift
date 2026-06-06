@@ -1,11 +1,11 @@
 {
-  "name": "@neko-drift/opencode",
+  "name": "@neko-drift/agent",
   "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/alvinunreal/nekodrift.git",
-    "directory": "packages/opencode"
+    "directory": "packages/agent"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -27,7 +27,7 @@
     }
   },
   "scripts": {
-    "test": "node dist/check-opencode-foundation.js && node dist/check-opencode-plugin.js",
+    "test": "node dist/check-agent-foundation.js && node dist/check-agent-plugin.js",
     "check": "pnpm typecheck && pnpm build && pnpm test",
     "typecheck": "tsc --noEmit",
     "build": "tsc"

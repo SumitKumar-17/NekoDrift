@@ -41,7 +41,7 @@ export interface NekoDriftStateV1 {
     readonly onboardingCompleted: boolean;
     readonly claudeCommandPath?: string;
     readonly nodeCommandPath?: string;
-    readonly opencodeCommandPath?: string;
+    readonly agentCommandPath?: string;
     // NekoDrift personalisation
     readonly userName?: string;
     readonly fixedMessage?: string;
@@ -387,7 +387,7 @@ function normalizePreferences(value: Partial<NekoDriftStateV1["preferences"]>): 
     onboardingCompleted: normalizeOnboardingCompleted(value),
     claudeCommandPath: normalizeCommandPath(value.claudeCommandPath),
     nodeCommandPath: normalizeCommandPath(value.nodeCommandPath),
-    opencodeCommandPath: normalizeCommandPath(value.opencodeCommandPath),
+    agentCommandPath: normalizeCommandPath(value.agentCommandPath),
     userName: normalizeShortText(value.userName, 64),
     fixedMessage: normalizeShortText(value.fixedMessage, 200),
     fixedMessageEnabled: typeof value.fixedMessageEnabled === "boolean" ? value.fixedMessageEnabled : false,
@@ -465,7 +465,7 @@ function createDefaultState(): NekoDriftStateV1 {
       onboardingCompleted: false,
       claudeCommandPath: undefined,
       nodeCommandPath: undefined,
-      opencodeCommandPath: undefined,
+      agentCommandPath: undefined,
       userName: undefined,
       fixedMessage: undefined,
       fixedMessageEnabled: false,

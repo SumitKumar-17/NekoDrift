@@ -4,7 +4,7 @@ Use this workflow when the user asks to configure the current project or a named
 
 ## Questions to confirm
 
-- Which agent/client should be configured? Common values: `claude`, `opencode`, `cursor`.
+- Which agent/client should be configured? Common values: `claude`, `agent`, `cursor`.
 - Which project path should be configured?
 - Which pet should be selected? If the user has not chosen one, list installed pets and use the catalog API to help them choose or install one.
 - Is it okay to update project-local config files?
@@ -48,19 +48,19 @@ Potential files:
 ~/.claude/nekodrift.md
 ```
 
-## OpenCode
+## Agent
 
 ```bash
-nekodrift configure --agent opencode --pet <pet-id> --cwd <project-path> --yes
+nekodrift configure --agent agent --pet <pet-id> --cwd <project-path> --yes
 ```
 
 Potential files:
 
 ```text
-<project>/.opencode/opencode.jsonc
-<project>/.opencode/nekodrift.md
-~/.config/opencode/opencode.json
-~/.config/opencode/opencode.jsonc
+<project>/.agent/agent.jsonc
+<project>/.agent/nekodrift.md
+~/.config/agent/agent.json
+~/.config/agent/agent.jsonc
 ```
 
 ## Cursor

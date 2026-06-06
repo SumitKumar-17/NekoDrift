@@ -1,51 +1,51 @@
-import { buildOpenCodeInstructionPath, buildOpenCodeMcpEntry, buildOpenCodePluginPreview, openCodeMcpServerName, type OpenCodePreviewOptions } from "./opencode-previews.js";
+import { buildAgentInstructionPath, buildAgentMcpEntry, buildAgentPluginPreview, agentMcpServerName, type AgentPreviewOptions } from "./agent-previews.js";
 
-export type OpenCodeEntryStatus = "not_installed" | "installed" | "needs_update" | "custom" | "conflict" | "error";
+export type AgentEntryStatus = "not_installed" | "installed" | "needs_update" | "custom" | "conflict" | "error";
 
-export interface OpenCodeStatusResult {
-  readonly status: OpenCodeEntryStatus;
+export interface AgentStatusResult {
+  readonly status: AgentEntryStatus;
   readonly message: string;
   readonly matches: readonly string[];
 }
 
-export function classifyOpenCodeMcpStatus(configs: readonly Record<string, unknown>[], expected: OpenCodePreviewOptions): OpenCodeStatusResult {
+export function classifyAgentMcpStatus(configs: readonly Record<string, unknown>[], expected: AgentPreviewOptions): AgentStatusResult {
   const entries = configs.flatMap((config, index) => {
     const mcp = isRecord(config.mcp) ? config.mcp : undefined;
-    const entry = mcp?.[openCodeMcpServerName];
+    const entry = mcp?.[agentMcpServerName];
     return entry === undefined ? [] : [{ source: String(index), entry }];
   });
-  if (entries.length === 0) return { status: "not_installed", message: "OpenCode NekoDrift MCP is not installed.", matches: [] };
-  const expectedEntry = buildOpenCodeMcpEntry(expected);
+  if (entries.length === 0) return { status: "not_installed", message: "NekoDrift Agent MCP is not installed.", matches: [] };
+  const expectedEntry = buildAgentMcpEntry(expected);
   const current = entries.filter(({ entry }) => isSameMcpEntry(entry, expectedEntry));
   const managed = entries.filter(({ entry }) => isManagedNekoDriftMcpEntry(entry, expectedEntry.command));
-  if (current.length === 1 && entries.length === 1) return { status: "installed", message: "OpenCode NekoDrift MCP is installed.", matches: [entries[0]?.source ?? "0"] };
-  if (current.length > 0 || managed.length > 0) return { status: entries.length > 1 ? "conflict" : "needs_update", message: "OpenCode NekoDrift MCP needs update.", matches: entries.map((entry) => entry.source) };
-  return { status: "custom", message: "OpenCode has a custom nekodrift MCP entry.", matches: entries.map((entry) => entry.source) };
+  if (current.length === 1 && entries.length === 1) return { status: "installed", message: "NekoDrift Agent MCP is installed.", matches: [entries[0]?.source ?? "0"] };
+  if (current.length > 0 || managed.length > 0) return { status: entries.length > 1 ? "conflict" : "needs_update", message: "NekoDrift Agent MCP needs update.", matches: entries.map((entry) => entry.source) };
+  return { status: "custom", message: "Agent has a custom nekodrift MCP entry.", matches: entries.map((entry) => entry.source) };
 }
 
-export function classifyOpenCodeInstructionsStatus(configs: readonly Record<string, unknown>[], scope: "project" | "global", configDir?: string, instructionFiles: Record<string, string> = {}): OpenCodeStatusResult {
-  const expected = buildOpenCodeInstructionPath(scope, configDir);
+export function classifyAgentInstructionsStatus(configs: readonly Record<string, unknown>[], scope: "project" | "global", configDir?: string, instructionFiles: Record<string, string> = {}): AgentStatusResult {
+  const expected = buildAgentInstructionPath(scope, configDir);
   const allEntries = configs.flatMap((config, index) => Array.isArray(config.instructions) ? config.instructions.filter((entry): entry is string => typeof entry === "string" && isNekoDriftLikeInstruction(entry)).map((entry) => ({ source: String(index), entry })) : []);
   const managedEntries = allEntries.filter(({ entry }) => entry === expected);
   const customEntries = allEntries.filter(({ entry }) => entry !== expected);
-  if (allEntries.length === 0) return { status: "not_installed", message: "OpenCode NekoDrift instructions are not installed.", matches: [] };
-  if (managedEntries.length > 1 || (managedEntries.length > 0 && customEntries.length > 0)) return { status: "conflict", message: "OpenCode has conflicting NekoDrift instruction entries.", matches: allEntries.map((entry) => entry.source) };
-  if (managedEntries.length === 1 && hasManagedInstructionBlock(instructionFiles[expected])) return { status: "installed", message: "OpenCode NekoDrift instructions are installed.", matches: managedEntries.map((entry) => entry.source) };
-  if (managedEntries.length === 1) return { status: "needs_update", message: "OpenCode NekoDrift instruction file needs managed block.", matches: managedEntries.map((entry) => entry.source) };
-  return { status: "custom", message: "OpenCode has custom NekoDrift-like instruction entries.", matches: customEntries.map((entry) => entry.source) };
+  if (allEntries.length === 0) return { status: "not_installed", message: "NekoDrift Agent instructions are not installed.", matches: [] };
+  if (managedEntries.length > 1 || (managedEntries.length > 0 && customEntries.length > 0)) return { status: "conflict", message: "Agent has conflicting NekoDrift instruction entries.", matches: allEntries.map((entry) => entry.source) };
+  if (managedEntries.length === 1 && hasManagedInstructionBlock(instructionFiles[expected])) return { status: "installed", message: "NekoDrift Agent instructions are installed.", matches: managedEntries.map((entry) => entry.source) };
+  if (managedEntries.length === 1) return { status: "needs_update", message: "NekoDrift Agent instruction file needs managed block.", matches: managedEntries.map((entry) => entry.source) };
+  return { status: "custom", message: "Agent has custom NekoDrift-like instruction entries.", matches: customEntries.map((entry) => entry.source) };
 }
 
-export function classifyOpenCodePluginStatus(configs: readonly Record<string, unknown>[], petId?: string, packageVersion?: string): OpenCodeStatusResult {
-  const expected = buildOpenCodePluginPreview(petId, packageVersion);
+export function classifyAgentPluginStatus(configs: readonly Record<string, unknown>[], petId?: string, packageVersion?: string): AgentStatusResult {
+  const expected = buildAgentPluginPreview(petId, packageVersion);
   const pluginEntries = configs.flatMap((config, index) => Array.isArray(config.plugin) ? config.plugin.map((entry) => ({ source: String(index), entry })) : []);
   const current = pluginEntries.filter(({ entry }) => isExpectedPlugin(entry, expected));
   const recognizable = pluginEntries.filter(({ entry }) => isManagedNekoDriftPluginEntry(entry));
   const custom = pluginEntries.filter(({ entry }) => !isManagedNekoDriftPluginEntry(entry) && isNekoDriftLikePluginEntry(entry));
-  if (current.length === 1 && recognizable.length === 1 && custom.length === 0) return { status: "installed", message: "OpenCode NekoDrift plugin is installed.", matches: current.map((entry) => entry.source) };
-  if (recognizable.length > 0 && custom.length > 0) return { status: "conflict", message: "OpenCode has conflicting NekoDrift plugin entries.", matches: [...recognizable, ...custom].map((entry) => entry.source) };
-  if (recognizable.length > 0) return { status: recognizable.length > 1 ? "conflict" : "needs_update", message: "OpenCode NekoDrift plugin needs update.", matches: recognizable.map((entry) => entry.source) };
-  if (custom.length > 0) return { status: "custom", message: "OpenCode has custom NekoDrift-like plugin entries.", matches: custom.map((entry) => entry.source) };
-  return { status: "not_installed", message: "OpenCode NekoDrift plugin is not installed.", matches: [] };
+  if (current.length === 1 && recognizable.length === 1 && custom.length === 0) return { status: "installed", message: "NekoDrift Agent plugin is installed.", matches: current.map((entry) => entry.source) };
+  if (recognizable.length > 0 && custom.length > 0) return { status: "conflict", message: "Agent has conflicting NekoDrift plugin entries.", matches: [...recognizable, ...custom].map((entry) => entry.source) };
+  if (recognizable.length > 0) return { status: recognizable.length > 1 ? "conflict" : "needs_update", message: "NekoDrift Agent plugin needs update.", matches: recognizable.map((entry) => entry.source) };
+  if (custom.length > 0) return { status: "custom", message: "Agent has custom NekoDrift-like plugin entries.", matches: custom.map((entry) => entry.source) };
+  return { status: "not_installed", message: "NekoDrift Agent plugin is not installed.", matches: [] };
 }
 
 export function isManagedNekoDriftMcpEntry(value: unknown, expectedCommand?: readonly string[]): boolean {
@@ -94,8 +94,8 @@ function isExpectedPlugin(value: unknown, expected: string | readonly [string, {
 }
 
 export function isManagedNekoDriftPluginEntry(value: unknown): boolean {
-  if (typeof value === "string") return /^@neko-drift\/opencode(?:@[^/]+)?$/.test(value);
-  return Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && /^@neko-drift\/opencode(?:@[^/]+)?$/.test(value[0]) && isPetPluginOptions(value[1]);
+  if (typeof value === "string") return /^@neko-drift/agent(?:@[^/]+)?$/.test(value);
+  return Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && /^@neko-drift/agent(?:@[^/]+)?$/.test(value[0]) && isPetPluginOptions(value[1]);
 }
 
 export function isNekoDriftLikePluginEntry(value: unknown): boolean {
@@ -135,7 +135,7 @@ function isSamePluginOptions(value: unknown, expected: { readonly pet?: string }
 }
 
 function isNekoDriftLikeInstruction(value: string): boolean {
-  return /nekodrift\.md$/i.test(value) || /@neko-drift\/opencode/i.test(value);
+  return /nekodrift\.md$/i.test(value) || /@neko-drift\/(agent|opencode)/i.test(value);
 }
 
 function hasManagedInstructionBlock(value: string | undefined): boolean {

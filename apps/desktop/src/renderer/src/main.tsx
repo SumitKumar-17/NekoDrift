@@ -5,7 +5,7 @@ import nekoDriftLogoUrl from "../../../assets/nekodrift.webp";
 import defaultThumbUrl from "../../../assets/default-pet-thumbnail.png";
 
 import claudeLogoUrl from "../../../assets/integrations/claude.svg";
-import opencodeLogoUrl from "../../../assets/integrations/opencode.svg";
+import agentLogoUrl from "../../../assets/integrations/agent.svg";
 import cursorLogoUrl from "../../../assets/integrations/cursor.svg";
 import piLogoUrl from "../../../assets/integrations/pi.svg";
 import vscodeLogoUrl from "../../../assets/integrations/vscode.svg";
@@ -83,18 +83,18 @@ type ControlCenterApi = {
 };
 
 
-type AgentSetupAction = "configure" | "replace" | "remove" | "install-memory" | "doctor-hooks" | "install-hooks" | "uninstall-hooks" | "opencode-install" | "opencode-remove" | "cursor-install" | "cursor-replace" | "cursor-remove";
+type AgentSetupAction = "configure" | "replace" | "remove" | "install-memory" | "doctor-hooks" | "install-hooks" | "uninstall-hooks" | "agent-install" | "agent-remove" | "cursor-install" | "cursor-replace" | "cursor-remove";
 type AgentSetupPetOption = { id: string; displayName: string; default: boolean };
 type ClaudeCodeStatus = { state: "detected" | "not_detected" | "configured" | "needs_setup" | "error"; label: string; details: string; claudeCommand?: string; version?: string; mcpListWorks: boolean; openPetsEntry: { present: boolean; verified: boolean; matchesExpected: boolean }; canConfigure: boolean; canReplace: boolean; canRemove: boolean };
 type ClaudeHookDoctorResult = { status: "installed" | "needs_setup" | "error" | "custom" | "conflict"; settingsPath: string; exists: boolean; valid: boolean; message: string; preview: Record<string, unknown>; asyncSupported: boolean; backupPath?: string };
 type ClaudeNekoDriftMemoryStatus = { state: "installed" | "needs_setup" | "error"; label: string; details: string; claudeMdPath: string; openPetsMemoryPath: string; canInstall: boolean };
-type OpenCodeSetupStatus = { state: "configured" | "needs_setup" | "not_detected" | "error"; label: string; details: string; configDir: string; canInstall: boolean; canRemove: boolean };
-type OpenCodeSetupPreview = { global: true; configDir: string; configPath: string; cleanupConfigPaths: string[]; mcpCommand: string[]; plugin: unknown[] | string; instructionPath: string; configPreview: Record<string, unknown> };
+type AgentSetupStatus = { state: "configured" | "needs_setup" | "not_detected" | "error"; label: string; details: string; configDir: string; canInstall: boolean; canRemove: boolean };
+type AgentSetupPreview = { global: true; configDir: string; configPath: string; cleanupConfigPaths: string[]; mcpCommand: string[]; plugin: unknown[] | string; instructionPath: string; configPreview: Record<string, unknown> };
 type CursorSetupStatus = { state: "configured" | "needs_setup" | "not_detected" | "error" | "conflict" | "needs_update"; label: string; details: string; configPath: string; canInstall: boolean; canReplace: boolean; canRemove: boolean };
 type CursorSetupPreview = { global: true; configPath: string; mcpEntry: Record<string, unknown>; rulesPath: string; rulesContent: string; commandMode: "published" | "local" | "bundled" };
-type AgentSetupCommandPaths = { claude: string; node: string; opencode: string };
+type AgentSetupCommandPaths = { claude: string; node: string; agent: string };
 type AgentSetupActionResult = { ok: boolean; action: AgentSetupAction; message: string; changed: boolean };
-type AgentSetupSnapshot = { selectedPetId?: string; commandMode: "published" | "local" | "bundled"; localDevAvailable: boolean; petOptions: AgentSetupPetOption[]; preview: { displayCommand: string; mcpJson: Record<string, unknown> }; status: ClaudeCodeStatus; hookStatus: ClaudeHookDoctorResult; memoryStatus: ClaudeNekoDriftMemoryStatus; opencodeStatus: OpenCodeSetupStatus; opencodePreview: OpenCodeSetupPreview; cursorStatus: CursorSetupStatus; cursorPreview: CursorSetupPreview; commandPaths: AgentSetupCommandPaths; busy: boolean; lastAction?: AgentSetupActionResult };
+type AgentSetupSnapshot = { selectedPetId?: string; commandMode: "published" | "local" | "bundled"; localDevAvailable: boolean; petOptions: AgentSetupPetOption[]; preview: { displayCommand: string; mcpJson: Record<string, unknown> }; status: ClaudeCodeStatus; hookStatus: ClaudeHookDoctorResult; memoryStatus: ClaudeNekoDriftMemoryStatus; agentStatus: AgentSetupStatus; agentPreview: AgentSetupPreview; cursorStatus: CursorSetupStatus; cursorPreview: CursorSetupPreview; commandPaths: AgentSetupCommandPaths; busy: boolean; lastAction?: AgentSetupActionResult };
 type StatusTone = keyof typeof statusPillToneClass;
 
 const api = (window as unknown as { nekoDriftControlCenter: ControlCenterApi }).nekoDriftControlCenter;
@@ -1433,7 +1433,7 @@ function PathField({ label, value, placeholder, onSave, disabled }: { label: str
 function IntegrationIcon({ id }: { id: string }) {
   const logos: Record<string, string> = {
     claude: claudeLogoUrl,
-    opencode: opencodeLogoUrl,
+    agent: agentLogoUrl,
     cursor: cursorLogoUrl,
     pi: piLogoUrl,
     vscode: vscodeLogoUrl,
@@ -1452,7 +1452,7 @@ function claudeStatusTone(state: ClaudeCodeStatus["state"]): StatusTone {
   return "slate";
 }
 
-function opencodeStatusTone(state: OpenCodeSetupStatus["state"]): StatusTone {
+function agentStatusTone(state: AgentSetupStatus["state"]): StatusTone {
   if (state === "configured") return "green";
   if (state === "error") return "red";
   if (state === "needs_setup") return "blue";
@@ -1543,7 +1543,7 @@ function IntegrationsView() {
 
   const integrations = [
     { id: "claude", name: "Claude Code", icon: "claude", status: snapshot.status.label, tone: claudeStatusTone(snapshot.status.state), description: "Connect Claude Code to your NekoDrift companion." },
-    { id: "opencode", name: "OpenCode", icon: "opencode", status: snapshot.opencodeStatus.label, tone: opencodeStatusTone(snapshot.opencodeStatus.state), description: "Connect OpenCode globally to your NekoDrift companion." },
+    { id: "agent", name: "Agent", icon: "agent", status: snapshot.agentStatus.label, tone: agentStatusTone(snapshot.agentStatus.state), description: "Connect Agent globally to your NekoDrift companion." },
     { id: "cursor", name: "Cursor", icon: "cursor", status: snapshot.cursorStatus.label, tone: cursorStatusTone(snapshot.cursorStatus.state), description: "Connect Cursor to your NekoDrift companion via global MCP config." },
     { id: "pi", name: "Pi", icon: "pi", status: "Manual", tone: "blue" satisfies StatusTone, description: "Connect Pi coding-agent activity through the NekoDrift Pi extension package." },
   ] as const;
@@ -1579,7 +1579,7 @@ function IntegrationsView() {
             <div className="plugin-card-footer">
               <div className="flex gap-2 w-full">
                 {item.id === "claude" && snapshot.status.canConfigure && <Button variant="primary" size="compact" icon={<InstallIcon />} disabled={isBusy} onClick={() => run("Installing", "configure")}>Install</Button>}
-                {item.id === "opencode" && snapshot.opencodeStatus.canInstall && <Button variant="primary" size="compact" icon={<InstallIcon />} disabled={isBusy} onClick={() => run("Installing", "opencode-install")}>Install</Button>}
+                {item.id === "agent" && snapshot.agentStatus.canInstall && <Button variant="primary" size="compact" icon={<InstallIcon />} disabled={isBusy} onClick={() => run("Installing", "agent-install")}>Install</Button>}
                 {item.id === "cursor" && snapshot.cursorStatus.canInstall && <Button variant="primary" size="compact" icon={<InstallIcon />} disabled={isBusy} onClick={() => run("Installing", "cursor-install")}>Install</Button>}
                 <Button variant="secondary" size="compact" icon={<ConfigureIcon />} fullWidth={item.id === "pi"} onClick={() => setSelectedId(item.id)}>{item.id === "pi" ? "View Setup" : "Configure"}</Button>
               </div>
@@ -1712,16 +1712,16 @@ function IntegrationsView() {
                 </>
               )}
 
-              {selectedId === "opencode" && (
+              {selectedId === "agent" && (
                 <>
                   <section className="plugin-section">
                     <div className="plugin-section-title"><small>Connection</small><strong>Global Setup</strong></div>
                     <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/50 border border-blue-100/50">
                       <div className="flex flex-col">
-                        <strong className="text-sm text-navy">{snapshot.opencodeStatus.label}</strong>
-                        <small className="text-xs text-slatecopy">{snapshot.opencodeStatus.details}</small>
+                        <strong className="text-sm text-navy">{snapshot.agentStatus.label}</strong>
+                        <small className="text-xs text-slatecopy">{snapshot.agentStatus.details}</small>
                       </div>
-                      <StatusPill tone={opencodeStatusTone(snapshot.opencodeStatus.state)}>{snapshot.opencodeStatus.state}</StatusPill>
+                      <StatusPill tone={agentStatusTone(snapshot.agentStatus.state)}>{snapshot.agentStatus.state}</StatusPill>
                     </div>
                     <div className="mt-2">
                       <label className="text-xs font-bold text-slatecopy uppercase tracking-wider mb-1 block">Pet Routing</label>
@@ -1740,7 +1740,7 @@ function IntegrationsView() {
                   <section className="plugin-section">
                     <div className="plugin-section-title"><small>Configuration</small><strong>Command Paths</strong></div>
                     <div className="flex flex-col gap-3">
-                      <PathField label="OpenCode Command" value={snapshot.commandPaths.opencode} placeholder="opencode" onSave={(v) => updatePath("opencode", v)} disabled={isBusy} />
+                      <PathField label="Agent Command" value={snapshot.commandPaths.agent} placeholder="agent" onSave={(v) => updatePath("agent", v)} disabled={isBusy} />
                       <PathField label="Node.js Command" value={snapshot.commandPaths.node} placeholder="node" onSave={(v) => updatePath("node", v)} disabled={isBusy} />
                     </div>
                   </section>
@@ -1748,8 +1748,8 @@ function IntegrationsView() {
                   <section className="plugin-section">
                     <div className="plugin-section-title"><small>Actions</small><strong>Management</strong></div>
                     <div className="grid grid-cols-2 gap-2">
-                      {snapshot.opencodeStatus.canInstall && <Button variant="primary" icon={<InstallIcon />} disabled={isBusy} onClick={() => run("Installing", "opencode-install")}>Install Global</Button>}
-                      {snapshot.opencodeStatus.canRemove && <Button variant="danger" icon={<RemoveIcon />} disabled={isBusy} onClick={() => run("Removing", "opencode-remove")}>Remove Global</Button>}
+                      {snapshot.agentStatus.canInstall && <Button variant="primary" icon={<InstallIcon />} disabled={isBusy} onClick={() => run("Installing", "agent-install")}>Install Global</Button>}
+                      {snapshot.agentStatus.canRemove && <Button variant="danger" icon={<RemoveIcon />} disabled={isBusy} onClick={() => run("Removing", "agent-remove")}>Remove Global</Button>}
                       <Button variant="secondary" icon={<RefreshIcon />} disabled={isBusy} onClick={() => void load()}>Refresh Status</Button>
                     </div>
                   </section>
@@ -1760,7 +1760,7 @@ function IntegrationsView() {
                       <span className="text-brand group-open:rotate-180 transition-transform"><NextIcon /></span>
                     </summary>
                     <pre className="mt-3 p-3 rounded-xl bg-navy/5 text-[10px] font-mono overflow-x-auto border border-navy/5">
-                      {JSON.stringify(snapshot.opencodePreview.configPreview, null, 2)}
+                      {JSON.stringify(snapshot.agentPreview.configPreview, null, 2)}
                     </pre>
                   </details>
                 </>

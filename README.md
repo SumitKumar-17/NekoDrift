@@ -37,7 +37,7 @@ If you also want coding-agent integration, install the NekoDrift Agent Skill wit
 npx skills add alvinunreal/nekodrift --skill nekodrift
 ```
 
-Then open Claude Code, OpenCode, Codex, or another skill-aware agent and say:
+Then open Claude Code, Cursor, Codex, or another skill-aware agent and say:
 
 ```text
 Use the NekoDrift skill. Install NekoDrift for me, connect this agent, and verify the integration works.
@@ -53,7 +53,6 @@ Useful prompts:
 
 ```text
 Use the NekoDrift skill. Configure this project for Claude Code with a pet.
-Use the NekoDrift skill. Configure this project for OpenCode with a pet.
 Use the NekoDrift skill. Debug why nekodrift_status is unavailable.
 ```
 
@@ -71,7 +70,7 @@ NekoDrift is a tray-first desktop companion app. A pet appears on your desktop, 
 
 - **Desktop companion** - a small pet that idles, reacts, and gives NekoDrift a friendly presence even before developer tools are configured.
 - **Bundled abilities** - first-party plugins can add ambient check-ins, break nudges, playful pet actions, focus timers, safe little walks, and optional developer notifications.
-- **Developer integrations** - advanced setup for Claude Code, OpenCode, Cursor, Pi, and MCP-capable tools when you want coding activity to drive the pet.
+- **Developer integrations** - advanced setup for Claude Code, Cursor, Pi, and MCP-capable tools when you want coding activity to drive the pet.
 - **MCP ready** - any MCP-capable agent can send short safe speech bubbles and reactions through the NekoDrift MCP server.
 - **Pet-pack friendly** - loads installed animated pet packs and can route a selected agent/project to its own pet window.
 - **Privacy-conscious by design** - automatic hook speech is static and local; prompts, code, logs, command output, URLs, paths, and secrets are not shown in bubbles.
@@ -113,7 +112,7 @@ open /Applications/NekoDrift.app
 Use the desktop **Integrations** screen for global setup when available:
 
 - **Claude Code** - installs NekoDrift MCP, Claude memory instructions, and optional Claude hooks.
-- **OpenCode** - installs NekoDrift MCP, an OpenCode instruction file, and the `@neko-drift/opencode` plugin.
+- **Agent** - installs NekoDrift MCP, a managed instruction file, and the `@neko-drift/agent` plugin.
 
 <p align="center">
   <img src="assets/integrations.png" alt="NekoDrift desktop integrations screen" width="100%" />
@@ -123,12 +122,12 @@ For project-local setup, run the CLI from the project you want to configure:
 
 ```bash
 npx -y @neko-drift/cli@latest configure --agent claude --pet <petId>
-npx -y @neko-drift/cli@latest configure --agent opencode --pet <petId>
+npx -y @neko-drift/cli@latest configure --agent agent --pet <petId>
 ```
 
 If you prefer a permanent `nekodrift` shell command, install the CLI once with `npm install -g @neko-drift/cli` and replace `npx -y @neko-drift/cli@latest` with `nekodrift`.
 
-Project-local setup can create project files such as `.claude/settings.local.json` or `.opencode/opencode.jsonc`. Review them before committing because they may include the selected pet id.
+Project-local setup can create project files such as `.claude/settings.local.json` or agent config files. Review them before committing because they may include the selected pet id.
 
 ## Advanced: agent integrations
 
@@ -161,22 +160,20 @@ claude mcp add --scope user nekodrift -- npx -y @neko-drift/mcp@latest --pet <pe
 
 See [`docs/claude-integration.md`](docs/claude-integration.md) for the full file layout, hook mapping, project-local behavior, and safety rules.
 
-### OpenCode
+### Generic agent
 
-OpenCode integration supports:
+Generic agent integration supports:
 
 - An MCP entry using `@neko-drift/cli mcp`.
 - A managed `nekodrift.md` instruction file.
-- The `@neko-drift/opencode` plugin for automatic reactions.
-- Global desktop setup and project-local `.opencode` setup.
+- The `@neko-drift/agent` plugin for automatic reactions.
+- Global desktop setup and project-local config.
 
 Project-local setup:
 
 ```bash
-npx -y @neko-drift/cli@latest configure --agent opencode --pet <petId>
+npx -y @neko-drift/cli@latest configure --agent agent --pet <petId>
 ```
-
-See [`docs/opencode.md`](docs/opencode.md) for global config selection, plugin behavior, project-local setup, and safety rules.
 
 ### Generic MCP clients
 
@@ -219,8 +216,8 @@ Available MCP tools:
 ## How it works
 
 ```text
-Claude Code / OpenCode / Pi / MCP client
-  -> @neko-drift/mcp, @neko-drift/cli mcp, @neko-drift/claude hook, @neko-drift/opencode plugin, or @neko-drift/pi extension
+Claude Code / Cursor / Pi / MCP client
+  -> @neko-drift/mcp, @neko-drift/cli mcp, @neko-drift/claude hook, @neko-drift/agent plugin, or @neko-drift/pi extension
   -> @neko-drift/client
   -> NekoDrift desktop local IPC discovery file
   -> NekoDrift desktop IPC socket/pipe
@@ -316,7 +313,7 @@ apps/desktop              Electron desktop app
 packages/client           @neko-drift/client, local IPC client
 packages/mcp              @neko-drift/mcp, MCP stdio server
 packages/claude           @neko-drift/claude, Claude command and hook helpers
-packages/opencode         @neko-drift/opencode, OpenCode config and plugin integration
+packages/agent            @neko-drift/agent, agent config and plugin integration
 packages/pi               @neko-drift/pi, Pi extension package
 packages/agent-events     Shared safe agent event speech helpers
 packages/cli              @neko-drift/cli, user-run CLI and MCP/hook entrypoints
@@ -327,7 +324,7 @@ docs/                     Documentation
 ## Documentation
 
 - [`docs/claude-integration.md`](docs/claude-integration.md) - Claude Code setup, MCP, memory, hooks, and safety.
-- [`docs/opencode.md`](docs/opencode.md) - OpenCode global/project setup, plugin behavior, and safety.
+- [`docs/agent.md`](docs/agent.md) - Agent global/project setup, plugin behavior, and safety.
 - [`docs/wsl-ipc.md`](docs/wsl-ipc.md) - Windows desktop + WSL MCP transport setup.
 - [`docs/testing.md`](docs/testing.md) - test/check strategy.
 - [`docs/release.md`](docs/release.md) - desktop release process.

@@ -22,7 +22,7 @@ Container for deployable application packages selected by the pnpm workspace `ap
 
 ## Integration Points
 
-- **Workspace packages**: consumes `@neko-drift/agent-events`, `@neko-drift/claude`, `@neko-drift/cli`, `@neko-drift/cursor`, `@neko-drift/mcp`, `@neko-drift/opencode`, and IPC/client-facing shared APIs.
+- **Workspace packages**: consumes `@neko-drift/agent-events`, `@neko-drift/claude`, `@neko-drift/cli`, `@neko-drift/cursor`, `@neko-drift/mcp`, `@neko-drift/agent`, and IPC/client-facing shared APIs.
 - **Desktop submodules**: `apps/desktop/src/` provides lifecycle, state, tray/windows, setup integrations, pet installation, local IPC, and plugin runtime services.
 - **External services**: GitHub Releases API for update checks, `nekodrift.app` for catalog data, and `zip.nekodrift.app` for pet downloads.
-- **System surfaces**: Claude Code CLI, OpenCode CLI, OS tray/dock, renderer windows, and filesystem locations such as `userData`, `~/.codex`, and `~/.claude`.
+- **System surfaces**: Claude Code CLI, Agent CLI, OS tray/dock, renderer windows, and filesystem locations such as `userData`, `~/.codex`, and `~/.claude`.

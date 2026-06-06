@@ -75,7 +75,7 @@ net.createConnection({ host, port }) → Windows desktop app
 - `@neko-drift/cli` - CLI commands
 - `@neko-drift/mcp` - MCP tool implementations
 - `@neko-drift/claude` - Hook execution
-- `@neko-drift/opencode` - Plugin runtime
+- `@neko-drift/agent` - Plugin runtime
 - `@neko-drift/install-pet` - Direct installation fallback
 
 **Desktop App**: Communicates with NekoDrift desktop app via:

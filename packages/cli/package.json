@@ -40,6 +40,6 @@
     "@neko-drift/claude": "workspace:*",
     "@neko-drift/cursor": "workspace:*",
     "@neko-drift/mcp": "workspace:*",
-    "@neko-drift/opencode": "workspace:*"
+    "@neko-drift/agent": "workspace:*"
   }
 }

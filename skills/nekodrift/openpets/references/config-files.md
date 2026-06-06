@@ -17,23 +17,23 @@ Project command:
 nekodrift configure --agent claude --pet <pet-id> --cwd <project-path> --yes
 ```
 
-## OpenCode
+## Agent
 
 ```text
-~/.config/opencode/opencode.json
-~/.config/opencode/opencode.jsonc
-<project>/.opencode/opencode.jsonc
-<project>/.opencode/nekodrift.md
+~/.config/agent/agent.json
+~/.config/agent/agent.jsonc
+<project>/.agent/agent.jsonc
+<project>/.agent/nekodrift.md
 ```
 
 Project command:
 
 ```bash
-nekodrift configure --agent opencode --pet <pet-id> --cwd <project-path> --yes
+nekodrift configure --agent agent --pet <pet-id> --cwd <project-path> --yes
 ```
 
 If the CLI is not installed globally, replace `nekodrift` with `npx -y @neko-drift/cli@latest`.
 
 ## Restart required
 
-After MCP/plugin/hook/config changes, ask the user to restart Claude Code, OpenCode, Cursor, Codex, or their MCP client.
+After MCP/plugin/hook/config changes, ask the user to restart Claude Code, Agent, Cursor, Codex, or their MCP client.

@@ -5,17 +5,17 @@ import { homedir } from "node:os";
 
 import { applyEdits, modify, parse, type ParseError } from "jsonc-parser";
 
-export interface OpenCodeConfigPaths {
+export interface AgentConfigPaths {
   readonly candidates: readonly string[];
   readonly defaultCreatePath: string;
 }
 
-export interface ParsedOpenCodeConfig {
+export interface ParsedAgentConfig {
   readonly ok: true;
   readonly value: Record<string, unknown>;
 }
 
-export interface OpenCodeConfigError {
+export interface AgentConfigError {
   readonly ok: false;
   readonly message: string;
 }
@@ -28,7 +28,7 @@ export interface PlannedWrite {
   readonly content: string;
 }
 
-export interface OpenCodeExecutableDetection {
+export interface AgentExecutableDetection {
   readonly command: "opencode" | "opencode.cmd";
   readonly platform: NodeJS.Platform | string;
   readonly available: boolean;
@@ -36,9 +36,9 @@ export interface OpenCodeExecutableDetection {
   readonly error?: string;
 }
 
-export const maxOpenCodeConfigBytes = 1024 * 1024;
+export const maxAgentConfigBytes = 1024 * 1024;
 
-export function getProjectOpenCodeConfigPaths(projectDir: string): OpenCodeConfigPaths {
+export function getProjectAgentConfigPaths(projectDir: string): AgentConfigPaths {
   const root = assertSafeProjectRoot(projectDir);
   return {
     candidates: [join(root, "opencode.json"), join(root, "opencode.jsonc"), join(root, ".opencode", "opencode.json"), join(root, ".opencode", "opencode.jsonc")],
@@ -46,26 +46,26 @@ export function getProjectOpenCodeConfigPaths(projectDir: string): OpenCodeConfi
   };
 }
 
-export function selectProjectOpenCodeConfigPath(projectDir: string): string {
-  const paths = getProjectOpenCodeConfigPaths(projectDir);
+export function selectProjectAgentConfigPath(projectDir: string): string {
+  const paths = getProjectAgentConfigPaths(projectDir);
   return paths.candidates.find((candidate) => existsSync(candidate)) ?? paths.defaultCreatePath;
 }
 
-export function getGlobalOpenCodeConfigDir(env: NodeJS.ProcessEnv = process.env, homeDir = homedir(), platform = process.platform): string {
-  if (env.OPENCODE_CONFIG_DIR) return env.OPENCODE_CONFIG_DIR;
+export function getGlobalAgentConfigDir(env: NodeJS.ProcessEnv = process.env, homeDir = homedir(), platform = process.platform): string {
+  if (env.AGENT_CONFIG_DIR) return env.AGENT_CONFIG_DIR;
   if (platform === "win32") return join(env.APPDATA || join(homeDir, "AppData", "Roaming"), "opencode");
   return join(env.XDG_CONFIG_HOME || join(homeDir, ".config"), "opencode");
 }
 
-export function getGlobalOpenCodeConfigPaths(env: NodeJS.ProcessEnv = process.env, homeDir = homedir(), platform = process.platform): OpenCodeConfigPaths {
-  const configDir = getGlobalOpenCodeConfigDir(env, homeDir, platform);
+export function getGlobalAgentConfigPaths(env: NodeJS.ProcessEnv = process.env, homeDir = homedir(), platform = process.platform): AgentConfigPaths {
+  const configDir = getGlobalAgentConfigDir(env, homeDir, platform);
   return {
     candidates: [join(configDir, "config.json"), join(configDir, "opencode.json"), join(configDir, "opencode.jsonc")],
     defaultCreatePath: join(configDir, "opencode.jsonc"),
   };
 }
 
-export function createOpenCodeExecutableDetection(input: Partial<OpenCodeExecutableDetection> & { readonly platform?: NodeJS.Platform | string } = {}): OpenCodeExecutableDetection {
+export function createAgentExecutableDetection(input: Partial<AgentExecutableDetection> & { readonly platform?: NodeJS.Platform | string } = {}): AgentExecutableDetection {
   const platform = input.platform ?? process.platform;
   return {
     command: input.command ?? (platform === "win32" ? "opencode.cmd" : "opencode"),
@@ -76,25 +76,25 @@ export function createOpenCodeExecutableDetection(input: Partial<OpenCodeExecuta
   };
 }
 
-export function readOpenCodeConfigFile(path: string): ParsedOpenCodeConfig | OpenCodeConfigError {
+export function readAgentConfigFile(path: string): ParsedAgentConfig | AgentConfigError {
   const safety = assertSafeExistingConfigFile(path);
   if (!safety.ok) return safety;
-  return parseOpenCodeConfig(readFileSync(path, "utf8"));
+  return parseAgentConfig(readFileSync(path, "utf8"));
 }
 
-export function parseOpenCodeConfig(text: string): ParsedOpenCodeConfig | OpenCodeConfigError {
-  if (Buffer.byteLength(text, "utf8") > maxOpenCodeConfigBytes) return { ok: false, message: "OpenCode config is too large." };
+export function parseAgentConfig(text: string): ParsedAgentConfig | AgentConfigError {
+  if (Buffer.byteLength(text, "utf8") > maxAgentConfigBytes) return { ok: false, message: "Agent config is too large." };
   const errors: ParseError[] = [];
   const parsed = parse(text || "{}", errors, { allowTrailingComma: true, disallowComments: false }) as unknown;
-  if (errors.length > 0) return { ok: false, message: "OpenCode config JSONC is invalid." };
-  if (!isRecord(parsed) || Array.isArray(parsed)) return { ok: false, message: "OpenCode config must be a JSON object." };
+  if (errors.length > 0) return { ok: false, message: "Agent config JSONC is invalid." };
+  if (!isRecord(parsed) || Array.isArray(parsed)) return { ok: false, message: "Agent config must be a JSON object." };
   const fields = validateKnownFieldTypes(parsed);
   if (!fields.ok) return fields;
   return { ok: true, value: parsed };
 }
 
-export function updateOpenCodeConfigText(text: string, updates: readonly { readonly path: readonly (string | number)[]; readonly value: unknown }[]): string | OpenCodeConfigError {
-  const parsed = parseOpenCodeConfig(text);
+export function updateAgentConfigText(text: string, updates: readonly { readonly path: readonly (string | number)[]; readonly value: unknown }[]): string | AgentConfigError {
+  const parsed = parseAgentConfig(text);
   if (!parsed.ok) return parsed;
   let next = text.trim() ? text : "{}\n";
   for (const update of updates) {
@@ -104,16 +104,16 @@ export function updateOpenCodeConfigText(text: string, updates: readonly { reado
   return next.endsWith("\n") ? next : `${next}\n`;
 }
 
-export function planOpenCodeConfigWrite(rootPath: string, targetPath: string, content: string): PlannedWrite | OpenCodeConfigError {
+export function planAgentConfigWrite(rootPath: string, targetPath: string, content: string): PlannedWrite | AgentConfigError {
   const root = assertSafeProjectRoot(rootPath);
   const rel = relative(root, targetPath);
-  if (rel.startsWith("..") || isAbsolute(rel)) return { ok: false, message: "OpenCode config target must stay inside the validated root." };
+  if (rel.startsWith("..") || isAbsolute(rel)) return { ok: false, message: "Agent config target must stay inside the validated root." };
   const parent = dirname(targetPath);
   const parentSafety = assertSafeParentDirectory(parent);
   if (!parentSafety.ok) return parentSafety;
   const existing = assertSafeExistingConfigFile(targetPath, true);
   if (!existing.ok) return existing;
-  const parsed = parseOpenCodeConfig(content);
+  const parsed = parseAgentConfig(content);
   if (!parsed.ok) return parsed;
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
   return {
@@ -128,17 +128,17 @@ export function planOpenCodeConfigWrite(rootPath: string, targetPath: string, co
 export function executePlannedWrite(plan: PlannedWrite): void {
   const root = assertSafeProjectRoot(plan.rootPath);
   const rel = relative(root, plan.targetPath);
-  if (rel.startsWith("..") || isAbsolute(rel)) throw new Error("OpenCode write target escaped validated root.");
+  if (rel.startsWith("..") || isAbsolute(rel)) throw new Error("Agent write target escaped validated root.");
   for (const path of [plan.backupPath, plan.tempPath].filter((value): value is string => typeof value === "string")) {
     const pathRel = relative(root, path);
-    if (pathRel.startsWith("..") || isAbsolute(pathRel)) throw new Error("OpenCode write support path escaped validated root.");
-    if (dirname(path) !== dirname(plan.targetPath)) throw new Error("OpenCode write support path must stay next to target.");
+    if (pathRel.startsWith("..") || isAbsolute(pathRel)) throw new Error("Agent write support path escaped validated root.");
+    if (dirname(path) !== dirname(plan.targetPath)) throw new Error("Agent write support path must stay next to target.");
   }
   const parentSafety = assertSafeParentDirectory(dirname(plan.targetPath));
   if (!parentSafety.ok) throw new Error(parentSafety.message);
   const targetSafety = assertSafeExistingConfigFile(plan.targetPath, true);
   if (!targetSafety.ok) throw new Error(targetSafety.message);
-  const parsed = parseOpenCodeConfig(plan.content);
+  const parsed = parseAgentConfig(plan.content);
   if (!parsed.ok) throw new Error(parsed.message);
   mkdirSync(dirname(plan.targetPath), { recursive: true, mode: 0o700 });
   if (plan.backupPath && existsSync(plan.targetPath)) {
@@ -160,34 +160,34 @@ export function executePlannedWrite(plan: PlannedWrite): void {
 }
 
 export function assertSafeProjectRoot(projectDir: string): string {
-  if (!isAbsolute(projectDir)) throw new Error("OpenCode project path must be absolute.");
-  if (!existsSync(projectDir)) throw new Error("OpenCode project path does not exist.");
+  if (!isAbsolute(projectDir)) throw new Error("Agent project path must be absolute.");
+  if (!existsSync(projectDir)) throw new Error("Agent project path does not exist.");
   const stat = lstatSync(projectDir);
-  if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("OpenCode project path must be a safe directory.");
+  if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Agent project path must be a safe directory.");
   return projectDir;
 }
 
-function assertSafeExistingConfigFile(path: string, allowMissing = false): OpenCodeConfigError | { readonly ok: true } {
-  if (!existsSync(path)) return allowMissing ? { ok: true } : { ok: false, message: "OpenCode config does not exist." };
+function assertSafeExistingConfigFile(path: string, allowMissing = false): AgentConfigError | { readonly ok: true } {
+  if (!existsSync(path)) return allowMissing ? { ok: true } : { ok: false, message: "Agent config does not exist." };
   const stat = lstatSync(path);
-  if (stat.isSymbolicLink() || !stat.isFile()) return { ok: false, message: "OpenCode config path must be a regular file." };
-  if (stat.size > maxOpenCodeConfigBytes) return { ok: false, message: "OpenCode config is too large." };
+  if (stat.isSymbolicLink() || !stat.isFile()) return { ok: false, message: "Agent config path must be a regular file." };
+  if (stat.size > maxAgentConfigBytes) return { ok: false, message: "Agent config is too large." };
   return { ok: true };
 }
 
-function assertSafeParentDirectory(path: string): OpenCodeConfigError | { readonly ok: true } {
+function assertSafeParentDirectory(path: string): AgentConfigError | { readonly ok: true } {
   const existing = nearestExistingParent(path);
   const rel = relative(existing, path);
-  if (rel.startsWith("..") || isAbsolute(rel)) return { ok: false, message: "OpenCode config parent escapes target directory." };
+  if (rel.startsWith("..") || isAbsolute(rel)) return { ok: false, message: "Agent config parent escapes target directory." };
   let current = existing;
   while (current !== dirname(current)) {
-    if (existsSync(current) && lstatSync(current).isSymbolicLink()) return { ok: false, message: "OpenCode config parent must not be a symlink." };
+    if (existsSync(current) && lstatSync(current).isSymbolicLink()) return { ok: false, message: "Agent config parent must not be a symlink." };
     if (current === path) break;
     current = dirname(current);
   }
   if (existsSync(path)) {
     const stat = lstatSync(path);
-    if (stat.isSymbolicLink() || !stat.isDirectory()) return { ok: false, message: "OpenCode config parent must be a safe directory." };
+    if (stat.isSymbolicLink() || !stat.isDirectory()) return { ok: false, message: "Agent config parent must be a safe directory." };
   }
   return { ok: true };
 }
@@ -199,11 +199,11 @@ function nearestExistingParent(path: string): string {
   return current;
 }
 
-function validateKnownFieldTypes(config: Record<string, unknown>): OpenCodeConfigError | { readonly ok: true } {
-  if (config.mcp !== undefined && !isRecord(config.mcp)) return { ok: false, message: "OpenCode config mcp field must be an object." };
-  if (config.instructions !== undefined && !Array.isArray(config.instructions)) return { ok: false, message: "OpenCode config instructions field must be an array." };
-  if (Array.isArray(config.instructions) && !config.instructions.every((entry) => typeof entry === "string")) return { ok: false, message: "OpenCode config instructions entries must be strings." };
-  if (config.plugin !== undefined && !Array.isArray(config.plugin)) return { ok: false, message: "OpenCode config plugin field must be an array." };
+function validateKnownFieldTypes(config: Record<string, unknown>): AgentConfigError | { readonly ok: true } {
+  if (config.mcp !== undefined && !isRecord(config.mcp)) return { ok: false, message: "Agent config mcp field must be an object." };
+  if (config.instructions !== undefined && !Array.isArray(config.instructions)) return { ok: false, message: "Agent config instructions field must be an array." };
+  if (Array.isArray(config.instructions) && !config.instructions.every((entry) => typeof entry === "string")) return { ok: false, message: "Agent config instructions entries must be strings." };
+  if (config.plugin !== undefined && !Array.isArray(config.plugin)) return { ok: false, message: "Agent config plugin field must be an array." };
   return { ok: true };
 }
 
@@ -213,7 +213,7 @@ function uniquePath(path: string): string {
     const candidate = `${path}.${index}`;
     if (!existsSync(candidate)) return candidate;
   }
-  throw new Error("Unable to allocate unique OpenCode temp path.");
+  throw new Error("Unable to allocate unique Agent temp path.");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

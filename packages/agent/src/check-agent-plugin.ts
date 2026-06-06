@@ -5,34 +5,34 @@ import { tmpdir } from "node:os";
 
 import type { NekoDriftClient, NekoDriftReaction } from "@neko-drift/client";
 
-import plugin, { openPetsOpenCodePluginId } from "./plugin.js";
-import { classifyOpenCodeBusEvent, classifyOpenCodeToolReaction, createNekoDriftOpenCodeHooks, getDefaultOpenCodeThrottlePath, shouldIgnoreNekoDriftTool } from "./opencode-plugin-runtime.js";
+import plugin, { nekoDriftAgentPluginId } from "./plugin.js";
+import { classifyAgentBusEvent, classifyAgentToolReaction, createNekoDriftAgentHooks, getDefaultAgentThrottlePath, shouldIgnoreNekoDriftTool } from "./agent-plugin-runtime.js";
 
-assert.equal(plugin.id, openPetsOpenCodePluginId);
+assert.equal(plugin.id, nekoDriftAgentPluginId);
 assert.equal(typeof plugin.server, "function");
-const packagePlugin = await import("@neko-drift/opencode/server");
-assert.equal(packagePlugin.default.id, openPetsOpenCodePluginId);
+const packagePlugin = await import("@neko-drift/agent/server");
+assert.equal(packagePlugin.default.id, nekoDriftAgentPluginId);
 assert.equal(typeof packagePlugin.default.server, "function");
 
-assert.equal(classifyOpenCodeToolReaction("edit", {}), "editing");
-assert.equal(classifyOpenCodeToolReaction("apply_patch", {}), "editing");
-assert.equal(classifyOpenCodeToolReaction("bash", { command: "pnpm test" }), "testing");
-assert.equal(classifyOpenCodeToolReaction("shell", { command: "ls" }), undefined);
-assert.equal(classifyOpenCodeToolReaction("read", {}), undefined);
+assert.equal(classifyAgentToolReaction("edit", {}), "editing");
+assert.equal(classifyAgentToolReaction("apply_patch", {}), "editing");
+assert.equal(classifyAgentToolReaction("bash", { command: "pnpm test" }), "testing");
+assert.equal(classifyAgentToolReaction("shell", { command: "ls" }), undefined);
+assert.equal(classifyAgentToolReaction("read", {}), undefined);
 assert.equal(shouldIgnoreNekoDriftTool("nekodrift_nekodrift_status"), true);
 assert.equal(shouldIgnoreNekoDriftTool("nekodrift_nekodrift_say"), true);
 assert.equal(shouldIgnoreNekoDriftTool("nekodrift_nekodrift_react"), true);
 assert.equal(shouldIgnoreNekoDriftTool("nekodrift_status"), true);
-assert.deepEqual(classifyOpenCodeBusEvent({ type: "permission.asked" }), { reaction: "waiting", speechCategory: "permission" });
-assert.equal(classifyOpenCodeBusEvent({ type: "permission.asked", properties: { permission: "nekodrift_nekodrift_say" } }), undefined);
-assert.equal(classifyOpenCodeBusEvent({ payload: { type: "permission.asked", properties: { patterns: ["nekodrift_nekodrift_react"] } } }), undefined);
-assert.deepEqual(classifyOpenCodeBusEvent({ type: "session.error" }), { reaction: "error", speechCategory: "error" });
-assert.deepEqual(classifyOpenCodeBusEvent({ type: "session.status", properties: { status: { type: "idle" } } }), { reaction: "success" });
-assert.ok(getDefaultOpenCodeThrottlePath().includes("opencode-hook-throttle.json"));
+assert.deepEqual(classifyAgentBusEvent({ type: "permission.asked" }), { reaction: "waiting", speechCategory: "permission" });
+assert.equal(classifyAgentBusEvent({ type: "permission.asked", properties: { permission: "nekodrift_nekodrift_say" } }), undefined);
+assert.equal(classifyAgentBusEvent({ payload: { type: "permission.asked", properties: { patterns: ["nekodrift_nekodrift_react"] } } }), undefined);
+assert.deepEqual(classifyAgentBusEvent({ type: "session.error" }), { reaction: "error", speechCategory: "error" });
+assert.deepEqual(classifyAgentBusEvent({ type: "session.status", properties: { status: { type: "idle" } } }), { reaction: "success" });
+assert.ok(getDefaultAgentThrottlePath().includes("opencode-hook-throttle.json"));
 
-assert.throws(() => createNekoDriftOpenCodeHooks({ pet: "bad/pet" }));
+assert.throws(() => createNekoDriftAgentHooks({ pet: "bad/pet" }));
 
-const dir = mkdtempSync(join(tmpdir(), "nekodrift-opencode-plugin-"));
+const dir = mkdtempSync(join(tmpdir(), "nekodrift-agent-plugin-"));
 try {
   const calls: Array<{ readonly kind: string; readonly value: string; readonly leaseId?: string; readonly requestedPetId?: string }> = [];
   let releaseBlockedReact: (() => void) | undefined;
@@ -58,7 +58,7 @@ try {
   };
 
   const scheduled: Array<() => Promise<void>> = [];
-  const hooks = createNekoDriftOpenCodeHooks({ pet: "fixer", clientFactory: () => client, schedule: (work) => { scheduled.push(work); }, throttlePath: join(dir, "opencode-hook-throttle.json"), now: () => 100_000, random: () => 0 });
+  const hooks = createNekoDriftAgentHooks({ pet: "fixer", clientFactory: () => client, schedule: (work) => { scheduled.push(work); }, throttlePath: join(dir, "opencode-hook-throttle.json"), now: () => 100_000, random: () => 0 });
   hooks["chat.message"]({}, { message: { text: "do not use this prompt" } });
   assert.equal(scheduled.length, 1);
   const thinkingWork = scheduled.shift();
@@ -103,12 +103,12 @@ try {
   assert.deepEqual(calls.at(-1), { kind: "react", value: "success", leaseId: "lease-fixer" });
 
   const errors: string[] = [];
-  const failingHooks = createNekoDriftOpenCodeHooks({ clientFactory: () => { throw new Error("api_key=secret /tmp/path"); }, schedule: (work) => { void work(); }, debug: true, debugLog: (message) => errors.push(message), throttlePath: join(dir, "fail-throttle.json"), now: () => 200_000 });
+  const failingHooks = createNekoDriftAgentHooks({ clientFactory: () => { throw new Error("api_key=secret /tmp/path"); }, schedule: (work) => { void work(); }, debug: true, debugLog: (message) => errors.push(message), throttlePath: join(dir, "fail-throttle.json"), now: () => 200_000 });
   assert.doesNotThrow(() => failingHooks.event({ event: { type: "session.error" } }));
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.match(errors.join("\n"), /<redacted>|<path>/);
 
-  const throwingSchedule = createNekoDriftOpenCodeHooks({ schedule: () => { throw new Error("schedule failed"); }, debug: true, debugLog: (message) => errors.push(message) });
+  const throwingSchedule = createNekoDriftAgentHooks({ schedule: () => { throw new Error("schedule failed"); }, debug: true, debugLog: (message) => errors.push(message) });
   assert.doesNotThrow(() => throwingSchedule.event({ event: { type: "session.error" } }));
 } finally {
   rmSync(dir, { recursive: true, force: true });
@@ -119,4 +119,4 @@ assert.equal(typeof loaded.event, "function");
 assert.equal(typeof loaded["chat.message"], "function");
 assert.equal(typeof loaded["tool.execute.before"], "function");
 
-console.error("OpenCode plugin validation passed.");
+console.error("Agent plugin validation passed.");

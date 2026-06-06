@@ -53,7 +53,7 @@
     "@neko-drift/cli": "workspace:*",
     "@neko-drift/cursor": "workspace:*",
     "@neko-drift/mcp": "workspace:*",
-    "@neko-drift/opencode": "workspace:*",
+    "@neko-drift/agent": "workspace:*",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "sharp": "^0.34.5",

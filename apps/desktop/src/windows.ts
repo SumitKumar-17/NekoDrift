@@ -372,7 +372,7 @@ export function installInternalUiHandlers(): void {
 
   ipcMain.handle("nekodrift:agent-setup-action", async (event, action: unknown, selectedPetId: unknown, commandMode: unknown) => {
     assertAllowedSender(event, ["control-center"]);
-    if (action !== "configure" && action !== "replace" && action !== "remove" && action !== "install-memory" && action !== "doctor-hooks" && action !== "install-hooks" && action !== "uninstall-hooks" && action !== "opencode-install" && action !== "opencode-remove" && action !== "cursor-install" && action !== "cursor-replace" && action !== "cursor-remove") {
+    if (action !== "configure" && action !== "replace" && action !== "remove" && action !== "install-memory" && action !== "doctor-hooks" && action !== "install-hooks" && action !== "uninstall-hooks" && action !== "agent-install" && action !== "agent-remove" && action !== "cursor-install" && action !== "cursor-replace" && action !== "cursor-remove") {
       throw new Error("Invalid agent setup action.");
     }
 

@@ -4,13 +4,13 @@ Main CLI tool for NekoDrift agent configuration and pet management.
 
 ## Responsibility
 
-Primary user-facing CLI for the NekoDrift ecosystem. Provides commands for: installing pets from gallery, configuring projects for Claude/OpenCode/Cursor agents, running MCP server wrapper, executing Claude hooks, and direct pet interaction (status, react, say).
+Primary user-facing CLI for the NekoDrift ecosystem. Provides commands for: installing pets from gallery, configuring projects for Claude/Agent/Cursor agents, running MCP server wrapper, executing Claude hooks, and direct pet interaction (status, react, say).
 
 ## Design/Patterns
 
 **Command Router**: `main()` dispatches to subcommands based on `process.argv[2]`:
 - `install <pet-id>` - Install pet via running app
-- `configure` - Interactive project setup for Claude, OpenCode, or Cursor
+- `configure` - Interactive project setup for Claude, Agent, or Cursor
 - `status` - Check NekoDrift desktop app connectivity and print JSON status
 - `pets` - List installed pets with flags (default, broken)
 - `react <reaction>` - Send reaction to desktop app
@@ -20,9 +20,9 @@ Primary user-facing CLI for the NekoDrift ecosystem. Provides commands for: inst
 
 **Configuration Flow** (`configureProject`):
 1. Resolve project directory (symlink/escape checks)
-2. Route to agent-specific handler (claude/opencode/cursor)
+2. Route to agent-specific handler (claude/agent/cursor)
 3. For Claude: Assert availability, list pets, build MCP config, write hooks
-4. For OpenCode: Prepare and write OpenCode config via `@neko-drift/opencode`
+4. For Agent: Prepare and write Agent config via `@neko-drift/agent`
 5. For Cursor: Configure MCP in `.cursor/mcp.json`, optional rules in `.cursor/rules/nekodrift.mdc`
 
 **Cursor Configuration**:
@@ -34,7 +34,7 @@ Primary user-facing CLI for the NekoDrift ecosystem. Provides commands for: inst
 
 **Safety Checks**:
 - Project path validation (no symlinks, must be directory)
-- `.claude`/`.cursor`/`.opencode` directory safety (no symlinks, path containment)
+- `.claude`/`.cursor`/`agent directory safety (no symlinks, path containment)
 - Settings file atomic writes (temp + rename pattern)
 - Shell argument quoting for command injection prevention
 
@@ -81,7 +81,7 @@ createNekoDriftClient().status() → Print JSON result
 - `@neko-drift/client` - Pet listing, installation, status, react, say
 - `@neko-drift/claude` - Hook management, MCP config
 - `@neko-drift/mcp` - MCP server spawning
-- `@neko-drift/opencode` - OpenCode project setup
+- `@neko-drift/agent` - Agent project setup
 - `@neko-drift/cursor` - Cursor project setup (MCP + rules)
 
 **External Commands**:

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC, CatSettings, EyeDir, PomodoroState, AiState } from '../shared/types';
+import { IPC, CatSettings, EyeDir, PomodoroState, AiState, SpriteInfo, SpriteType } from '../shared/types';
 
 contextBridge.exposeInMainWorld('nekodrift', {
   // Settings
@@ -70,4 +70,21 @@ contextBridge.exposeInMainWorld('nekodrift', {
 
   showContextMenu: () => ipcRenderer.send(IPC.SHOW_CONTEXT_MENU),
   toggleLock: () => ipcRenderer.send(IPC.TOGGLE_LOCK),
+
+  // ── Sprite management ────────────────────────────────────────
+  addSprite: (type: SpriteType): Promise<SpriteInfo> =>
+    ipcRenderer.invoke(IPC.SPRITE_ADD, type),
+  removeSprite: (id: string): Promise<boolean> =>
+    ipcRenderer.invoke(IPC.SPRITE_REMOVE, id),
+  listSprites: (): Promise<SpriteInfo[]> =>
+    ipcRenderer.invoke(IPC.SPRITE_LIST),
+  resizeSprite: (id: string, size: number): Promise<boolean> =>
+    ipcRenderer.invoke(IPC.SPRITE_RESIZE, id, size),
+
+  // ── Manager / windows ────────────────────────────────────────
+  openManager: () => ipcRenderer.send(IPC.OPEN_MANAGER),
+
+  // ── Pomodoro state query ─────────────────────────────────────
+  getPomoState: (): Promise<PomodoroState | null> =>
+    ipcRenderer.invoke(IPC.POMO_GET),
 });

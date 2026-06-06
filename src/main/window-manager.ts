@@ -117,13 +117,14 @@ export function createManagerWindow(): void {
   }
 
   managerWindow = new BrowserWindow({
-    width: 340,
-    height: 480,
-    minWidth: 280,
+    width: 800,
+    height: 560,
+    minWidth: 640,
+    minHeight: 440,
     resizable: true,
-    title: 'NekoDrift — Sprite Manager',
+    title: 'NekoDrift — Control Panel',
     show: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     ...(isMac ? { titleBarStyle: 'hiddenInset' } : {}),
     webPreferences: {
       preload: PRELOAD,

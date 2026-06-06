@@ -89,7 +89,18 @@ export function listSprites(): SpriteInfo[] {
     id: config.id,
     type: config.type,
     lockedPosition: config.lockedPosition,
+    size: config.size,
   }));
+}
+
+export function resizeSprite(id: string, size: number): boolean {
+  const entry = sprites.get(id);
+  if (!entry || entry.win.isDestroyed()) return false;
+  entry.config.size = Math.max(1, Math.min(4, Math.round(size)));
+  const catSize = 64 * entry.config.size;
+  entry.win.setSize(catSize + 80, catSize + 80);
+  entry.win.loadURL(spriteUrl(entry.config));
+  return true;
 }
 
 export function getSpriteWindow(id: string): BrowserWindow | null {

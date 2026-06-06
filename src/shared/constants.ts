@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: CatSettings = {
   reminderMinute: 0,
   claudeIntegration: true,
   customPixels: '0'.repeat(256),
+  dndEnabled: false,
 };
 
 // Named cat breed presets
@@ -47,12 +48,13 @@ export const CAT_GRID = 16;
 export const CAT_SCALE = 3;
 
 export const CAT_COLORS = {
-  orange: { body: '#e8894a', belly: '#f9c89b', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#c96a2a', eye: '#2d1b0e' },
-  gray:   { body: '#9eaabb', belly: '#d4dde8', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#7a8fa8', eye: '#2d1b0e' },
-  black:  { body: '#2c2c3e', belly: '#4a4a62', ear: '#c5b4e3', nose: '#f4a7b9', stripe: null,      eye: '#f5f5f5' },
-  white:  { body: '#f0ece8', belly: '#ffffff', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#ddd5cc', eye: '#2d1b0e' },
-  brown:  { body: '#8b5e3c', belly: '#c4956a', ear: '#f4a7b9', nose: '#c96a2a', stripe: '#6b4228', eye: '#2d1b0e' },
-  pink:   { body: '#f4a7b9', belly: '#ffd6e0', ear: '#ff8fa8', nose: '#e8607a', stripe: '#e8899e', eye: '#5c2a3a' },
+  // iris: true eye color visible in the iris ring around the pupil
+  orange: { body: '#e8894a', belly: '#f9c89b', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#c96a2a', eye: '#2d1b0e', iris: '#22b030' },
+  gray:   { body: '#9eaabb', belly: '#d4dde8', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#7a8fa8', eye: '#2d1b0e', iris: '#4a88d8' },
+  black:  { body: '#2c2c3e', belly: '#4a4a62', ear: '#c5b4e3', nose: '#f4a7b9', stripe: null,      eye: '#f5f5f5', iris: '#d4c018' },
+  white:  { body: '#f0ece8', belly: '#ffffff', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#ddd5cc', eye: '#2d1b0e', iris: '#3c80d0' },
+  brown:  { body: '#8b5e3c', belly: '#c4956a', ear: '#f4a7b9', nose: '#c96a2a', stripe: '#6b4228', eye: '#2d1b0e', iris: '#c88020' },
+  pink:   { body: '#f4a7b9', belly: '#ffd6e0', ear: '#ff8fa8', nose: '#e8607a', stripe: '#e8899e', eye: '#5c2a3a', iris: '#8880d8' },
 } as const;
 
 export const STRETCH_MESSAGES = [

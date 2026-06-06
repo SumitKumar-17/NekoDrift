@@ -71,6 +71,8 @@ export interface CatSettings {
   claudeIntegration: boolean;
   // Custom pixel coat (256-char string, each char = palette index 0-9, 0=transparent)
   customPixels: string;
+  // Do Not Disturb — pauses stretch + daily reminder notifications
+  dndEnabled: boolean;
 }
 
 // ─── State objects ─────────────────────────────────────────────
@@ -99,6 +101,7 @@ export interface SpriteInfo {
   id: string;
   type: SpriteType;
   lockedPosition: boolean;
+  size: number;
 }
 
 // ─── IPC channel names ─────────────────────────────────────────
@@ -137,8 +140,10 @@ export const IPC = {
   SPRITE_ADD:         'sprite:add',
   SPRITE_REMOVE:      'sprite:remove',
   SPRITE_LIST:        'sprite:list',
+  SPRITE_RESIZE:      'sprite:resize',
   SPRITE_CONFIG:      'sprite:config',
   SPRITE_EYE_DIR:     'sprite:eye-dir',
   SPRITE_STATE:       'sprite:state',
   OPEN_MANAGER:       'window:open-manager',
+  POMO_GET:           'pomodoro:get',
 } as const;

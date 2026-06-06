@@ -10,8 +10,9 @@ import {
   getPomodoroTimer, setPomodoroTimer,
   getMessageReminder, setMessageReminder,
 } from './services';
-import { addSprite, removeSprite, listSprites } from './sprite-manager';
+import { addSprite, removeSprite, listSprites, resizeSprite } from './sprite-manager';
 import { SpriteType } from '../shared/types';
+import { getManagerWindow } from './window-manager';
 
 export interface IpcDeps {
   getCatWindow: () => BrowserWindow | null;
@@ -24,8 +25,22 @@ export interface IpcDeps {
 
 export function setupIPC(deps: IpcDeps): void {
   const { getCatWindow, createSettingsWindow, createManagerWindow, quitApp } = deps;
-  const send = (channel: string, ...args: unknown[]) =>
+  let lastPomoState: import('../shared/types').PomodoroState | null = null;
+
+  const send = (channel: string, ...args: unknown[]) => {
+    if (channel === IPC.POMODORO_STATE) {
+      lastPomoState = args[0] as import('../shared/types').PomodoroState;
+    }
     getCatWindow()?.webContents.send(channel, ...args);
+    // Mirror pomodoro + reminder events to manager panel
+    if (
+      channel === IPC.POMODORO_STATE ||
+      channel === IPC.REMINDER_TRIGGER ||
+      channel === IPC.STRETCH_REMINDER
+    ) {
+      getManagerWindow()?.webContents.send(channel, ...args);
+    }
+  };
 
   ipcMain.handle(IPC.GET_SETTINGS, () => getSettings());
 
@@ -69,6 +84,31 @@ export function setupIPC(deps: IpcDeps): void {
         );
         mr.start();
         setMessageReminder(mr);
+      }
+    }
+
+    if (partial.dndEnabled !== undefined) {
+      if (updated.dndEnabled) {
+        getStretchTimer()?.stop();
+        getMessageReminder()?.stop();
+      } else {
+        if (updated.stretchEnabled && !getStretchTimer()) {
+          const st = new StretchTimer(
+            (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
+            updated.stretchIntervalMin,
+            updated.name,
+          );
+          st.start();
+          setStretchTimer(st);
+        }
+        if (updated.reminderEnabled && !getMessageReminder()) {
+          const mr = new MessageReminder(
+            updated.reminderHour, updated.reminderMinute, updated.reminderMessage,
+            (msg) => send(IPC.REMINDER_TRIGGER, msg),
+          );
+          mr.start();
+          setMessageReminder(mr);
+        }
       }
     }
 
@@ -183,5 +223,7 @@ export function setupIPC(deps: IpcDeps): void {
   ipcMain.handle(IPC.SPRITE_ADD, (_event, type: SpriteType) => addSprite(type));
   ipcMain.handle(IPC.SPRITE_REMOVE, (_event, id: string) => removeSprite(id));
   ipcMain.handle(IPC.SPRITE_LIST, () => listSprites());
+  ipcMain.handle(IPC.SPRITE_RESIZE, (_event, id: string, size: number) => resizeSprite(id, size));
   ipcMain.on(IPC.OPEN_MANAGER, () => createManagerWindow());
+  ipcMain.handle(IPC.POMO_GET, () => lastPomoState);
 }

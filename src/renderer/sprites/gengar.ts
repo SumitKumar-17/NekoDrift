@@ -1,121 +1,144 @@
-// Gengar — programmatic canvas 2D renderer
+import { fill, stroke, blob, radialGrad, groundShadow, Ctx } from './sprite-utils';
 
-type C = CanvasRenderingContext2D;
-
-function fill(ctx: C, color: string, alpha: number, shape: () => void) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-  ctx.beginPath(); shape(); ctx.fill(); ctx.restore();
-}
-function stroke(ctx: C, color: string, width: number, alpha: number, shape: () => void) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = width;
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.beginPath(); shape(); ctx.stroke(); ctx.restore();
-}
-
-export function drawGengar(ctx: C, frame: number, scale: number, eyeDir?: { dx: number; dy: number }): void {
+export function drawGengar(
+  ctx: Ctx,
+  frame: number,
+  scale: number,
+  eyeDir?: { dx: number; dy: number },
+): void {
   const u = (n: number) => n * scale;
   const t = frame;
-
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  const bobY = Math.sin(t * 0.06) * 0.45;
-  const blinkOpen = !((t % 160) > 154);
-  const by = bobY;
+  // Gengar floats — gentle bob, no foot contact
+  const by = Math.sin(t * 0.055) * 0.5;
+  const blinkOpen = !((t % 160) > 153);
 
-  const purple = '#7b52ab';
-  const darkPurple = '#4a2d7a';
-  const lightPurple = '#9b72cb';
-  const red = '#cc2222';
-  const white = '#ffffff';
-  const black = '#1a1a1a';
-  const pink = '#ff88aa';
+  // ── Palette ─────────────────────────────────────────────────
+  const ink         = '#2a1850';
+  const purpleLight = '#9b72cb';
+  const purpleMid   = '#7b52ab';
+  const purpleDeep  = '#583a86';
+  const darkPurple  = '#3f2670';
+  const red         = '#d62828';
+  const redLight    = '#ff5252';
+  const white       = '#ffffff';
+  const pink        = '#ff88aa';
+  const lw = u(0.28);
 
-  // ── BODY (spiky round shape) ──────────────────────────────
-  // Draw spiky outline manually
-  const spikes = 12;
-  const cx = u(8), cy = u(10 + by);
-  const innerR = u(4.2), outerR = u(5.0);
-  fill(ctx, purple, 1, () => {
-    for (let i = 0; i < spikes * 2; i++) {
-      const angle = (i * Math.PI) / spikes - Math.PI / 2;
-      const r = i % 2 === 0 ? outerR : innerR;
-      if (i === 0) ctx.moveTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
-      else ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+  // Spiky polygon helper
+  const spiky = (cx: number, cy: number, inner: number, outer: number, n: number) => {
+    for (let i = 0; i < n * 2; i++) {
+      const angle = (i * Math.PI) / n - Math.PI / 2;
+      const r = i % 2 === 0 ? outer : inner;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.closePath();
-  });
-  // Soft belly highlight
-  fill(ctx, lightPurple, 0.38, () => { ctx.ellipse(u(7.5), u(9.5 + by), u(2.5), u(2.0), -0.15, 0, Math.PI * 2); });
+  };
 
-  // ── ARMS (stubby) ─────────────────────────────────────────
-  fill(ctx, purple, 1, () => {
-    ctx.moveTo(u(3.5), u(9.5 + by));
-    ctx.bezierCurveTo(u(1.5), u(8.5 + by), u(0.8), u(11 + by), u(2.5), u(11.5 + by));
-    ctx.bezierCurveTo(u(3.2), u(11.8 + by), u(3.5), u(10.5 + by), u(3.5), u(9.5 + by));
+  // ── Ground shadow (floating, so smaller + softer) ───────────
+  groundShadow(ctx, u(8), u(15.2), u(3.4), u(0.7), 0.13);
+
+  // ── STUBBY ARMS (behind body) ───────────────────────────────
+  blob(ctx, purpleMid, ink, lw, () => {
+    ctx.moveTo(u(4.0), u(9.8 + by));
+    ctx.bezierCurveTo(u(1.2), u(8.8 + by), u(0.4), u(11.8 + by), u(2.4), u(12.4 + by));
+    ctx.bezierCurveTo(u(3.4), u(12.7 + by), u(4.0), u(11.2 + by), u(4.0), u(9.8 + by));
     ctx.closePath();
   });
-  fill(ctx, purple, 1, () => {
-    ctx.moveTo(u(12.5), u(9.5 + by));
-    ctx.bezierCurveTo(u(14.5), u(8.5 + by), u(15.2), u(11 + by), u(13.5), u(11.5 + by));
-    ctx.bezierCurveTo(u(12.8), u(11.8 + by), u(12.5), u(10.5 + by), u(12.5), u(9.5 + by));
+  blob(ctx, purpleMid, ink, lw, () => {
+    ctx.moveTo(u(12.0), u(9.8 + by));
+    ctx.bezierCurveTo(u(14.8), u(8.8 + by), u(15.6), u(11.8 + by), u(13.6), u(12.4 + by));
+    ctx.bezierCurveTo(u(12.6), u(12.7 + by), u(12.0), u(11.2 + by), u(12.0), u(9.8 + by));
     ctx.closePath();
   });
+  // claw tips
+  for (let i = 0; i < 3; i++) {
+    stroke(ctx, ink, u(0.14), 0.85, () => {
+      ctx.moveTo(u(1.5 + i * 0.5), u(11.6 + by)); ctx.lineTo(u(1.3 + i * 0.5), u(12.5 + by));
+    });
+    stroke(ctx, ink, u(0.14), 0.85, () => {
+      ctx.moveTo(u(14.5 - i * 0.5), u(11.6 + by)); ctx.lineTo(u(14.7 - i * 0.5), u(12.5 + by));
+    });
+  }
 
-  // ── HEAD ─────────────────────────────────────────────────
-  // Spiky head
-  const hSpikes = 8, hcx = u(8), hcy = u(4.5 + by);
-  const hiR = u(3.4), hoR = u(4.1);
-  fill(ctx, purple, 1, () => {
-    for (let i = 0; i < hSpikes * 2; i++) {
-      const angle = (i * Math.PI) / hSpikes - Math.PI / 2;
-      const r = i % 2 === 0 ? hoR : hiR;
-      if (i === 0) ctx.moveTo(hcx + Math.cos(angle) * r, hcy + Math.sin(angle) * r);
-      else ctx.lineTo(hcx + Math.cos(angle) * r, hcy + Math.sin(angle) * r);
-    }
-    ctx.closePath();
+  // ── TINY FEET (behind body) ─────────────────────────────────
+  blob(ctx, purpleDeep, ink, lw, () => {
+    ctx.ellipse(u(5.9), u(14.4 + by), u(1.45), u(0.92), -0.12, 0, Math.PI * 2);
+  });
+  blob(ctx, purpleDeep, ink, lw, () => {
+    ctx.ellipse(u(10.1), u(14.4 + by), u(1.45), u(0.92), 0.12, 0, Math.PI * 2);
   });
 
-  // ── EYES ─────────────────────────────────────────────────
-  const ey = 4.0 + by;
+  // ── BODY (spiky) ────────────────────────────────────────────
+  blob(ctx, radialGrad(ctx, u(7), u(9.6 + by), u(5.4), purpleLight, purpleDeep), ink, lw, () => {
+    spiky(u(8), u(10.6 + by), u(4.0), u(5.1), 11);
+  });
+
+  // ── HEAD (spiky, overlaps body) ─────────────────────────────
+  blob(ctx, radialGrad(ctx, u(7), u(3.8 + by), u(4.4), purpleLight, purpleMid), ink, lw, () => {
+    spiky(u(8), u(4.8 + by), u(3.4), u(4.3), 8);
+  });
+
+  // ── RED EYES ────────────────────────────────────────────────
+  const ey = 4.2 + by;
   if (!blinkOpen) {
-    stroke(ctx, red, u(0.2), 0.9, () => {
-      ctx.moveTo(u(5.8), u(ey)); ctx.lineTo(u(7.0), u(ey));
-      ctx.moveTo(u(9.0), u(ey)); ctx.lineTo(u(10.2), u(ey));
+    stroke(ctx, red, u(0.26), 0.95, () => {
+      ctx.moveTo(u(5.7), u(ey)); ctx.lineTo(u(7.1), u(ey));
+      ctx.moveTo(u(8.9), u(ey)); ctx.lineTo(u(10.3), u(ey));
     });
   } else {
-    // Spiral red eyes
-    fill(ctx, red, 1, () => { ctx.arc(u(6.4), u(ey), u(0.85), 0, Math.PI * 2); });
-    fill(ctx, red, 1, () => { ctx.arc(u(9.6), u(ey), u(0.85), 0, Math.PI * 2); });
-    // White pupils
-    const ex = eyeDir ? eyeDir.dx * 0.22 : 0;
-    const edy = eyeDir ? eyeDir.dy * 0.14 : 0;
-    fill(ctx, white, 1, () => { ctx.arc(u(6.4 + ex), u(ey + edy), u(0.38), 0, Math.PI * 2); });
-    fill(ctx, white, 1, () => { ctx.arc(u(9.6 + ex), u(ey + edy), u(0.38), 0, Math.PI * 2); });
+    const ex  = eyeDir ? eyeDir.dx * 0.24 : 0;
+    const edy = eyeDir ? eyeDir.dy * 0.16 : 0;
+    blob(ctx, radialGrad(ctx, u(6.3), u(ey - 0.2), u(1), redLight, red), ink, u(0.1),
+      () => { ctx.ellipse(u(6.4), u(ey), u(0.95), u(1.0), -0.15, 0, Math.PI * 2); });
+    blob(ctx, radialGrad(ctx, u(9.5), u(ey - 0.2), u(1), redLight, red), ink, u(0.1),
+      () => { ctx.ellipse(u(9.6), u(ey), u(0.95), u(1.0), 0.15, 0, Math.PI * 2); });
+    // white pupils
+    fill(ctx, white, 1, () => { ctx.arc(u(6.4 + ex), u(ey + edy), u(0.34), 0, Math.PI * 2); });
+    fill(ctx, white, 1, () => { ctx.arc(u(9.6 + ex), u(ey + edy), u(0.34), 0, Math.PI * 2); });
   }
 
-  // ── WIDE GRIN ─────────────────────────────────────────────
-  fill(ctx, white, 1, () => {
-    ctx.arc(u(8), u(5.5 + by), u(2.8), Math.PI * 0.1, Math.PI * 0.9);
-  });
-  fill(ctx, black, 0.92, () => {
-    ctx.arc(u(8), u(5.5 + by), u(2.8), Math.PI * 0.1, Math.PI * 0.9);
-    // Remove just the teeth strip
-  });
-  // Re-draw white teeth as rectangles
-  fill(ctx, white, 1, () => {
-    ctx.arc(u(8), u(6.8 + by), u(2.6), Math.PI * 0.1, Math.PI * 0.9);
-  });
-  // Teeth dividers
-  for (let i = 0; i < 5; i++) {
-    const tx = u(5.2 + i * 1.1);
-    stroke(ctx, purple, u(0.12), 0.9, () => {
-      ctx.moveTo(tx, u(5.9 + by)); ctx.lineTo(tx, u(7.2 + by));
-    });
-  }
-  // Pink tongue
-  fill(ctx, pink, 0.85, () => { ctx.ellipse(u(8), u(7.2 + by), u(1.2), u(0.7), 0, 0, Math.PI * 2); });
+  // ── WIDE GRIN: dark cavity + tongue + white teeth ───────────
+  const mCx = u(8), mCy = u(6.1 + by);
+  const mOuter = u(2.9), mInner = u(2.0);
+  const gStart = Math.PI * 0.05, gEnd = Math.PI * 0.95;
 
-  // ── TINY FEET ─────────────────────────────────────────────
-  fill(ctx, darkPurple, 0.9, () => { ctx.ellipse(u(5.8), u(14.2 + by), u(1.3), u(0.78), -0.15, 0, Math.PI * 2); });
-  fill(ctx, darkPurple, 0.9, () => { ctx.ellipse(u(10.2), u(14.2 + by), u(1.3), u(0.78), 0.15, 0, Math.PI * 2); });
+  // cavity (outlined)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(mCx, mCy, mOuter, gStart, gEnd);
+  ctx.lineTo(mCx, mCy);
+  ctx.closePath();
+  ctx.fillStyle = '#160030';
+  ctx.fill();
+  ctx.lineWidth = lw;
+  ctx.strokeStyle = ink;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.restore();
+
+  // tongue
+  fill(ctx, pink, 0.9, () => {
+    ctx.ellipse(mCx, mCy + u(1.75), u(1.5), u(0.9), 0, 0, Math.PI * 2);
+  });
+
+  // teeth
+  const numTeeth = 8, gapFrac = 0.1;
+  const span = (gEnd - gStart) / numTeeth;
+  for (let i = 0; i < numTeeth; i++) {
+    const a1 = gStart + i * span + span * gapFrac;
+    const a2 = gStart + (i + 1) * span - span * gapFrac;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(mCx, mCy, mOuter, a1, a2);
+    ctx.arc(mCx, mCy, mInner, a2, a1, true);
+    ctx.closePath();
+    ctx.fillStyle = white;
+    ctx.globalAlpha = 0.97;
+    ctx.fill();
+    ctx.restore();
+  }
 }

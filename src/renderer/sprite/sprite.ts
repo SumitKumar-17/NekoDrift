@@ -42,16 +42,29 @@ function draw() {
     case 'snorlax': drawSnorlax(ctx, frame, scale); break;
   }
   ctx.restore();
+}
 
-  // Per-pixel hit test: pass-through transparent areas
+// Per-pixel hit test is expensive (GPU→CPU readback) — only run it
+// periodically instead of every frame. The sprite silhouette barely
+// moves, so a few-times-a-second sample is plenty.
+let lastIgnore = true;
+function updateHitTest() {
   const hit = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const allTransparent = hit.data.every((_, i) => i % 4 !== 3 || hit.data[i] < 25);
-  api.invoke(IPC.SET_IGNORE_MOUSE, allTransparent);
+  let opaque = false;
+  for (let i = 3; i < hit.data.length; i += 4) {
+    if (hit.data[i] >= 25) { opaque = true; break; }
+  }
+  const ignore = !opaque;
+  if (ignore !== lastIgnore) {
+    lastIgnore = ignore;
+    api.invoke(IPC.SET_IGNORE_MOUSE, ignore);
+  }
 }
 
 function tick() {
   frame++;
   draw();
+  if (frame % 20 === 0) updateHitTest();
   animId = requestAnimationFrame(tick);
 }
 

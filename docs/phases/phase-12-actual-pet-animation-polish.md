@@ -4,7 +4,7 @@
 
 Replace the placeholder-feeling built-in pet experience with an actual animated pet renderer and premium compact chat bubble that feel alive in the packaged app.
 
-This phase should make the default OpenPets experience look like a real desktop companion instead of a CSS/wireframe prototype, while preserving the stable packaging, IPC, Claude, and pet-install safety work already completed.
+This phase should make the default NekoDrift experience look like a real desktop companion instead of a CSS/wireframe prototype, while preserving the stable packaging, IPC, Claude, and pet-install safety work already completed.
 
 ## Non-goals
 
@@ -18,7 +18,7 @@ This phase should make the default OpenPets experience look like a real desktop 
 
 ## User-visible/manual outcome
 
-When the user launches OpenPets, the default pet appears as an actual animated sprite/visual companion, not a simple CSS mascot or static image.
+When the user launches NekoDrift, the default pet appears as an actual animated sprite/visual companion, not a simple CSS mascot or static image.
 
 The pet should:
 
@@ -34,7 +34,7 @@ The pet should:
 
 - A real bundled default pet visual asset exists in `apps/desktop/assets/` or another packaged desktop asset location.
 - Bundled pet asset contract is explicit:
-  - source file: `apps/desktop/assets/default-pet-spritesheet.webp`, copied from the real catalog material for Claude (`https://zip.openpets.dev/pets/claude-f187e74a/claude.zip` / `web/public/pets/claude-f187e74a/spritesheet.webp`),
+  - source file: `apps/desktop/assets/default-pet-spritesheet.webp`, copied from the real catalog material for Claude (`https://zip.nekodrift.app/pets/claude-f187e74a/claude.zip` / `web/public/pets/claude-f187e74a/spritesheet.webp`),
   - no remote runtime art fetch,
   - known frame layout/dimensions documented in code comments or constants: 1536×1872, 8 columns × 9 rows, 192×208 frames,
   - at minimum supports `idle`, `run-left`, and `run-right` visual states,
@@ -155,16 +155,16 @@ Manual verification is provided after implementation. It should include:
 4. Confirm pause/resume visibly pauses/resumes animation.
 5. Trigger or inspect speech/reaction bubble behavior and confirm it feels premium: compact, readable, visually attached to the pet, no oversized wireframe card, no jarring animation.
 
-   Suggested speech command while OpenPets is running:
+   Suggested speech command while NekoDrift is running:
 
    ```bash
-   pnpm --filter @open-pets/client smoke:say "Working on it" thinking
+   pnpm --filter @neko-drift/client smoke:say "Working on it" thinking
    ```
 
    Suggested reaction command:
 
    ```bash
-   pnpm --filter @open-pets/client smoke:react success
+   pnpm --filter @neko-drift/client smoke:react success
    ```
 
 6. If a catalog/installed pet is available, set it as default and confirm static installed-pet rendering still works with the shared polished bubble.
@@ -229,7 +229,7 @@ Should-fix: none before manual verification.
 Key checks:
 
 - Drag-direction architecture uses main-process window movement, not renderer pointer events in `-webkit-app-region: drag`.
-- Pet preload is narrow: only listens for whitelisted `openpets:pet-motion` states and mutates `dataset`.
+- Pet preload is narrow: only listens for whitelisted `nekodrift:pet-motion` states and mutates `dataset`.
 - Renderer remains sandboxed/context-isolated with Node disabled.
 - Bubble content is escaped text, not unsafe HTML.
 - Installed pet fallback remains static/safe with shared bubble styling.

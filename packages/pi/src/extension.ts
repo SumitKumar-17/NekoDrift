@@ -1,5 +1,5 @@
-import { createOpenPetsPiExtension, type OpenPetsPiOptions } from "./runtime.js";
+import { createNekoDriftPiExtension, type NekoDriftPiOptions } from "./runtime.js";
 
-export default function openPetsPiExtension(pi: unknown, options: OpenPetsPiOptions = {}): void {
-  createOpenPetsPiExtension(pi, options);
+export default function openPetsPiExtension(pi: unknown, options: NekoDriftPiOptions = {}): void {
+  createNekoDriftPiExtension(pi, options);
 }

@@ -1,15 +1,15 @@
-# Package: @open-pets/cursor
+# Package: @neko-drift/cursor
 
 ## Responsibility
 
-Pure Node.js package for Cursor editor integration file management. Manages OpenPets MCP entries in Cursor's `mcp.json` configuration files and optional project-local Cursor rules guidance. Provides safe, atomic file operations with validation, backup, and redaction capabilities.
+Pure Node.js package for Cursor editor integration file management. Manages NekoDrift MCP entries in Cursor's `mcp.json` configuration files and optional project-local Cursor rules guidance. Provides safe, atomic file operations with validation, backup, and redaction capabilities.
 
 ## Design/Patterns
 
 ### Config Path Resolution
 - **Global config**: `<homeDir>/.cursor/mcp.json` - user-wide MCP settings
 - **Project config**: `<projectDir>/.cursor/mcp.json` - project-specific MCP settings
-- **Rules path**: `<projectDir>/.cursor/rules/openpets.mdc` - project-local Cursor rules
+- **Rules path**: `<projectDir>/.cursor/rules/nekodrift.mdc` - project-local Cursor rules
 - All APIs accept explicit `configPath` for custom locations
 
 ### Safety-First File Operations
@@ -23,10 +23,10 @@ Pure Node.js package for Cursor editor integration file management. Manages Open
 - Private file permissions (0o600) where supported
 
 ### Status Classification (MCP & Rules)
-- `missing`: No config file or no OpenPets entry exists
-- `installed`: Matching OpenPets entry present and up-to-date
+- `missing`: No config file or no NekoDrift entry exists
+- `installed`: Matching NekoDrift entry present and up-to-date
 - `needs-update`: Old version, different pet, or content drift
-- `conflict`: Non-OpenPets entry blocking installation
+- `conflict`: Non-NekoDrift entry blocking installation
 - `invalid`: Parse error, oversized, unsafe path, malformed schema
 - `error`: Unexpected I/O failure
 
@@ -35,12 +35,12 @@ Pure Node.js package for Cursor editor integration file management. Manages Open
 {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "@open-pets/mcp@VERSION", "--pet", "PET_ID"]
+  "args": ["-y", "@neko-drift/mcp@VERSION", "--pet", "PET_ID"]
 }
 ```
 
 ### Managed Entry Detection
-- Published mode: `npx -y @open-pets/mcp@SEMVER [--pet PET]`
+- Published mode: `npx -y @neko-drift/mcp@SEMVER [--pet PET]`
 - Local mode: `node <absolute-path> [--pet PET]`
 - Validates semantic versioning and pet ID format
 - Rejects unpinned versions (e.g., `@latest`)
@@ -75,20 +75,20 @@ Recursive, case-insensitive redaction of:
 
 ### MCP Removal Flow
 1. Read and classify existing config
-2. Verify entry is managed by OpenPets (not conflict)
+2. Verify entry is managed by NekoDrift (not conflict)
 3. Plan remove via `planCursorMcpRemove(path)`
-4. Execute removes only `mcpServers.openpets`, preserves other servers
+4. Execute removes only `mcpServers.nekodrift`, preserves other servers
 5. Empty `mcpServers` kept as `{}` after removal
 
 ### Rules Installation Flow
-1. **Read** existing rules via `readCursorOpenPetsRules(projectDir)`
+1. **Read** existing rules via `readCursorNekoDriftRules(projectDir)`
 2. **Classify** status via `classifyCursorRulesStatus(result, path, expected?)`
 3. **Plan** via `planCursorRulesInstall(projectDir, allowReplace?)`
 4. **Execute** via `executeCursorRulesWrite(plan)`
 5. Managed content includes frontmatter + START/END markers
 
 ### Preview/Redaction Flow
-1. Build preview via `buildOpenPetsOnlyPreview(options)`
+1. Build preview via `buildNekoDriftOnlyPreview(options)`
 2. Redact sensitive config via `redactCursorConfig(config)`
 3. Safe for logging and UI display
 
@@ -106,10 +106,10 @@ Recursive, case-insensitive redaction of:
 
 **From cursor-mcp.ts:**
 - `buildCursorMcpEntry(options)`: Build MCP entry object
-- `formatCursorMcpConfig(options)`: Build full config with openpets entry
+- `formatCursorMcpConfig(options)`: Build full config with nekodrift entry
 - `getCursorGlobalMcpPath(homeDir)`: Get global config path
 - `getCursorProjectMcpPath(projectDir)`: Get project config path
-- `validateOpenPetsPetId(id)`: Validate and return pet ID
+- `validateNekoDriftPetId(id)`: Validate and return pet ID
 - `isValidPetId(id)`: Check if pet ID is valid
 
 **From cursor-status.ts:**
@@ -119,24 +119,24 @@ Recursive, case-insensitive redaction of:
 - `planCursorMcpReplace(path, options)`: Plan replace operation
 - `planCursorMcpRemove(path)`: Plan remove operation
 - `executeCursorMcpWrite(plan)`: Execute planned write atomically
-- `isManagedOpenPetsMcpEntry(value)`: Check if entry is OpenPets-managed
+- `isManagedNekoDriftMcpEntry(value)`: Check if entry is NekoDrift-managed
 - `maxCursorConfigBytes`: 256 KiB limit constant
 
 **From cursor-previews.ts:**
-- `buildOpenPetsOnlyPreview(options)`: Build OpenPets-only preview
+- `buildNekoDriftOnlyPreview(options)`: Build NekoDrift-only preview
 - `redactCursorConfig(config)`: Redact sensitive fields from config
 
 **From cursor-rules.ts:**
 - `getCursorProjectRulesPath(projectDir)`: Get project rules path
-- `buildCursorOpenPetsRule()`: Build managed Cursor rules content
+- `buildCursorNekoDriftRule()`: Build managed Cursor rules content
 - `buildCursorRulesPreview()`: Build copyable rules preview
-- `readCursorOpenPetsRules(projectDir)`: Safely read managed rules file
+- `readCursorNekoDriftRules(projectDir)`: Safely read managed rules file
 - `classifyCursorRulesStatus(result, path, expected?)`: Classify rules status
 - `planCursorRulesInstall(projectDir, allowReplace?)`: Plan project rules install/update
 - `planCursorRulesReplace(projectDir)`: Plan explicit replacement
 - `planCursorRulesRemove(projectDir)`: Plan managed rules removal
 - `executeCursorRulesWrite(plan)`: Execute rules write/remove atomically
-- `isManagedCursorOpenPetsRule(content)`: Check managed marker/frontmatter shape
+- `isManagedCursorNekoDriftRule(content)`: Check managed marker/frontmatter shape
 - `maxCursorRulesBytes`: 64 KiB limit constant
 
 ### Package Scripts

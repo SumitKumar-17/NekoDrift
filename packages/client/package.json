@@ -1,10 +1,10 @@
 {
-  "name": "@open-pets/client",
+  "name": "@neko-drift/client",
   "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/client"
   },
   "type": "module",

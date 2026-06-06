@@ -1,6 +1,6 @@
 # packages/opencode/
 
-OpenCode editor integration for OpenPets.
+OpenCode editor integration for NekoDrift.
 
 ## Responsibility
 
@@ -10,8 +10,8 @@ Provides comprehensive OpenCode editor integration including: MCP server configu
 
 **Plugin Architecture** (`plugin.ts`):
 - Default export: `{ id, server }` object
-- Server factory: `createOpenPetsOpenCodeHooks(options)`
-- Plugin ID: `open-pets-opencode`
+- Server factory: `createNekoDriftOpenCodeHooks(options)`
+- Plugin ID: `neko-drift-opencode`
 
 **Plugin Runtime** (`opencode-plugin-runtime.ts`):
 - Event hooks: `event`, `chat.message`, `tool.execute.before`, `tool.execute.after`
@@ -32,7 +32,7 @@ Provides comprehensive OpenCode editor integration including: MCP server configu
 - Status classification: `not_installed`, `installed`, `needs_update`, `custom`, `conflict`, `error`
 - Managed block detection in instruction files (`<!-- OPENPETS:START/END -->`)
 - Config field updates: `mcp`, `instructions`, `plugin` arrays
-- Instruction file: `.opencode/openpets.md` with usage guidelines
+- Instruction file: `.opencode/nekodrift.md` with usage guidelines
 
 **Global Setup** (`opencode-global-setup.ts`):
 - Similar to project setup but for `~/.config/opencode/`
@@ -42,8 +42,8 @@ Provides comprehensive OpenCode editor integration including: MCP server configu
 - Config precedence handling: chooses the effective config file across `config.json`, `opencode.json`, and `opencode.jsonc`, preserving existing user arrays when safe
 
 **Status Classification** (`opencode-status.ts`):
-- MCP entry detection: `isManagedOpenPetsMcpEntry()`
-- Plugin entry detection: `isManagedOpenPetsPluginEntry()`
+- MCP entry detection: `isManagedNekoDriftMcpEntry()`
+- Plugin entry detection: `isManagedNekoDriftPluginEntry()`
 - Command pattern matching (npx, node, local paths)
 - Version comparison for update detection
 
@@ -51,7 +51,7 @@ Provides comprehensive OpenCode editor integration including: MCP server configu
 - MCP entry builder: `buildOpenCodeMcpEntry()` (published/local/bundled modes)
 - Plugin spec builder: `buildOpenCodePluginPreview()`
 - Instruction path builder: `buildOpenCodeInstructionPath()`
-- Pet ID validation: `validateOpenPetsPetArg()`
+- Pet ID validation: `validateNekoDriftPetArg()`
 - MCP config formatter: `formatOpenCodeMcpConfig()`
 
 ## Flow
@@ -79,8 +79,8 @@ writePreparedOpenCodeProjectSetup() → Execute writes atomically
 ## Integration Points
 
 **Dependencies**:
-- `@open-pets/client` - IPC for plugin runtime
-- `@open-pets/agent-events` - Speech pools and validation
+- `@neko-drift/client` - IPC for plugin runtime
+- `@neko-drift/agent-events` - Speech pools and validation
 - `jsonc-parser` - JSONC config parsing and editing
 
 **Package Surface**:
@@ -89,7 +89,7 @@ writePreparedOpenCodeProjectSetup() → Execute writes atomically
 - Server export (`./server`): OpenCode plugin default export from `dist/plugin.js`
 
 **Consumers**:
-- `@open-pets/cli` - `configure` command for OpenCode projects
+- `@neko-drift/cli` - `configure` command for OpenCode projects
 
 **Exports**:
 - `plugin.ts` - Default plugin export for OpenCode

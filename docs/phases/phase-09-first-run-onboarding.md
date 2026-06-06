@@ -4,7 +4,7 @@
 
 Connect the existing pet manager, agent setup, default pet, and settings pieces into a clear first-run onboarding flow.
 
-Phase 09 should make a fresh OpenPets install feel ready: the default pet appears, the user can optionally browse/install pets, configure Claude from the real Agent Setup flow, and finish with onboarding completion persisted.
+Phase 09 should make a fresh NekoDrift install feel ready: the default pet appears, the user can optionally browse/install pets, configure Claude from the real Agent Setup flow, and finish with onboarding completion persisted.
 
 ## Non-goals
 
@@ -18,12 +18,12 @@ Phase 09 should make a fresh OpenPets install feel ready: the default pet appear
 
 ## User-visible/manual outcome
 
-On a fresh app state, OpenPets opens a first-run onboarding window after startup.
+On a fresh app state, NekoDrift opens a first-run onboarding window after startup.
 
 The onboarding window has a simple wizard shape:
 
 1. **Welcome**
-   - Explains that OpenPets lives in the tray/menu bar.
+   - Explains that NekoDrift lives in the tray/menu bar.
    - Confirms the bundled default pet is already available.
    - Provides a Continue button.
 2. **Pets**
@@ -36,7 +36,7 @@ The onboarding window has a simple wizard shape:
    - Provides an action to open the real Agent Setup window.
    - Explains that setup is confirmation-based and can be skipped.
 4. **Ready**
-   - Confirms OpenPets is ready.
+   - Confirms NekoDrift is ready.
    - Offers quick actions to open Pet Manager or Agent Setup.
    - Finish persists onboarding completion and closes the onboarding window.
 
@@ -85,7 +85,7 @@ The tray remains usable during onboarding. Closing onboarding without finishing 
   - Add **Continue Setup...** while onboarding is incomplete.
   - Refresh menu after onboarding completion.
 - `apps/desktop/preload.cjs`
-  - Expose a narrow `openpetsOnboarding` bridge only for onboarding actions.
+  - Expose a narrow `nekodriftOnboarding` bridge only for onboarding actions.
 - `apps/desktop/src/check-onboarding-state.ts`
   - Contract checks for state migration/completion through extracted pure normalization/completion helpers or injected temp state paths.
   - Do not import Electron-bound `app-state.ts` directly from plain Node tests if that couples tests to Electron `app.getPath`.
@@ -115,7 +115,7 @@ Add narrow exported helpers:
 
 ```ts
 isOnboardingCompleted(): boolean
-completeOnboarding(): OpenPetsStateV1
+completeOnboarding(): NekoDriftStateV1
 ```
 
 `completeOnboarding()` should only set the completion flag and persist via existing atomic state write behavior.
@@ -144,9 +144,9 @@ The onboarding renderer should be static inline HTML loaded through the same dat
 Suggested bridge:
 
 ```ts
-window.openpetsOnboarding = {
+window.nekodriftOnboarding = {
   getSnapshot(): Promise<{ defaultPetName: string; onboardingCompleted: boolean }>;
-  complete(): Promise<OpenPetsStateV1>;
+  complete(): Promise<NekoDriftStateV1>;
   openPetManager(): Promise<void>;
   openAgentSetup(): Promise<void>;
 }
@@ -154,7 +154,7 @@ window.openpetsOnboarding = {
 
 Keep the snapshot lightweight: default pet/onboarding state only. Phase 09 does not need to duplicate the full Pet Manager or Agent Setup UIs inside onboarding; opening the real windows is enough and avoids parallel state/config logic. Do not expose Claude settings paths, Claude config previews, or detailed agent status in onboarding.
 
-Sender validation should allow onboarding access only through the existing main-process window-kind mapping from `webContents.id` to `taskWindows`. Renderer-declared values like `data-openpets-view="onboarding"` may be useful for the preload bridge but must not be the trust boundary.
+Sender validation should allow onboarding access only through the existing main-process window-kind mapping from `webContents.id` to `taskWindows`. Renderer-declared values like `data-nekodrift-view="onboarding"` may be useful for the preload bridge but must not be the trust boundary.
 
 ### Onboarding UI details
 
@@ -221,7 +221,7 @@ Manual verification should use a fresh or reset dev app state.
 
 ## Manual verification guide
 
-1. Reset the dev app state by deleting the OpenPets dev user data directory shown in the app startup log, or remove/edit `openpets-state.json` so onboarding is incomplete.
+1. Reset the dev app state by deleting the NekoDrift dev user data directory shown in the app startup log, or remove/edit `nekodrift-state.json` so onboarding is incomplete.
 2. Run:
 
 ```bash
@@ -234,7 +234,7 @@ pnpm dev:desktop
 6. On Pets, click the Pet Manager action and confirm the real Pet Manager opens. Close or leave it open, then continue/skip.
 7. On Agents, click the Agent Setup action and confirm the real Configure Agents window opens with Claude controls. Do not apply config unless intentionally testing Claude setup. Continue/skip.
 8. On Ready, click Finish.
-9. Quit OpenPets and launch again with `pnpm dev:desktop`.
+9. Quit NekoDrift and launch again with `pnpm dev:desktop`.
 10. Confirm onboarding does not auto-open after completion.
 11. Reset onboarding state again, relaunch, close the onboarding window without finishing, and confirm **Continue Setup...** is available from the tray and reopens onboarding.
 12. Simulate catalog unavailable behavior if practical, for example by disconnecting network or using an invalid catalog URL if supported by the dev environment; confirm onboarding can still be completed.
@@ -265,7 +265,7 @@ Should-fix feedback:
 
 Nice-to-have feedback:
 
-- Add a small “Start using OpenPets”/Finish action on Ready that closes onboarding.
+- Add a small “Start using NekoDrift”/Finish action on Ready that closes onboarding.
 - Place tray **Continue Setup...** above manager/settings while incomplete for discoverability.
 - Consider a developer-only env var to force onboarding incomplete for manual testing.
 
@@ -298,7 +298,7 @@ Blockers: none.
 
 Should-fix feedback:
 
-- Remove onboarding access to the broad `openpets:get-state` handler; onboarding should use only its minimal snapshot.
+- Remove onboarding access to the broad `nekodrift:get-state` handler; onboarding should use only its minimal snapshot.
 - Return a minimal completion result instead of the full app state from onboarding completion.
 - Wrap automatic onboarding startup so a window creation failure does not exit the tray app.
 - Improve onboarding state tests so completion remains true after preference-like updates, and prefer temp/injected persistence coverage if practical.
@@ -322,7 +322,7 @@ Final Oracle re-check:
 Fixed:
 
 - Added root `pnpm dev:desktop` script so the manual verification command works from the workspace root.
-- Removed onboarding from `openpets:get-state` allowlist.
+- Removed onboarding from `nekodrift:get-state` allowlist.
 - Onboarding completion now returns `{ onboardingCompleted: true }` instead of full app state.
 - Wrapped startup onboarding open in a try/catch so tray/default-pet startup continues on failure.
 - Added state-check coverage that onboarding completion remains true after a preference-like update while other preferences are preserved.

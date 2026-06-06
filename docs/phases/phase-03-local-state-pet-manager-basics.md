@@ -4,7 +4,7 @@
 
 Turn the current desktop shell into a minimally real local-first app by formalizing app state and making Pet Manager / Settings show and update the built-in default pet behavior.
 
-This phase should prove that OpenPets owns local preferences and installed-pet state before remote catalog installation, MCP, or Claude integration are added.
+This phase should prove that NekoDrift owns local preferences and installed-pet state before remote catalog installation, MCP, or Claude integration are added.
 
 ## Non-goals
 
@@ -39,7 +39,7 @@ Pet Manager shows the bundled built-in pet as installed/default/protected, Setti
 - State remains local-only under Electron `app.getPath("userData")`.
 - State reads are defensive and corrupted/invalid state falls back safely.
 - State writes are atomic where practical.
-- `app-state.ts` is the only owner/writer of `openpets-state.json`.
+- `app-state.ts` is the only owner/writer of `nekodrift-state.json`.
 - Phase 02 `pet-state.ts` is retired or delegates to `app-state.ts` so pet position writes cannot clobber preferences/pets.
 - Existing unversioned Phase 02 state is migrated to V1 while preserving default pet position.
 - Built-in pet exists in app state as an installed/protected pet.
@@ -100,13 +100,13 @@ Formalize a versioned local app state file.
 Recommended state path:
 
 ```text
-<userData>/openpets-state.json
+<userData>/nekodrift-state.json
 ```
 
 Recommended state shape:
 
 ```ts
-interface OpenPetsStateV1 {
+interface NekoDriftStateV1 {
   version: 1;
   preferences: {
     defaultPetId: string;
@@ -157,12 +157,12 @@ Avoid split-brain state where different modules write unrelated JSON shapes to t
 
 Recommended ownership:
 
-- `app-state.ts` owns reading/writing `openpets-state.json`.
+- `app-state.ts` owns reading/writing `nekodrift-state.json`.
 - Controllers request state updates through narrow functions.
 - State is loaded only after `app.whenReady()`.
 - No app state reads happen at module import time.
 - `pet-state.ts` should be removed or changed to delegate to `app-state.ts`.
-- No module other than `app-state.ts` writes directly to `openpets-state.json`.
+- No module other than `app-state.ts` writes directly to `nekodrift-state.json`.
 - All state updates are read/modify/write against one in-memory normalized state object.
 - State updates should be serialized in-process to avoid debounced pet-position saves clobbering Settings updates.
 
@@ -170,11 +170,11 @@ Recommended `app-state.ts` API shape:
 
 ```ts
 initializeAppState(): void
-getAppStateSnapshot(): OpenPetsStateV1
-updatePreferences(patch: Partial<OpenPetsStateV1["preferences"]>): OpenPetsStateV1
-setDefaultPet(defaultPetId: string): OpenPetsStateV1
-setDefaultPetPosition(position: { x: number; y: number }): OpenPetsStateV1
-resetDefaultPetPosition(): OpenPetsStateV1
+getAppStateSnapshot(): NekoDriftStateV1
+updatePreferences(patch: Partial<NekoDriftStateV1["preferences"]>): NekoDriftStateV1
+setDefaultPet(defaultPetId: string): NekoDriftStateV1
+setDefaultPetPosition(position: { x: number; y: number }): NekoDriftStateV1
+resetDefaultPetPosition(): NekoDriftStateV1
 ```
 
 The API can differ if implementation finds a simpler shape, but the ownership rules must remain.
@@ -182,7 +182,7 @@ The API can differ if implementation finds a simpler shape, but the ownership ru
 Startup ordering:
 
 1. `app.whenReady()` resolves.
-2. `app.setName("OpenPets")` runs.
+2. `app.setName("NekoDrift")` runs.
 3. App state is loaded/normalized through `initializeAppState()`.
 4. Tray is created.
 5. Display/lifecycle handlers are installed.
@@ -269,13 +269,13 @@ Required preload/security behavior if used:
 Recommended preload/API contract:
 
 ```ts
-window.openPets.getState(): Promise<OpenPetsStateV1>
+window.openPets.getState(): Promise<NekoDriftStateV1>
 window.openPets.updatePreferences(patch: {
   openDefaultPetOnLaunch?: boolean;
   speechBubblesEnabled?: boolean;
-}): Promise<OpenPetsStateV1>
-window.openPets.setDefaultPet(petId: string): Promise<OpenPetsStateV1>
-window.openPets.resetDefaultPetPosition(): Promise<OpenPetsStateV1>
+}): Promise<NekoDriftStateV1>
+window.openPets.setDefaultPet(petId: string): Promise<NekoDriftStateV1>
+window.openPets.resetDefaultPetPosition(): Promise<NekoDriftStateV1>
 ```
 
 Rules:
@@ -380,7 +380,7 @@ pnpm build
 Manual app run command:
 
 ```bash
-pnpm --filter @open-pets/desktop dev
+pnpm --filter @neko-drift/desktop dev
 ```
 
 Expected automated result:
@@ -396,7 +396,7 @@ After implementation, the user should verify:
 1. Start the desktop app:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. Confirm tray and default pet still appear.
@@ -412,9 +412,9 @@ After implementation, the user should verify:
 12. Drag the pet to a new position, quit, restart, and confirm position still persists.
 13. Use `Reset default pet position` and confirm the pet moves back near bottom-right and persists there after restart.
 14. If a Phase 02 unversioned state file exists, confirm position is preserved after Phase 03 migration.
-15. If practical, temporarily corrupt `openpets-state.json`, restart, and confirm app falls back safely with built-in pet/default preferences.
+15. If practical, temporarily corrupt `nekodrift-state.json`, restart, and confirm app falls back safely with built-in pet/default preferences.
 16. Confirm placeholder/real task windows still do not quit the app when closed.
-17. Quit OpenPets and confirm clean exit.
+17. Quit NekoDrift and confirm clean exit.
 
 Manual acceptance question:
 
@@ -443,7 +443,7 @@ Summary of required Oracle feedback:
 ## Oracle feedback disposition
 
 - Fixed: Made Phase 02 position migration into `app-state.ts` mandatory.
-- Fixed: Required `app-state.ts` to be the only owner/writer of `openpets-state.json`.
+- Fixed: Required `app-state.ts` to be the only owner/writer of `nekodrift-state.json`.
 - Fixed: Added V0/unversioned migration preserving `defaultPet.position`.
 - Fixed: Added startup ordering with `initializeAppState()` before tray/show-default-pet logic.
 - Fixed: Added recommended app-state API and whole-state update semantics.
@@ -468,7 +468,7 @@ Oracle found no blocking correctness, security, state migration, or scope issues
 Implementation review disposition:
 
 - Approved: Versioned app state and V0 migration preserve Phase 02 pet position.
-- Approved: `pet-state.ts` was removed and `app-state.ts` owns `openpets-state.json`.
+- Approved: `pet-state.ts` was removed and `app-state.ts` owns `nekodrift-state.json`.
 - Approved: Open-on-launch gating and reset-position behavior are implemented.
 - Approved: Pet Manager and Settings use narrow internal Electron IPC with sender and payload validation.
 - Approved: Generated UI uses DOM/text rendering for state-derived values instead of HTML injection.

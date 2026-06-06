@@ -13,20 +13,20 @@ let hardExitTimer: NodeJS.Timeout | null = null;
 export function installAppLifecycle(): void {
   app.on("second-instance", () => {
     info("app", "second instance requested");
-    console.log("Second OpenPets launch requested; keeping existing instance.");
+    console.log("Second NekoDrift launch requested; keeping existing instance.");
     focusOpenTaskWindows();
   });
 
   app.on("window-all-closed", () => {
     if (!intentionalQuit) {
       info("app", "all task windows closed; tray app kept alive");
-      console.log("All OpenPets task windows closed; keeping tray app running.");
+      console.log("All NekoDrift task windows closed; keeping tray app running.");
     }
   });
 
   app.on("activate", () => {
     info("app", "activate event");
-    console.log("OpenPets activate event received; not opening a dashboard window.");
+    console.log("NekoDrift activate event received; not opening a dashboard window.");
   });
 
   app.on("before-quit", () => {
@@ -40,7 +40,7 @@ export function installAppLifecycle(): void {
   });
 }
 
-export function quitOpenPets(): void {
+export function quitNekoDrift(): void {
   intentionalQuit = true;
   info("app", "quit requested");
   scheduleHardExitFallback("quit-requested");

@@ -14,7 +14,7 @@ Polish the remaining basic desktop surfaces so Settings and tray/menu copy match
 
 ## User-visible/manual outcome
 
-- Settings opens as a polished light OpenPets window instead of the older dark generic card layout.
+- Settings opens as a polished light NekoDrift window instead of the older dark generic card layout.
 - Settings groups current controls into clear cards/rows with better copy and consistent button/toggle styling.
 - Tray menu uses current product labels, especially **Integrations** instead of **Configure Agents**.
 - Tray menu order is clearer and still exposes setup, pet visibility, pause/resume, Pet Manager, Integrations, Settings, and Quit.
@@ -37,7 +37,7 @@ Polish the remaining basic desktop surfaces so Settings and tray/menu copy match
   - `Configure Agents...` becomes `Integrations...`,
   - Quit and pause/show/hide labels remain clear.
 - Tray menu order remains:
-  - `OpenPets` disabled header,
+  - `NekoDrift` disabled header,
   - separator,
   - conditional `Continue Setup...` plus separator when onboarding is incomplete,
   - `Default Pet: Built-in Pet`,
@@ -48,14 +48,14 @@ Polish the remaining basic desktop surfaces so Settings and tray/menu copy match
   - `Integrations...`,
   - `Settings...`,
   - separator,
-  - `Quit OpenPets`.
+  - `Quit NekoDrift`.
 - Tray actions still call the same internal functions/windows.
-- Agent setup window title/user-facing definition uses **Integrations** (`OpenPets — Integrations`) while preserving internal `agent-setup` identifiers.
+- Agent setup window title/user-facing definition uses **Integrations** (`NekoDrift — Integrations`) while preserving internal `agent-setup` identifiers.
 - Settings includes visible `aria-live` status feedback for successful preference saves and reset actions, plus existing error feedback.
-- Settings-specific light styles are scoped to `body[data-openpets-view="settings"]`; avoid broad edits to global `button`, `.card`, or `.setting-row` behavior.
+- Settings-specific light styles are scoped to `body[data-nekodrift-view="settings"]`; avoid broad edits to global `button`, `.card`, or `.setting-row` behavior.
 - Settings has clear keyboard/focus behavior: labels toggle checkboxes, reset button is reachable, focus states are visible.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 - Designer review is completed for Settings polish.
 - Oracle implementation review is completed and feedback is dispositioned.
 
@@ -73,7 +73,7 @@ Polish the remaining basic desktop surfaces so Settings and tray/menu copy match
 ## Technical approach
 
 1. Keep `createSettingsHtml()` simple and data-free: no assets, no remote content.
-2. Add scoped CSS under `body[data-openpets-view="settings"]` to avoid broad regressions.
+2. Add scoped CSS under `body[data-nekodrift-view="settings"]` to avoid broad regressions.
 3. Use native checkboxes/buttons with polished row/card styling; do not invent custom persistence.
 4. Preserve existing element IDs used by preload:
    - `open-default-pet-on-launch`,
@@ -100,8 +100,8 @@ Polish the remaining basic desktop surfaces so Settings and tray/menu copy match
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 If shared styles unexpectedly affect multiple windows, also run/manual-check the app via:
@@ -113,7 +113,7 @@ pnpm dev:desktop
 ## Manual verification guide
 
 1. Run `pnpm dev:desktop`.
-2. Open Settings from the tray and confirm it matches the light OpenPets polish direction.
+2. Open Settings from the tray and confirm it matches the light NekoDrift polish direction.
 3. Toggle “Open default pet on app launch” and confirm it persists after closing/reopening Settings.
 4. Toggle “Speech bubbles enabled” and confirm it persists after closing/reopening Settings.
 5. Toggle each checkbox twice in the same open Settings window and confirm controls re-enable after each save.
@@ -180,14 +180,14 @@ Implemented:
 Follow-up Settings changes:
 
 - Removed the Speech bubbles toggle because speech bubbles are now always enabled.
-- Added a Launch OpenPets at login toggle backed by Electron login item settings on supported platforms.
+- Added a Launch NekoDrift at login toggle backed by Electron login item settings on supported platforms.
 - Kept unsupported platforms disabled with explanatory copy.
 
 Validation passed:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 Designer review: approved with no blockers or should-fix issues.

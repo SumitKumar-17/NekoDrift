@@ -1,4 +1,4 @@
-import type { OpenPetsReaction } from "./local-ipc-protocol.js";
+import type { NekoDriftReaction } from "./local-ipc-protocol.js";
 
 export const reactionMessagePools = {
   idle: [
@@ -155,9 +155,9 @@ export const reactionMessagePools = {
     "Result shines",
     "Moment earned",
   ],
-} as const satisfies Record<OpenPetsReaction, readonly string[]>;
+} as const satisfies Record<NekoDriftReaction, readonly string[]>;
 
-export function pickReactionMessage(reaction: OpenPetsReaction, random: () => number = Math.random): string {
+export function pickReactionMessage(reaction: NekoDriftReaction, random: () => number = Math.random): string {
   const pool = reactionMessagePools[reaction];
   return pool[Math.floor(random() * pool.length) % pool.length] ?? reaction;
 }

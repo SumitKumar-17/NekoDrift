@@ -1,17 +1,17 @@
 {
-  "name": "@open-pets/mcp",
+  "name": "@neko-drift/mcp",
   "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/mcp"
   },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "open-pets-mcp": "./dist/index.js"
+    "neko-drift-mcp": "./dist/index.js"
   },
   "files": [
     "dist"
@@ -27,7 +27,7 @@
   },
   "scripts": {
     "test": "node dist/check-mcp-contract.js",
-    "check": "pnpm --filter @open-pets/client build && pnpm typecheck && pnpm build && pnpm test",
+    "check": "pnpm --filter @neko-drift/client build && pnpm typecheck && pnpm build && pnpm test",
     "typecheck": "tsc --noEmit",
     "build": "tsc && node dist/ensure-executable.js"
   },
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@open-pets/client": "workspace:*",
+    "@neko-drift/client": "workspace:*",
     "zod": "^4.4.3"
   }
 }

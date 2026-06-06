@@ -1,7 +1,7 @@
 import { validatePluginCatalog, type PluginCatalog, type PluginCatalogEntry, type PluginCatalogEntryV2 } from "./plugin-catalog-validation.js";
 
-export const pluginCatalogUrl = "https://openpets.dev/plugins/catalog.v2.json";
-export const pluginCatalogV1Url = "https://openpets.dev/plugins/catalog.v1.json";
+export const pluginCatalogUrl = "https://nekodrift.app/plugins/catalog.v2.json";
+export const pluginCatalogV1Url = "https://nekodrift.app/plugins/catalog.v1.json";
 export const pluginCatalogV2Url = pluginCatalogUrl;
 const maxCatalogBytes = 2 * 1024 * 1024;
 const catalogTimeoutMs = 15_000;

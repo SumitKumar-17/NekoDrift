@@ -16,7 +16,7 @@ Redesign the Pet Manager into a polished pet installation/gallery screen inspire
 
 Opening Pet Manager shows a light, polished two-column install page:
 
-- OpenPets brand art at top-left,
+- NekoDrift brand art at top-left,
 - search and simple gallery filter pills,
 - install/selectable pet cards with pixel-art previews where available,
 - a large right-side selected pet detail panel,
@@ -29,7 +29,7 @@ Opening Pet Manager shows a light, polished two-column install page:
 - `lfs/pets.png` remains reference-only and is not loaded by app code or copied into desktop assets.
 - Use existing bundled/local assets where safe, including `apps/desktop/assets/onboarding-logo.webp` for brand identity. Do not embed the large `default-pet-spritesheet.webp` in the Pet Manager data URL.
 - Catalog pet preview images may be shown only from validated `CatalogPetV2.preview` values returned by main-process catalog data. The renderer must not independently construct remote image URLs.
-- Pet Manager CSP must be exactly scoped for required image sources, e.g. `img-src data: https://openpets.dev`; no broad `https:`, `*`, or `file:` sources.
+- Pet Manager CSP must be exactly scoped for required image sources, e.g. `img-src data: https://nekodrift.app`; no broad `https:`, `*`, or `file:` sources.
 - Do not use mutable `InstalledPetState.source.preview` for remote rendering unless it is revalidated against the same catalog preview rules.
 - Catalog previews are spritesheets; the UI must crop/display a single-frame thumbnail/preview, not show the whole sheet.
 - Image failures/offline state must degrade gracefully: no broken image icon, neutral/blank preview surface, and install/default/remove actions remain usable.
@@ -46,8 +46,8 @@ Opening Pet Manager shows a light, polished two-column install page:
 - Detail actions are limited to real Pet Manager operations: `Install`, `Set Default`, and `Remove`, with disabled/status variants such as `Selected`, `Protected`, `Broken`, or `Installing…`.
 - Keyboard users can tab to search, filter pills, pet cards/actions, and detail actions.
 - The Pet Manager opens at 1160×780 and remains usable at 720×520 with vertical scrolling/responsive stacking.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 - `pnpm package:desktop:dir` passes because Pet Manager CSP/asset packaging contracts change.
 - Designer review is completed before manual verification.
 - Oracle implementation review is completed and feedback is dispositioned.
@@ -69,7 +69,7 @@ Opening Pet Manager shows a light, polished two-column install page:
 
 1. Keep backend/state/install behavior unchanged.
 2. Build one normalized UI list from installed pets plus catalog pets:
-   - installed/default state comes from `OpenPetsStateV1`,
+   - installed/default state comes from `NekoDriftStateV1`,
    - catalog data comes from `getCatalog()`.
 3. Render a left gallery with:
    - search,
@@ -83,7 +83,7 @@ Opening Pet Manager shows a light, polished two-column install page:
    - primary action (`Install`, `Selected`, or `Set Default`) and secondary action (`Remove` or `Protected`) where applicable.
 5. Use safe image behavior:
    - bundled default uses data URL or local packaged asset strategy already established,
-   - catalog previews use only validated `CatalogPetV2.preview` URLs from main-process catalog data, scoped to `https://openpets.dev`,
+   - catalog previews use only validated `CatalogPetV2.preview` URLs from main-process catalog data, scoped to `https://nekodrift.app`,
    - card/mini preview images crop a single sprite frame from spritesheets using CSS background strategy,
    - the detail spotlight animates the pet sprite itself without decorative platform/fallback art,
    - image error handling is attached with DOM listeners in preload (`addEventListener("error", ...)`), not inline attributes,
@@ -106,7 +106,7 @@ Opening Pet Manager shows a light, polished two-column install page:
 - No broad install behavior changes; narrow stale-target cleanup is allowed when a previously failed/manual install leaves files on disk while state says the pet is not installed.
 - No direct use of `lfs/pets.png` at runtime.
 - Keep Electron renderer sandbox/context isolation unchanged.
-- CSP should allow only the image sources needed for data bundled assets and exact existing catalog preview origin (`https://openpets.dev`); no remote script/style execution and no `file:` images.
+- CSP should allow only the image sources needed for data bundled assets and exact existing catalog preview origin (`https://nekodrift.app`); no remote script/style execution and no `file:` images.
 - Removing a removable current-default pet must preserve existing safe fallback behavior to the built-in pet.
 
 ## Test/check plan
@@ -114,8 +114,8 @@ Opening Pet Manager shows a light, polished two-column install page:
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 ```bash
@@ -134,7 +134,7 @@ pnpm package:desktop:dir
 8. Install a catalog pet and confirm it becomes installed/selectable without breaking the UI.
 9. Set an installed pet as default and confirm selected/default state updates.
 10. Remove a non-protected installed pet and confirm it disappears/falls back safely.
-11. If the current default is a removable installed pet, remove it and confirm OpenPets falls back safely to the built-in/default pet.
+11. If the current default is a removable installed pet, remove it and confirm NekoDrift falls back safely to the built-in/default pet.
 12. Simulate offline/catalog error or use fixture/error state if available; confirm the gallery remains usable and image failures show neutral preview surfaces with no broken image icon.
 13. Confirm a broken installed pet, if present, is shown but cannot be selected as default.
 14. Confirm an installed pet missing from the current catalog still appears and remains manageable.
@@ -149,7 +149,7 @@ Blockers: none.
 
 Should-fix feedback:
 
-- Clarify remote preview policy: only validated `CatalogPetV2.preview` from main-process catalog data; exact CSP such as `img-src data: https://openpets.dev`; no broad `https:`, `*`, or `file:`; no mutable `InstalledPetState.source.preview` without revalidation.
+- Clarify remote preview policy: only validated `CatalogPetV2.preview` from main-process catalog data; exact CSP such as `img-src data: https://nekodrift.app`; no broad `https:`, `*`, or `file:`; no mutable `InstalledPetState.source.preview` without revalidation.
 - Require previews to crop a single sprite frame, not show full spritesheets.
 - Use DOM `addEventListener("error", ...)` for image failures, not inline `onerror` attributes.
 - Add offline/image-failure behavior: no broken image icon, visible fallback thumbnail/card/detail, install/default/remove still usable.
@@ -192,8 +192,8 @@ Reviewed by Designer and Oracle after implementation.
 Validation passed:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 pnpm package:desktop:dir
 ```
 

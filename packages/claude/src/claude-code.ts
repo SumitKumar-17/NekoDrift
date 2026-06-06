@@ -2,9 +2,9 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { lstatSync, realpathSync, statSync } from "node:fs";
 
-export const claudeMcpServerName = "openpets";
-export const openPetsMcpPackageName = "@open-pets/mcp";
-export type OpenPetsCommandMode = "published" | "local" | "bundled";
+export const claudeMcpServerName = "nekodrift";
+export const openPetsMcpPackageName = "@neko-drift/mcp";
+export type NekoDriftCommandMode = "published" | "local" | "bundled";
 
 export type ClaudeMcpScope = "user";
 
@@ -14,12 +14,12 @@ export interface ClaudeCommandSpec {
 }
 
 export interface ClaudeMcpPreview {
-  readonly commandMode: OpenPetsCommandMode;
+  readonly commandMode: NekoDriftCommandMode;
   readonly add: ClaudeCommandSpec;
   readonly remove: ClaudeCommandSpec;
   readonly mcpJson: {
     readonly mcpServers: {
-      readonly openpets: {
+      readonly nekodrift: {
         readonly type: "stdio";
         readonly command: string;
         readonly args: readonly string[];
@@ -38,8 +38,8 @@ export interface ParsedClaudeMcpEntry {
   readonly matchesExpected: boolean;
 }
 
-export function buildClaudeMcpPreview(selectedPetId?: string, commandMode: OpenPetsCommandMode = "published", nodeCommand = "node"): ClaudeMcpPreview {
-  const server = buildOpenPetsMcpServerCommand(selectedPetId, commandMode, nodeCommand);
+export function buildClaudeMcpPreview(selectedPetId?: string, commandMode: NekoDriftCommandMode = "published", nodeCommand = "node"): ClaudeMcpPreview {
+  const server = buildNekoDriftMcpServerCommand(selectedPetId, commandMode, nodeCommand);
   const addArgs = ["mcp", "add", "--scope", "user", claudeMcpServerName, "--", server.command, ...server.args] as const;
   const removeArgs = ["mcp", "remove", "--scope", "user", claudeMcpServerName] as const;
   const add: ClaudeCommandSpec = { command: "claude", args: addArgs };
@@ -50,7 +50,7 @@ export function buildClaudeMcpPreview(selectedPetId?: string, commandMode: OpenP
     remove: { command: "claude", args: removeArgs },
     mcpJson: {
       mcpServers: {
-        openpets: {
+        nekodrift: {
           type: "stdio",
           command: server.command,
           args: server.args,
@@ -61,21 +61,21 @@ export function buildClaudeMcpPreview(selectedPetId?: string, commandMode: OpenP
   };
 }
 
-export function buildOpenPetsMcpArgs(selectedPetId?: string): readonly string[] {
+export function buildNekoDriftMcpArgs(selectedPetId?: string): readonly string[] {
   if (selectedPetId === undefined) return ["-y", openPetsMcpPackageName];
-  validateOpenPetsPetArg(selectedPetId);
+  validateNekoDriftPetArg(selectedPetId);
   return ["-y", openPetsMcpPackageName, "--pet", selectedPetId];
 }
 
-export function buildOpenPetsMcpServerCommand(selectedPetId?: string, commandMode: OpenPetsCommandMode = "published", nodeCommand = "node"): { readonly command: string; readonly args: readonly string[] } {
+export function buildNekoDriftMcpServerCommand(selectedPetId?: string, commandMode: NekoDriftCommandMode = "published", nodeCommand = "node"): { readonly command: string; readonly args: readonly string[] } {
   if (commandMode === "local" || commandMode === "bundled") {
     const entryPath = commandMode === "bundled" ? getBundledMcpEntryPath() : getLocalMcpEntryPath();
     commandMode === "bundled" ? assertBundledMcpEntryPath() : assertLocalMcpEntryPath();
     if (selectedPetId === undefined) return { command: nodeCommand, args: [entryPath] };
-    validateOpenPetsPetArg(selectedPetId);
+    validateNekoDriftPetArg(selectedPetId);
     return { command: nodeCommand, args: [entryPath, "--pet", selectedPetId] };
   }
-  return { command: "npx", args: buildOpenPetsMcpArgs(selectedPetId) };
+  return { command: "npx", args: buildNekoDriftMcpArgs(selectedPetId) };
 }
 
 export function assertLocalMcpEntryPath(): void {
@@ -107,16 +107,16 @@ export function buildClaudeMcpGetCommand(): ClaudeCommandSpec {
   return { command: "claude", args: ["mcp", "get", claudeMcpServerName] };
 }
 
-export function validateOpenPetsPetArg(value: string): string {
+export function validateNekoDriftPetArg(value: string): string {
   const trimmed = value.trim();
-  if (trimmed !== value || trimmed.length < 1) throw new Error("Invalid OpenPets pet id.");
-  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(trimmed)) throw new Error("Invalid OpenPets pet id.");
+  if (trimmed !== value || trimmed.length < 1) throw new Error("Invalid NekoDrift pet id.");
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(trimmed)) throw new Error("Invalid NekoDrift pet id.");
   return trimmed;
 }
 
 export function parseClaudeMcpListOutput(output: string): ParsedClaudeMcpEntry {
   const normalized = output.toLowerCase();
-  const present = /(^|\s|[•*-])openpets(\s|$|:|-)/m.test(normalized) || normalized.includes("openpets:");
+  const present = /(^|\s|[•*-])nekodrift(\s|$|:|-)/m.test(normalized) || normalized.includes("nekodrift:");
   return {
     present,
     source: present ? "list" : "none",
@@ -125,12 +125,12 @@ export function parseClaudeMcpListOutput(output: string): ParsedClaudeMcpEntry {
   };
 }
 
-export function parseClaudeMcpGetOutput(output: string, expectedPetId?: string, commandMode: OpenPetsCommandMode = "published", nodeCommand = "node"): ParsedClaudeMcpEntry {
+export function parseClaudeMcpGetOutput(output: string, expectedPetId?: string, commandMode: NekoDriftCommandMode = "published", nodeCommand = "node"): ParsedClaudeMcpEntry {
   const text = output.trim();
   if (!text) return { present: false, source: "none", verified: false, matchesExpected: false };
 
   const parsed = tryParseJson(text);
-  const expected = buildOpenPetsMcpServerCommand(expectedPetId, commandMode, nodeCommand);
+  const expected = buildNekoDriftMcpServerCommand(expectedPetId, commandMode, nodeCommand);
   const jsonEntry = parsed ? extractJsonEntry(parsed) : null;
   if (jsonEntry) {
     const matchesExpected = jsonEntry.command === expected.command && arraysEqual(jsonEntry.args, expected.args);
@@ -144,14 +144,14 @@ export function parseClaudeMcpGetOutput(output: string, expectedPetId?: string, 
     return { present: true, command, args, source: "get", verified: true, matchesExpected };
   }
 
-  if (/openpets/i.test(text) || /@open-pets\/mcp/i.test(text)) {
+  if (/nekodrift/i.test(text) || /@neko-drift\/mcp/i.test(text)) {
     return { present: true, source: "get", verified: false, matchesExpected: false };
   }
 
   return { present: false, source: "none", verified: false, matchesExpected: false };
 }
 
-export function classifyClaudeMcpStatus(listOutput: string, getOutput: string | undefined, expectedPetId?: string, commandMode: OpenPetsCommandMode = "published", nodeCommand = "node"): ParsedClaudeMcpEntry {
+export function classifyClaudeMcpStatus(listOutput: string, getOutput: string | undefined, expectedPetId?: string, commandMode: NekoDriftCommandMode = "published", nodeCommand = "node"): ParsedClaudeMcpEntry {
   if (getOutput) {
     const parsedGet = parseClaudeMcpGetOutput(getOutput, expectedPetId, commandMode, nodeCommand);
     if (parsedGet.present) return parsedGet;
@@ -179,8 +179,8 @@ function tryParseJson(value: string): unknown {
 
 function extractJsonEntry(value: unknown): { readonly command: string; readonly args: readonly string[] } | null {
   const record = isRecord(value) ? value : null;
-  const maybeEntry = record && isRecord(record.mcpServers) && isRecord(record.mcpServers.openpets)
-    ? record.mcpServers.openpets
+  const maybeEntry = record && isRecord(record.mcpServers) && isRecord(record.mcpServers.nekodrift)
+    ? record.mcpServers.nekodrift
     : record;
 
   if (!isRecord(maybeEntry) || typeof maybeEntry.command !== "string" || !Array.isArray(maybeEntry.args)) return null;
@@ -243,7 +243,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function assertSafeLocalDistFile(path: string, label: string): void {
   const expectedPrefix = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-  if (!path.startsWith(expectedPrefix)) throw new Error(`Local ${label} path is outside the OpenPets workspace.`);
+  if (!path.startsWith(expectedPrefix)) throw new Error(`Local ${label} path is outside the NekoDrift workspace.`);
   const stat = statSync(path);
   if (!stat.isFile()) throw new Error(`Local ${label} path is not a regular file.`);
 }
@@ -257,7 +257,7 @@ function assertSafeBundledDistFile(path: string, label: string): void {
   const expectedRoot = realpathSync(mapAsarPathToUnpacked(join(dirname(fileURLToPath(import.meta.url)), "..", "..")));
   const realPath = realpathSync(path);
   const rel = relative(expectedRoot, realPath);
-  if (rel.startsWith("..") || isAbsolute(rel)) throw new Error(`Bundled ${label} path is outside the packaged OpenPets resources.`);
+  if (rel.startsWith("..") || isAbsolute(rel)) throw new Error(`Bundled ${label} path is outside the packaged NekoDrift resources.`);
 }
 
 function isTrueAsarPath(path: string): boolean {

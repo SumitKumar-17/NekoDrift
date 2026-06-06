@@ -1,10 +1,10 @@
 {
-  "name": "@open-pets/opencode",
+  "name": "@neko-drift/opencode",
   "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/opencode"
   },
   "type": "module",
@@ -33,8 +33,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@open-pets/agent-events": "workspace:*",
-    "@open-pets/client": "workspace:*",
+    "@neko-drift/agent-events": "workspace:*",
+    "@neko-drift/client": "workspace:*",
     "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {

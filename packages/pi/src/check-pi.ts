@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 
-import { allowedReactions } from "@open-pets/client";
+import { allowedReactions } from "@neko-drift/client";
 
 import extension from "./extension.js";
-import { classifyPiEvent, classifyPiToolExecutionStart, createOpenPetsPiExtension, createOpenPetsPiRuntime, getPiOpenPetsHelp, normalizePiEvent, parseOpenPetsCommand, shouldIgnoreOpenPetsTool, validateManualSpeech, type OpenPetsPiExtensionApi } from "./runtime.js";
+import { classifyPiEvent, classifyPiToolExecutionStart, createNekoDriftPiExtension, createNekoDriftPiRuntime, getPiNekoDriftHelp, normalizePiEvent, parseNekoDriftCommand, shouldIgnoreNekoDriftTool, validateManualSpeech, type NekoDriftPiExtensionApi } from "./runtime.js";
 
 assert.equal(typeof extension, "function");
-assert.equal(typeof getPiOpenPetsHelp(), "string");
+assert.equal(typeof getPiNekoDriftHelp(), "string");
 assert.deepEqual(normalizePiEvent({ type: "agent_start" }), { type: "agent_start", payload: { type: "agent_start" } });
 assert.deepEqual(normalizePiEvent({ type: "agent_start", payload: { reason: "startup" } }), { type: "agent_start", payload: { reason: "startup" } });
 
@@ -26,17 +26,17 @@ assert.equal(classifyPiToolExecutionStart("apply_patch", {}), "editing");
 assert.equal(classifyPiToolExecutionStart("bash", { command: "pnpm test -- --secret token=abc" }), "testing");
 assert.equal(classifyPiToolExecutionStart("bash", { command: "ls" }), "running");
 assert.equal(classifyPiToolExecutionStart("read", {}), "working");
-assert.equal(classifyPiToolExecutionStart("openpets_status", {}), undefined);
-assert.equal(shouldIgnoreOpenPetsTool("openpets_openpets_say"), true);
+assert.equal(classifyPiToolExecutionStart("nekodrift_status", {}), undefined);
+assert.equal(shouldIgnoreNekoDriftTool("nekodrift_nekodrift_say"), true);
 
-assert.deepEqual(parseOpenPetsCommand(""), { kind: "help" });
-assert.deepEqual(parseOpenPetsCommand("status"), { kind: "status" });
-assert.deepEqual(parseOpenPetsCommand("test"), { kind: "test" });
-assert.deepEqual(parseOpenPetsCommand("react success"), { kind: "react", reaction: "success" });
-assert.deepEqual(parseOpenPetsCommand("say Ready"), { kind: "say", message: "Ready" });
-for (const reaction of allowedReactions) assert.deepEqual(parseOpenPetsCommand(`react ${reaction}`), { kind: "react", reaction });
-assert.throws(() => parseOpenPetsCommand("react nope"), /Invalid OpenPets reaction/);
-assert.throws(() => parseOpenPetsCommand("status extra"), /Usage/);
+assert.deepEqual(parseNekoDriftCommand(""), { kind: "help" });
+assert.deepEqual(parseNekoDriftCommand("status"), { kind: "status" });
+assert.deepEqual(parseNekoDriftCommand("test"), { kind: "test" });
+assert.deepEqual(parseNekoDriftCommand("react success"), { kind: "react", reaction: "success" });
+assert.deepEqual(parseNekoDriftCommand("say Ready"), { kind: "say", message: "Ready" });
+for (const reaction of allowedReactions) assert.deepEqual(parseNekoDriftCommand(`react ${reaction}`), { kind: "react", reaction });
+assert.throws(() => parseNekoDriftCommand("react nope"), /Invalid NekoDrift reaction/);
+assert.throws(() => parseNekoDriftCommand("status extra"), /Usage/);
 
 assert.equal(validateManualSpeech("  Ready  "), "Ready");
 for (const unsafe of [
@@ -56,7 +56,7 @@ for (const unsafe of [
 {
   const calls: string[] = [];
   const scheduled: Array<() => Promise<void>> = [];
-  const runtime = createOpenPetsPiRuntime({
+  const runtime = createNekoDriftPiRuntime({
     now: () => 1_000,
     random: () => 0,
     schedule: (work) => { scheduled.push(work); },
@@ -94,12 +94,12 @@ for (const unsafe of [
   let commandHandler: ((args: string, ctx?: unknown) => unknown) | undefined;
   const handlers = new Map<string, (event: unknown, ctx?: unknown) => unknown>();
   const calls: string[] = [];
-  const api: OpenPetsPiExtensionApi = {
+  const api: NekoDriftPiExtensionApi = {
     on: (eventName, handler) => { events.push(eventName); handlers.set(eventName, handler); },
     registerCommand: (_name, command) => { commandHandler = command.handler; },
   };
   const scheduled: Array<() => Promise<void>> = [];
-  const runtime = createOpenPetsPiExtension(api, {
+  const runtime = createNekoDriftPiExtension(api, {
     schedule: (work) => { scheduled.push(work); },
     clientFactory: () => ({
       hello: async () => ({}),
@@ -124,7 +124,7 @@ for (const unsafe of [
 
 {
   const debugLogs: string[] = [];
-  const runtime = createOpenPetsPiRuntime({
+  const runtime = createNekoDriftPiRuntime({
     debug: true,
     debugLog: (message) => debugLogs.push(message),
     clientFactory: () => ({

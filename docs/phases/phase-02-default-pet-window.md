@@ -4,7 +4,7 @@
 
 Show the bundled default pet as a real floating desktop companion window.
 
-This phase should prove the core visible OpenPets experience: a small pet appears, can be dragged, can be shown/hidden from the tray, can be paused/resumed, and remembers its position across app restarts.
+This phase should prove the core visible NekoDrift experience: a small pet appears, can be dragged, can be shown/hidden from the tray, can be paused/resumed, and remembers its position across app restarts.
 
 ## Non-goals
 
@@ -47,7 +47,7 @@ The bundled default pet appears as a small floating window, can be dragged, can 
 - `Show Default Pet` / `Hide Default Pet` tray item works for the persistent default pet.
 - `Pause All Pets` / `Resume All Pets` visibly affects the pet.
 - Closing placeholder task windows does not close the pet or quit the app.
-- Quitting OpenPets closes the pet window cleanly.
+- Quitting NekoDrift closes the pet window cleanly.
 - Phase 01 placeholder windows and tray behavior continue to work.
 - Known platform limitations are documented after manual testing.
 - Hidden state is session-only in Phase 02: every fresh app launch shows the default pet.
@@ -185,7 +185,7 @@ Use Electron `app.getPath("userData")` for local app state.
 Recommended state file:
 
 ```text
-<userData>/openpets-state.json
+<userData>/nekodrift-state.json
 ```
 
 State writes should be simple and safe:
@@ -224,7 +224,7 @@ Default pet lifetime:
 - Default pet is persistent.
 - It is not closed due to agent lifecycle in future phases.
 - In this phase, hiding does not destroy the pet window.
-- The pet window is destroyed only when OpenPets quits.
+- The pet window is destroyed only when NekoDrift quits.
 
 ## Risks and tradeoffs
 
@@ -255,7 +255,7 @@ Dragging may require communication between renderer and main process, but Phase 
 Mitigation:
 
 - If needed, use a very narrow Electron preload bridge only for pet window dragging.
-- Do not implement external/local OpenPets IPC in this phase.
+- Do not implement external/local NekoDrift IPC in this phase.
 - Keep the bridge private to the pet renderer.
 
 ### Risk: state file corruption
@@ -298,7 +298,7 @@ Security/privacy expectations:
 - No telemetry.
 - No network calls.
 - No remote content loaded in pet window.
-- No config file edits outside OpenPets own userData state file.
+- No config file edits outside NekoDrift own userData state file.
 - No shell command execution.
 - Pet renderer uses hardcoded local content only.
 - Pet renderer includes a restrictive CSP.
@@ -326,7 +326,7 @@ pnpm build
 Manual app run command:
 
 ```bash
-pnpm --filter @open-pets/desktop dev
+pnpm --filter @neko-drift/desktop dev
 ```
 
 Expected automated result:
@@ -342,7 +342,7 @@ After implementation, the user should verify:
 1. Start the desktop app:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. Confirm no dashboard/main window opens automatically.
@@ -352,16 +352,16 @@ After implementation, the user should verify:
 6. Confirm the pet stays above normal windows where supported.
 7. Confirm clicking/dragging the pet does not unexpectedly steal focus from the active app where supported.
 8. Drag the pet to a new position.
-9. Quit OpenPets from the tray.
-10. Restart OpenPets and confirm the pet position persists.
+9. Quit NekoDrift from the tray.
+10. Restart NekoDrift and confirm the pet position persists.
 11. Use tray `Hide Default Pet` and confirm the pet hides without quitting the app.
 12. Use tray `Show Default Pet` and confirm the same default pet returns.
-13. Hide the pet, quit OpenPets, restart OpenPets, and confirm the pet appears again because hidden state is not persisted in Phase 02.
+13. Hide the pet, quit NekoDrift, restart NekoDrift, and confirm the pet appears again because hidden state is not persisted in Phase 02.
 14. Toggle `Pause All Pets` and confirm the pet visibly changes to paused/quiet state.
 15. Toggle `Resume All Pets` and confirm the pet returns to normal state.
 16. Open/close placeholder Pet Manager, Configure Agents, and Settings windows and confirm the pet remains alive.
 17. If practical, move/change displays and confirm the pet remains visible or is re-clamped on restart.
-18. Quit OpenPets and confirm all windows close cleanly.
+18. Quit NekoDrift and confirm all windows close cleanly.
 
 Manual acceptance question:
 

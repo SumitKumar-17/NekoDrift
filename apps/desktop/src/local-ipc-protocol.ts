@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-export const openPetsIpcProtocol = "openpets-ipc";
+export const openPetsIpcProtocol = "nekodrift-ipc";
 export const openPetsIpcVersion = 1;
 export const maxIpcMessageBytes = 16 * 1024;
 export const transientDisplayMs = 4_000;
@@ -19,18 +19,18 @@ export const allowedReactions = [
   "celebrating",
 ] as const;
 
-export type OpenPetsReaction = typeof allowedReactions[number];
-export type OpenPetsIpcMethod = "hello" | "status" | "pets.list" | "pets.install" | "lease.acquire" | "lease.heartbeat" | "lease.release" | "pet.react" | "pet.say";
+export type NekoDriftReaction = typeof allowedReactions[number];
+export type NekoDriftIpcMethod = "hello" | "status" | "pets.list" | "pets.install" | "lease.acquire" | "lease.heartbeat" | "lease.release" | "pet.react" | "pet.say";
 
-export interface OpenPetsIpcRequest {
+export interface NekoDriftIpcRequest {
   readonly id: string;
   readonly version: number;
   readonly token: string;
-  readonly method: OpenPetsIpcMethod;
+  readonly method: NekoDriftIpcMethod;
   readonly params?: unknown;
 }
 
-export interface OpenPetsIpcResponse {
+export interface NekoDriftIpcResponse {
   readonly id: string | null;
   readonly ok: boolean;
   readonly result?: unknown;
@@ -44,7 +44,7 @@ export function createRequestId(): string {
   return randomUUID();
 }
 
-export function parseIpcRequest(raw: string, expectedToken: string): OpenPetsIpcRequest {
+export function parseIpcRequest(raw: string, expectedToken: string): NekoDriftIpcRequest {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw) as unknown;
@@ -75,11 +75,11 @@ export function validateInstallPetId(value: unknown): string {
   return value;
 }
 
-export function validateReaction(value: unknown): OpenPetsReaction {
-  if (typeof value !== "string" || !allowedReactions.includes(value as OpenPetsReaction)) {
+export function validateReaction(value: unknown): NekoDriftReaction {
+  if (typeof value !== "string" || !allowedReactions.includes(value as NekoDriftReaction)) {
     throw new IpcProtocolError("invalid_params", "Invalid pet reaction.");
   }
-  return value as OpenPetsReaction;
+  return value as NekoDriftReaction;
 }
 
 export function validateSayMessage(value: unknown): string {
@@ -113,11 +113,11 @@ export function validateRequestedPetId(value: unknown): string | undefined {
   return trimmed;
 }
 
-export function okResponse(id: string | null, result: unknown): OpenPetsIpcResponse {
+export function okResponse(id: string | null, result: unknown): NekoDriftIpcResponse {
   return { id, ok: true, result };
 }
 
-export function errorResponse(id: string | null, error: unknown): OpenPetsIpcResponse {
+export function errorResponse(id: string | null, error: unknown): NekoDriftIpcResponse {
   if (error instanceof IpcProtocolError) {
     return { id, ok: false, error: { code: error.code, message: error.message } };
   }

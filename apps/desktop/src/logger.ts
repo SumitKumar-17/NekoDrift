@@ -11,17 +11,17 @@ type LogFields = Record<string, unknown>;
 const levelPriority = { debug: 10, info: 20, warn: 30, error: 40 } as const satisfies Record<LogLevel, number>;
 const maxLogBytes = 2 * 1024 * 1024;
 
-let configuredLevel: LogLevel = normalizeLogLevel(process.env.OPENPETS_LOG_LEVEL) ?? "debug";
+let configuredLevel: LogLevel = normalizeLogLevel(process.env.NEKODRIFT_LOG_LEVEL) ?? "debug";
 let logFilePath: string | null = null;
 let previousLogFilePath: string | null = null;
-let mirrorToConsole = isDevRun() || process.env.OPENPETS_LOG_CONSOLE === "1";
+let mirrorToConsole = isDevRun() || process.env.NEKODRIFT_LOG_CONSOLE === "1";
 
 export function initializeLogger(): void {
   try {
     const logsDir = getLogsDir();
     mkdirSync(logsDir, { recursive: true });
-    logFilePath = join(logsDir, "openpets.log");
-    previousLogFilePath = join(logsDir, "openpets.previous.log");
+    logFilePath = join(logsDir, "nekodrift.log");
+    previousLogFilePath = join(logsDir, "nekodrift.previous.log");
     rotateCurrentLog(logFilePath, previousLogFilePath);
     writeFileSync(logFilePath, "", { flag: "a" });
     info("app", "logger initialized", { logFile: logFilePath, previousLogFile: previousLogFilePath, level: configuredLevel, console: mirrorToConsole });
@@ -29,7 +29,7 @@ export function initializeLogger(): void {
     const message = initError instanceof Error ? initError.message : String(initError);
     logFilePath = null;
     previousLogFilePath = null;
-    console.error("OpenPets file logger unavailable; continuing without log file.", message);
+    console.error("NekoDrift file logger unavailable; continuing without log file.", message);
   }
 }
 
@@ -87,7 +87,7 @@ function writeLog(level: LogLevel, scope: LogScope, message: string, fields: Log
 
   if (!logFilePath) return;
   void appendFile(logFilePath, line, "utf8").catch((appendError: unknown) => {
-    if (mirrorToConsole) console.error("Failed to write OpenPets log file.", appendError);
+    if (mirrorToConsole) console.error("Failed to write NekoDrift log file.", appendError);
   });
 }
 
@@ -96,10 +96,10 @@ function rotateCurrentLog(currentPath: string, previousPath: string): void {
   try {
     const current = statSync(currentPath);
     if (current.size <= 0) return;
-    if (existsSync(previousPath)) renameSync(previousPath, join(dirname(previousPath), "openpets.previous.old.log"));
+    if (existsSync(previousPath)) renameSync(previousPath, join(dirname(previousPath), "nekodrift.previous.old.log"));
     renameSync(currentPath, previousPath);
   } catch (rotationError: unknown) {
-    if (mirrorToConsole) console.error("Failed to rotate OpenPets log file.", rotationError);
+    if (mirrorToConsole) console.error("Failed to rotate NekoDrift log file.", rotationError);
   }
 }
 
@@ -109,7 +109,7 @@ function normalizeLogLevel(value: string | undefined): LogLevel | null {
 }
 
 function isDevRun(): boolean {
-  return process.env.OPENPETS_DEV === "1" || process.env.NODE_ENV === "development" || !app.isPackaged;
+  return process.env.NEKODRIFT_DEV === "1" || process.env.NODE_ENV === "development" || !app.isPackaged;
 }
 
 function formatFields(fields: LogFields | undefined): string {

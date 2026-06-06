@@ -1,10 +1,10 @@
 # packages/client/
 
-Core IPC client library for OpenPets desktop app communication.
+Core IPC client library for NekoDrift desktop app communication.
 
 ## Responsibility
 
-Provides the foundational client library for all OpenPets integrations. Handles discovery file reading, TCP socket connections (including WSL cross-platform), request/response protocol, and high-level pet operations (status, list, install, lease, react, say).
+Provides the foundational client library for all NekoDrift integrations. Handles discovery file reading, TCP socket connections (including WSL cross-platform), request/response protocol, and high-level pet operations (status, list, install, lease, react, say).
 
 ## Design/Patterns
 
@@ -12,7 +12,7 @@ Provides the foundational client library for all OpenPets integrations. Handles 
 - Defines IPC protocol version (v1), message limits (16KB), timeouts (2s connect, 3s response)
 - Request/response types with discriminated union (`ok: true/false`)
 - Reaction validation against allowed enum values
-- Custom `OpenPetsClientError` with error codes
+- Custom `NekoDriftClientError` with error codes
 
 **Discovery Layer** (`discovery.ts`):
 - Cross-platform discovery file path resolution (macOS, Windows, Linux/XDG)
@@ -31,7 +31,7 @@ Provides the foundational client library for all OpenPets integrations. Handles 
 - Enables WSL clients to connect to Windows desktop app
 
 **Client Layer** (`index.ts`):
-- Factory pattern: `createOpenPetsClient(options)` returns `OpenPetsClient` interface
+- Factory pattern: `createNekoDriftClient(options)` returns `NekoDriftClient` interface
 - Methods: `hello()`, `status()`, `listPets()`, `installPet()`, `acquireLease()`, `heartbeatLease()`, `releaseLease()`, `react()`, `say()`
 - Lease-aware operations for multi-pet targeting
 - Result parsers with validation
@@ -72,23 +72,23 @@ net.createConnection({ host, port }) → Windows desktop app
 ## Integration Points
 
 **Consumers** (all depend on this package):
-- `@open-pets/cli` - CLI commands
-- `@open-pets/mcp` - MCP tool implementations
-- `@open-pets/claude` - Hook execution
-- `@open-pets/opencode` - Plugin runtime
-- `@open-pets/install-pet` - Direct installation fallback
+- `@neko-drift/cli` - CLI commands
+- `@neko-drift/mcp` - MCP tool implementations
+- `@neko-drift/claude` - Hook execution
+- `@neko-drift/opencode` - Plugin runtime
+- `@neko-drift/install-pet` - Direct installation fallback
 
-**Desktop App**: Communicates with OpenPets desktop app via:
+**Desktop App**: Communicates with NekoDrift desktop app via:
 - Unix domain socket (macOS/Linux)
 - Windows named pipe (Windows)
 - TCP socket (WSL cross-platform)
 
 **Exports**:
-- `createOpenPetsClient()` - Main factory
+- `createNekoDriftClient()` - Main factory
 - `sendRequest()` - Low-level request function
 - `readDiscoveryFile()`, `getDiscoveryFilePath()` - Discovery utilities
 - `parseIpcEndpoint()`, `validateEndpoint()` - Endpoint handling
-- `OpenPetsClientError`, error codes, types
+- `NekoDriftClientError`, error codes, types
 
 **Contracts**:
 - `contracts/client-protocol.contract.ts` - Runtime protocol validation tests

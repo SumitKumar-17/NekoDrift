@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make the Pet Manager feel like the first polished OpenPets desktop window and establish a reusable visual direction for later Settings, Agent Setup, and Onboarding polish.
+Make the Pet Manager feel like the first polished NekoDrift desktop window and establish a reusable visual direction for later Settings, Agent Setup, and Onboarding polish.
 
 This phase focuses on one window only: Pet Manager.
 
@@ -44,8 +44,8 @@ The user should be able to quickly understand:
 - Pet Manager rendering continues to use DOM APIs and `textContent` for all catalog/state strings; no `innerHTML` for catalog-provided content.
 - No CSP `img-src` expansion, no `<img>`, and no CSS `background-image` using catalog preview URLs in Phase 13A.
 - Existing visible placeholder copy is removed from Pet Manager window definitions and user-facing text.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 - If shared task-window styles are changed, verify Settings/Agent Setup/Onboarding are not obviously broken.
 - Designer review is completed before final manual verification.
 - Oracle implementation review is completed and feedback is dispositioned.
@@ -66,7 +66,7 @@ The user should be able to quickly understand:
 ## Technical approach
 
 1. Keep scope to Pet Manager:
-   - Require Pet Manager selectors under `body[data-openpets-view="pet-manager"]` unless intentionally changing shared task-window tokens.
+   - Require Pet Manager selectors under `body[data-nekodrift-view="pet-manager"]` unless intentionally changing shared task-window tokens.
    - Avoid broad restyling of Settings/Agent Setup/Onboarding unless shared base styles must be adjusted carefully.
    - Remove the existing placeholder copy from `taskWindowDefinitions.pet-manager.description` and visible Pet Manager text.
 2. Improve information architecture:
@@ -111,8 +111,8 @@ The user should be able to quickly understand:
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 If shared styles or packaging-sensitive files change unexpectedly, also run:
@@ -145,7 +145,7 @@ Blockers: none.
 
 Should-fix feedback:
 
-- Tighten style isolation under `body[data-openpets-view="pet-manager"]` unless intentionally changing shared tokens.
+- Tighten style isolation under `body[data-nekodrift-view="pet-manager"]` unless intentionally changing shared tokens.
 - Add explicit acceptance that catalog/state strings use DOM APIs/`textContent`, no `innerHTML` for catalog content.
 - Add manual verification for catalog unavailable/error/fixture status if feasible, busy install/remove states, set default, remove, and shared window regression check.
 - Make “no remote image rendering” concrete: no CSP `img-src` expansion, no `<img>`, no catalog preview CSS backgrounds.
@@ -164,7 +164,7 @@ Verdict: implementation-ready after small spec tightening.
 
 Fixed:
 
-- Added selector isolation requirement under `body[data-openpets-view="pet-manager"]`.
+- Added selector isolation requirement under `body[data-nekodrift-view="pet-manager"]`.
 - Added explicit `textContent`/DOM API requirement and `innerHTML` prohibition for catalog/state strings.
 - Added concrete no-remote-image constraints.
 - Added placeholder-copy removal as an explicit implementation item.

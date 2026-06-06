@@ -47,11 +47,11 @@ export function validateRawPetArg(value: string): string {
   const trimmed = value.trim();
   if (trimmed.length < 1) throw new Error("--pet requires a non-empty pet id.");
   if (Buffer.byteLength(trimmed, "utf8") > 128 || /[\x00-\x1F\x7F/\\]/.test(trimmed)) {
-    throw new Error("--pet value is outside OpenPets CLI bounds.");
+    throw new Error("--pet value is outside NekoDrift CLI bounds.");
   }
   return trimmed;
 }
 
 export function createHelpText(): string {
-  return `OpenPets MCP server\n\nUsage:\n  open-pets-mcp [--pet <petId>]\n\nOptions:\n  --pet <petId>  Request an installed OpenPets pet for this MCP process; missing pets fall back to default.\n  --help         Show this help.\n  --version      Show package version.\n`;
+  return `NekoDrift MCP server\n\nUsage:\n  neko-drift-mcp [--pet <petId>]\n\nOptions:\n  --pet <petId>  Request an installed NekoDrift pet for this MCP process; missing pets fall back to default.\n  --help         Show this help.\n  --version      Show package version.\n`;
 }

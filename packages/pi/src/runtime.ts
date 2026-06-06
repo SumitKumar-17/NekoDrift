@@ -1,8 +1,8 @@
-import { pickHookSpeech, validateHookSpeech } from "@open-pets/agent-events";
-import { allowedReactions, createOpenPetsClient, type OpenPetsClient, type OpenPetsReaction } from "@open-pets/client";
+import { pickHookSpeech, validateHookSpeech } from "@neko-drift/agent-events";
+import { allowedReactions, createNekoDriftClient, type NekoDriftClient, type NekoDriftReaction } from "@neko-drift/client";
 
-export interface OpenPetsPiOptions {
-  readonly clientFactory?: () => OpenPetsClient;
+export interface NekoDriftPiOptions {
+  readonly clientFactory?: () => NekoDriftClient;
   readonly schedule?: (work: () => Promise<void>) => void;
   readonly debug?: boolean;
   readonly debugLog?: (message: string) => void;
@@ -10,24 +10,24 @@ export interface OpenPetsPiOptions {
   readonly now?: () => number;
 }
 
-export interface OpenPetsPiRuntime {
+export interface NekoDriftPiRuntime {
   readonly handleEvent: (event: unknown) => void;
-  readonly handleCommand: (args: string, ctx?: OpenPetsPiCommandContext) => Promise<void>;
+  readonly handleCommand: (args: string, ctx?: NekoDriftPiCommandContext) => Promise<void>;
 }
 
-export interface OpenPetsPiExtensionApi {
+export interface NekoDriftPiExtensionApi {
   readonly on?: (eventName: string, handler: (event: unknown, ctx?: unknown) => unknown) => unknown;
   readonly registerCommand?: (name: string, command: { readonly description?: string; readonly handler: (args: string, ctx?: unknown) => unknown }) => unknown;
 }
 
-export interface OpenPetsPiCommandContext {
+export interface NekoDriftPiCommandContext {
   readonly ui?: {
     readonly notify?: (message: string, type?: "info" | "warning" | "error") => void;
   };
 }
 
 export interface PiEventDecision {
-  readonly reaction?: OpenPetsReaction;
+  readonly reaction?: NekoDriftReaction;
   readonly speech?: "error";
   readonly markError?: boolean;
   readonly clearError?: boolean;
@@ -38,21 +38,21 @@ export interface PiEventEnvelope {
   readonly payload?: unknown;
 }
 
-export type OpenPetsPiCommand =
+export type NekoDriftPiCommand =
   | { readonly kind: "help" }
   | { readonly kind: "status" }
   | { readonly kind: "test" }
-  | { readonly kind: "react"; readonly reaction: OpenPetsReaction }
+  | { readonly kind: "react"; readonly reaction: NekoDriftReaction }
   | { readonly kind: "say"; readonly message: string };
 
 const automaticTimeoutMs = 500;
 const errorSuccessSuppressionMs = 5_000;
 const boundedCommandSliceLength = 300;
 
-export const allowedPiOpenPetsCommands = ["help", "status", "test", "react", "say"] as const;
+export const allowedPiNekoDriftCommands = ["help", "status", "test", "react", "say"] as const;
 
-export function createOpenPetsPiExtension(pi: unknown, options: OpenPetsPiOptions = {}): OpenPetsPiRuntime {
-  const runtime = createOpenPetsPiRuntime(options);
+export function createNekoDriftPiExtension(pi: unknown, options: NekoDriftPiOptions = {}): NekoDriftPiRuntime {
+  const runtime = createNekoDriftPiRuntime(options);
   const api = isPiApi(pi) ? pi : undefined;
   if (!api) return runtime;
 
@@ -64,26 +64,26 @@ export function createOpenPetsPiExtension(pi: unknown, options: OpenPetsPiOption
     subscribe(eventName);
   }
 
-  api.registerCommand?.("openpets", {
-    description: "Control OpenPets desktop pet reactions and check local connection status.",
+  api.registerCommand?.("nekodrift", {
+    description: "Control NekoDrift desktop pet reactions and check local connection status.",
     handler: async (args, ctx) => runtime.handleCommand(args, isCommandContext(ctx) ? ctx : undefined),
   });
 
   return runtime;
 }
 
-export function createOpenPetsPiRuntime(options: OpenPetsPiOptions = {}): OpenPetsPiRuntime {
-  const clientFactory = options.clientFactory ?? (() => createOpenPetsClient({ connectTimeoutMs: automaticTimeoutMs, responseTimeoutMs: automaticTimeoutMs }));
+export function createNekoDriftPiRuntime(options: NekoDriftPiOptions = {}): NekoDriftPiRuntime {
+  const clientFactory = options.clientFactory ?? (() => createNekoDriftClient({ connectTimeoutMs: automaticTimeoutMs, responseTimeoutMs: automaticTimeoutMs }));
   const schedule = options.schedule ?? defaultSchedule;
-  const debug = options.debug === true || process.env.OPENPETS_PI_DEBUG === "1";
+  const debug = options.debug === true || process.env.NEKODRIFT_PI_DEBUG === "1";
   const debugLog = options.debugLog ?? ((message) => {
     if (debug) process.stderr.write(`${message}\n`);
   });
-  let client: OpenPetsClient | undefined;
+  let client: NekoDriftClient | undefined;
   let recentErrorAt = Number.NEGATIVE_INFINITY;
   let lastErrorSpeechAt = Number.NEGATIVE_INFINITY;
 
-  const getClient = (): OpenPetsClient => {
+  const getClient = (): NekoDriftClient => {
     client ??= clientFactory();
     return client;
   };
@@ -103,11 +103,11 @@ export function createOpenPetsPiRuntime(options: OpenPetsPiOptions = {}): OpenPe
           }
           await getClient().react(reaction);
         } catch (error) {
-          debugLog(`OpenPets Pi extension ignored error: ${sanitizeDebugError(error)}`);
+          debugLog(`NekoDrift Pi extension ignored error: ${sanitizeDebugError(error)}`);
         }
       });
     } catch (error) {
-      debugLog(`OpenPets Pi extension scheduling ignored error: ${sanitizeDebugError(error)}`);
+      debugLog(`NekoDrift Pi extension scheduling ignored error: ${sanitizeDebugError(error)}`);
     }
   };
 
@@ -123,12 +123,12 @@ export function createOpenPetsPiRuntime(options: OpenPetsPiOptions = {}): OpenPe
       try {
         runAutomatic(classifyPiEvent(event));
       } catch (error) {
-        debugLog(`OpenPets Pi event ignored error: ${sanitizeDebugError(error)}`);
+        debugLog(`NekoDrift Pi event ignored error: ${sanitizeDebugError(error)}`);
       }
     },
     async handleCommand(args, ctx) {
       try {
-        const command = parseOpenPetsCommand(args);
+        const command = parseNekoDriftCommand(args);
         await executeCommand(command, getClient(), ctx);
       } catch (error) {
         notify(ctx, sanitizeUserError(error), "error");
@@ -170,73 +170,73 @@ export function normalizePiEvent(event: unknown): PiEventEnvelope {
   return { type: "", payload: event };
 }
 
-export function classifyPiToolExecutionStart(toolName: unknown, args?: unknown): OpenPetsReaction | undefined {
+export function classifyPiToolExecutionStart(toolName: unknown, args?: unknown): NekoDriftReaction | undefined {
   const normalized = typeof toolName === "string" ? toolName.toLowerCase() : "";
-  if (!normalized || shouldIgnoreOpenPetsTool(normalized)) return undefined;
+  if (!normalized || shouldIgnoreNekoDriftTool(normalized)) return undefined;
   if (/edit|write|patch|apply/.test(normalized)) return "editing";
   if (/bash|shell|terminal|exec|command/.test(normalized)) return isTestLikeArgs(args) ? "testing" : "running";
   return "working";
 }
 
-export function shouldIgnoreOpenPetsTool(toolName: string): boolean {
+export function shouldIgnoreNekoDriftTool(toolName: string): boolean {
   const normalized = toolName.toLowerCase().replace(/[^a-z0-9_:/.-]+/g, "_");
-  return /(?:^|[_:/.-])openpets(?:[_:/.-]|$)/.test(normalized) || /^openpets_(?:status|say|react)$/.test(normalized);
+  return /(?:^|[_:/.-])nekodrift(?:[_:/.-]|$)/.test(normalized) || /^nekodrift_(?:status|say|react)$/.test(normalized);
 }
 
-export function parseOpenPetsCommand(args: string): OpenPetsPiCommand {
+export function parseNekoDriftCommand(args: string): NekoDriftPiCommand {
   const trimmed = args.trim();
   if (!trimmed || trimmed === "help" || trimmed === "--help" || trimmed === "-h") return { kind: "help" };
   const [head = "", ...rest] = trimmed.split(/\s+/);
   const tail = trimmed.slice(head.length).trim();
   switch (head.toLowerCase()) {
     case "status":
-      if (rest.length > 0) throw new Error("Usage: /openpets status");
+      if (rest.length > 0) throw new Error("Usage: /nekodrift status");
       return { kind: "status" };
     case "test":
-      if (rest.length > 0) throw new Error("Usage: /openpets test");
+      if (rest.length > 0) throw new Error("Usage: /nekodrift test");
       return { kind: "test" };
     case "react": {
-      if (rest.length !== 1) throw new Error("Usage: /openpets react <reaction>");
+      if (rest.length !== 1) throw new Error("Usage: /nekodrift react <reaction>");
       return { kind: "react", reaction: validateReaction(rest[0] ?? "") };
     }
     case "say":
       return { kind: "say", message: validateManualSpeech(tail) };
     default:
-      throw new Error(`Unknown /openpets command: ${head}`);
+      throw new Error(`Unknown /nekodrift command: ${head}`);
   }
 }
 
 export function validateManualSpeech(message: string): string {
   const trimmed = message.trim();
-  if (/-----BEGIN [A-Z ]*PRIVATE KEY-----/i.test(trimmed)) throw new Error("OpenPets speech must not contain secrets.");
+  if (/-----BEGIN [A-Z ]*PRIVATE KEY-----/i.test(trimmed)) throw new Error("NekoDrift speech must not contain secrets.");
   return validateHookSpeech(trimmed);
 }
 
-export function getPiOpenPetsHelp(): string {
-  return "OpenPets commands: /openpets status, /openpets test, /openpets react <reaction>, /openpets say <message>.";
+export function getPiNekoDriftHelp(): string {
+  return "NekoDrift commands: /nekodrift status, /nekodrift test, /nekodrift react <reaction>, /nekodrift say <message>.";
 }
 
-async function executeCommand(command: OpenPetsPiCommand, client: OpenPetsClient, ctx?: OpenPetsPiCommandContext): Promise<void> {
+async function executeCommand(command: NekoDriftPiCommand, client: NekoDriftClient, ctx?: NekoDriftPiCommandContext): Promise<void> {
   switch (command.kind) {
     case "help":
-      notify(ctx, getPiOpenPetsHelp(), "info");
+      notify(ctx, getPiNekoDriftHelp(), "info");
       return;
     case "status": {
       const status = await client.status();
-      notify(ctx, status.ok ? "OpenPets is connected." : `OpenPets unavailable: ${sanitizeStatusReason(status.unavailableReason)}`, status.ok ? "info" : "warning");
+      notify(ctx, status.ok ? "NekoDrift is connected." : `NekoDrift unavailable: ${sanitizeStatusReason(status.unavailableReason)}`, status.ok ? "info" : "warning");
       return;
     }
     case "test":
       await client.say("Pi connected", { reaction: "waving" });
-      notify(ctx, "OpenPets test sent.", "info");
+      notify(ctx, "NekoDrift test sent.", "info");
       return;
     case "react":
       await client.react(command.reaction);
-      notify(ctx, `OpenPets reaction set: ${command.reaction}`, "info");
+      notify(ctx, `NekoDrift reaction set: ${command.reaction}`, "info");
       return;
     case "say":
       await client.say(command.message);
-      notify(ctx, "OpenPets message sent.", "info");
+      notify(ctx, "NekoDrift message sent.", "info");
       return;
   }
 }
@@ -246,12 +246,12 @@ function isTestLikeArgs(args: unknown): boolean {
   return /\b(test|vitest|jest|pytest|npm\s+test|pnpm\s+test|yarn\s+test|cargo\s+test|go\s+test)\b/i.test(command);
 }
 
-function validateReaction(value: string): OpenPetsReaction {
-  if (!allowedReactions.includes(value as OpenPetsReaction)) throw new Error("Invalid OpenPets reaction.");
-  return value as OpenPetsReaction;
+function validateReaction(value: string): NekoDriftReaction {
+  if (!allowedReactions.includes(value as NekoDriftReaction)) throw new Error("Invalid NekoDrift reaction.");
+  return value as NekoDriftReaction;
 }
 
-function notify(ctx: OpenPetsPiCommandContext | undefined, message: string, type: "info" | "warning" | "error"): void {
+function notify(ctx: NekoDriftPiCommandContext | undefined, message: string, type: "info" | "warning" | "error"): void {
   ctx?.ui?.notify?.(message, type);
 }
 
@@ -274,11 +274,11 @@ function sanitizeKnownErrorCode(code: string): string {
   if (normalized.includes("response_timeout")) return "response_timeout";
   if (normalized.includes("connection_closed")) return "connection_closed";
   if (normalized.includes("unavailable")) return "unavailable";
-  return "OpenPetsClientError";
+  return "NekoDriftClientError";
 }
 
 function sanitizeUserError(error: unknown): string {
-  return error instanceof Error ? error.message.replace(/[\r\n]+/g, " ").slice(0, 140) : "OpenPets command failed.";
+  return error instanceof Error ? error.message.replace(/[\r\n]+/g, " ").slice(0, 140) : "NekoDrift command failed.";
 }
 
 function sanitizeStatusReason(reason: unknown): string {
@@ -287,11 +287,11 @@ function sanitizeStatusReason(reason: unknown): string {
   return "unavailable";
 }
 
-function isPiApi(value: unknown): value is OpenPetsPiExtensionApi {
+function isPiApi(value: unknown): value is NekoDriftPiExtensionApi {
   return isRecord(value) && (typeof value.on === "function" || typeof value.registerCommand === "function");
 }
 
-function isCommandContext(value: unknown): value is OpenPetsPiCommandContext {
+function isCommandContext(value: unknown): value is NekoDriftPiCommandContext {
   return isRecord(value) && (value.ui === undefined || isRecord(value.ui));
 }
 

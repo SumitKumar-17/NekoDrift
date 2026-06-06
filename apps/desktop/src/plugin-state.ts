@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 
 import { canonicalizePluginPermissions, type KnownPluginRuntime, type PluginPermission } from "./plugin-manifest.js";
 
-export const openPetsPluginStateFileName = "openpets-plugin-state.json";
+export const openPetsPluginStateFileName = "nekodrift-plugin-state.json";
 
 export type PluginSource = "catalog" | "local";
 
@@ -34,7 +34,7 @@ export type PluginStateRecord = {
   readonly update?: PluginUpdateMetadata;
 };
 
-export type OpenPetsPluginStateV1 = {
+export type NekoDriftPluginStateV1 = {
   readonly version: 1;
   readonly plugins: Record<string, PluginStateRecord>;
 };
@@ -45,19 +45,19 @@ export type PluginStateStoreOptions =
 
 export class PluginStateStore {
   readonly statePath: string;
-  #state: OpenPetsPluginStateV1 | null = null;
+  #state: NekoDriftPluginStateV1 | null = null;
 
   constructor(options: PluginStateStoreOptions) {
     this.statePath = options.statePath ?? join(options.userDataPath, openPetsPluginStateFileName);
   }
 
-  initialize(): OpenPetsPluginStateV1 {
+  initialize(): NekoDriftPluginStateV1 {
     const state = normalizePluginState(readPluginStateFile(this.statePath));
     this.#commit(state);
     return this.snapshot();
   }
 
-  read(): OpenPetsPluginStateV1 {
+  read(): NekoDriftPluginStateV1 {
     const state = normalizePluginState(readPluginStateFile(this.statePath));
     this.#state = state;
     return this.snapshot();
@@ -79,7 +79,7 @@ export class PluginStateStore {
     return cloneRecord(normalized);
   }
 
-  removeRecord(id: string): OpenPetsPluginStateV1 {
+  removeRecord(id: string): NekoDriftPluginStateV1 {
     const state = this.#getState();
     const plugins = { ...state.plugins };
     delete plugins[id];
@@ -116,7 +116,7 @@ export class PluginStateStore {
     return this.#replaceRecord(record);
   }
 
-  snapshot(): OpenPetsPluginStateV1 {
+  snapshot(): NekoDriftPluginStateV1 {
     return cloneState(this.#getState());
   }
 
@@ -137,12 +137,12 @@ export class PluginStateStore {
     return record;
   }
 
-  #getState(): OpenPetsPluginStateV1 {
-    if (!this.#state) throw new Error("OpenPets plugin state has not been initialized.");
+  #getState(): NekoDriftPluginStateV1 {
+    if (!this.#state) throw new Error("NekoDrift plugin state has not been initialized.");
     return this.#state;
   }
 
-  #commit(state: OpenPetsPluginStateV1): void {
+  #commit(state: NekoDriftPluginStateV1): void {
     writePluginStateToDisk(this.statePath, state);
     this.#state = state;
   }
@@ -159,12 +159,12 @@ function readPluginStateFile(path: string): unknown {
   try {
     return JSON.parse(readFileSync(path, "utf8")) as unknown;
   } catch (error) {
-    console.error(`Failed to read OpenPets plugin state from ${path}; using defaults.`, error);
+    console.error(`Failed to read NekoDrift plugin state from ${path}; using defaults.`, error);
     return undefined;
   }
 }
 
-function normalizePluginState(value: unknown): OpenPetsPluginStateV1 {
+function normalizePluginState(value: unknown): NekoDriftPluginStateV1 {
   const plugins: Record<string, PluginStateRecord> = {};
   if (isPlainRecord(value) && isPlainRecord(value.plugins)) {
     for (const [id, record] of Object.entries(value.plugins)) {
@@ -295,15 +295,15 @@ function normalizeUpdateMetadata(value: unknown): PluginUpdateMetadata | undefin
   return update.availableVersion || update.checkedAt || update.catalogUrl ? update : undefined;
 }
 
-function writePluginStateToDisk(path: string, state: OpenPetsPluginStateV1): void {
+function writePluginStateToDisk(path: string, state: NekoDriftPluginStateV1): void {
   mkdirSync(dirname(path), { recursive: true });
   const tempPath = `${path}.${process.pid}.tmp`;
   writeFileSync(tempPath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
   renameSync(tempPath, path);
 }
 
-function cloneState(state: OpenPetsPluginStateV1): OpenPetsPluginStateV1 {
-  return structuredClone(state) as OpenPetsPluginStateV1;
+function cloneState(state: NekoDriftPluginStateV1): NekoDriftPluginStateV1 {
+  return structuredClone(state) as NekoDriftPluginStateV1;
 }
 
 function cloneRecord(record: PluginStateRecord): PluginStateRecord {

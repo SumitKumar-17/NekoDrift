@@ -1,12 +1,12 @@
-appId: dev.openpets.app
-productName: OpenPets
-executableName: openpets
-copyright: Copyright © 2026 OpenPets
+appId: dev.nekodrift.app
+productName: NekoDrift
+executableName: nekodrift
+copyright: Copyright © 2026 NekoDrift
 
 directories:
   output: dist-electron
 
-artifactName: OpenPets-${version}-${os}-${arch}.${ext}
+artifactName: NekoDrift-${version}-${os}-${arch}.${ext}
 
 files:
   - dist/**
@@ -51,13 +51,13 @@ win:
   verifyUpdateCodeSignature: false
 
 nsis:
-  artifactName: OpenPets-${version}-win-${arch}-setup.${ext}
+  artifactName: NekoDrift-${version}-win-${arch}-setup.${ext}
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
 
 portable:
-  artifactName: OpenPets-${version}-win-${arch}-portable.${ext}
+  artifactName: NekoDrift-${version}-win-${arch}-portable.${ext}
 
 linux:
   icon: assets/app-icon.png
@@ -67,4 +67,4 @@ linux:
     - rpm
     - tar.gz
   category: Utility
-  maintainer: OpenPets
+  maintainer: NekoDrift

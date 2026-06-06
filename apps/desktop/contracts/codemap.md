@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Public API boundary contract tests for the OpenPets desktop application. These contracts validate that critical external-facing interfaces (catalog data, IPC protocol) conform to expected schemas and behavior. Contract tests are compiled to `.test-dist/contracts/` and executed during `pnpm test`.
+Public API boundary contract tests for the NekoDrift desktop application. These contracts validate that critical external-facing interfaces (catalog data, IPC protocol) conform to expected schemas and behavior. Contract tests are compiled to `.test-dist/contracts/` and executed during `pnpm test`.
 
 ## Design Patterns
 
@@ -32,7 +32,7 @@ Test parseIpcRequest() with valid/invalid tokens, versions, methods
 
 **Plugin Manifest Contract** (`plugin-manifest.contract.ts`):
 ```
-Assert openpets.plugin.json filename constant
+Assert nekodrift.plugin.json filename constant
 → Validate a declarative timer manifest with permissions, config schema, and pet actions
 → Test config references, unknown fields, runtime/permission constraints, deferred config types/features, defaults, options, timer intervals, and required permissions
 → Assert each invalid manifest reports the expected error code

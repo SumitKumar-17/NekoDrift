@@ -1,33 +1,33 @@
 # packages/cli/
 
-Main CLI tool for OpenPets agent configuration and pet management.
+Main CLI tool for NekoDrift agent configuration and pet management.
 
 ## Responsibility
 
-Primary user-facing CLI for the OpenPets ecosystem. Provides commands for: installing pets from gallery, configuring projects for Claude/OpenCode/Cursor agents, running MCP server wrapper, executing Claude hooks, and direct pet interaction (status, react, say).
+Primary user-facing CLI for the NekoDrift ecosystem. Provides commands for: installing pets from gallery, configuring projects for Claude/OpenCode/Cursor agents, running MCP server wrapper, executing Claude hooks, and direct pet interaction (status, react, say).
 
 ## Design/Patterns
 
 **Command Router**: `main()` dispatches to subcommands based on `process.argv[2]`:
 - `install <pet-id>` - Install pet via running app
 - `configure` - Interactive project setup for Claude, OpenCode, or Cursor
-- `status` - Check OpenPets desktop app connectivity and print JSON status
+- `status` - Check NekoDrift desktop app connectivity and print JSON status
 - `pets` - List installed pets with flags (default, broken)
 - `react <reaction>` - Send reaction to desktop app
 - `say <message> [--reaction <reaction>]` - Display message on pet
-- `mcp` - Spawn MCP server (delegates to `@open-pets/mcp`)
+- `mcp` - Spawn MCP server (delegates to `@neko-drift/mcp`)
 - `hook` - Execute Claude hook from stdin
 
 **Configuration Flow** (`configureProject`):
 1. Resolve project directory (symlink/escape checks)
 2. Route to agent-specific handler (claude/opencode/cursor)
 3. For Claude: Assert availability, list pets, build MCP config, write hooks
-4. For OpenCode: Prepare and write OpenCode config via `@open-pets/opencode`
-5. For Cursor: Configure MCP in `.cursor/mcp.json`, optional rules in `.cursor/rules/openpets.mdc`
+4. For OpenCode: Prepare and write OpenCode config via `@neko-drift/opencode`
+5. For Cursor: Configure MCP in `.cursor/mcp.json`, optional rules in `.cursor/rules/nekodrift.mdc`
 
 **Cursor Configuration**:
 - `--with-rules` - Install MCP + project rules
-- `--rules-only` - Install only `.cursor/rules/openpets.mdc`
+- `--rules-only` - Install only `.cursor/rules/nekodrift.mdc`
 - `--remove-rules` - Remove managed rules file
 - Status classification: `not_installed`, `installed`, `needs_update`, `conflict`, `error`
 - Atomic writes with backup creation
@@ -46,7 +46,7 @@ Primary user-facing CLI for the OpenPets ecosystem. Provides commands for: insta
 ## Flow
 
 ```
-openpets configure --agent claude --pet <id> --cwd <dir>
+nekodrift configure --agent claude --pet <id> --cwd <dir>
     ↓
 resolveProjectDir() → assertSafeProjectHookPath()
     ↓
@@ -60,29 +60,29 @@ runClaudeMcpAddJson() → spawnSync "claude mcp add-json ..."
     ↓
 writePreparedHooks() → Atomic write to .claude/settings.local.json
 
-openpets configure --agent cursor --with-rules
+nekodrift configure --agent cursor --with-rules
     ↓
 readCursorMcpConfig() → classifyCursorMcpStatus()
     ↓
-readCursorOpenPetsRules() → classifyCursorRulesStatus()
+readCursorNekoDriftRules() → classifyCursorRulesStatus()
     ↓
 planCursorMcpInstall/Replace() → executeCursorMcpWrite()
     ↓
 planCursorRulesInstall/Replace() → executeCursorRulesWrite()
 
-openpets status
+nekodrift status
     ↓
-createOpenPetsClient().status() → Print JSON result
+createNekoDriftClient().status() → Print JSON result
 ```
 
 ## Integration Points
 
 **Dependencies**:
-- `@open-pets/client` - Pet listing, installation, status, react, say
-- `@open-pets/claude` - Hook management, MCP config
-- `@open-pets/mcp` - MCP server spawning
-- `@open-pets/opencode` - OpenCode project setup
-- `@open-pets/cursor` - Cursor project setup (MCP + rules)
+- `@neko-drift/client` - Pet listing, installation, status, react, say
+- `@neko-drift/claude` - Hook management, MCP config
+- `@neko-drift/mcp` - MCP server spawning
+- `@neko-drift/opencode` - OpenCode project setup
+- `@neko-drift/cursor` - Cursor project setup (MCP + rules)
 
 **External Commands**:
 - `claude` - Claude Code CLI for MCP configuration

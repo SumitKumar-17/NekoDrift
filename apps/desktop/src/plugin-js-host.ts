@@ -3,13 +3,13 @@ import { pathToFileURL } from "node:url";
 
 import { app, BrowserWindow, ipcMain, session, type Event, type IpcMainInvokeEvent, type RenderProcessGoneDetails, type Session, type WebContents } from "electron";
 
-import type { OpenPetsJavascriptPluginManifest } from "./plugin-manifest.js";
+import type { NekoDriftJavascriptPluginManifest } from "./plugin-manifest.js";
 import type { PluginSdkApi } from "./plugin-sdk-bridge.js";
 import type { PluginStateRecord } from "./plugin-state.js";
 
 export type PluginJsHostStartOptions = {
   readonly record: PluginStateRecord;
-  readonly manifest: OpenPetsJavascriptPluginManifest;
+  readonly manifest: NekoDriftJavascriptPluginManifest;
   readonly entryPath: string;
   readonly sdk?: PluginSdkApi;
   readonly startupTimeoutMs?: number;
@@ -29,13 +29,13 @@ export class ElectronPluginJsHost implements PluginJsHost {
   }
 
   async startPlugin(options: PluginJsHostStartOptions): Promise<PluginJsHostInstance> {
-    const partition = `openpets-plugin:${encodeURIComponent(options.record.id)}:${Date.now()}`;
+    const partition = `nekodrift-plugin:${encodeURIComponent(options.record.id)}:${Date.now()}`;
     const pluginSession = session.fromPartition(partition, { cache: false });
     const entryUrl = pathToFileURL(options.entryPath).toString();
     const moduleUrl = buildPluginModuleUrl(await readFile(options.entryPath, "utf8"), entryUrl);
     const htmlUrl = buildPluginHtmlUrl(moduleUrl);
     const token = `${options.record.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const sdkChannel = `openpets:plugin-sdk:${token}`;
+    const sdkChannel = `nekodrift:plugin-sdk:${token}`;
     hardenSession(pluginSession, { entryUrl: moduleUrl, htmlUrl });
 
     const window = new BrowserWindow({
@@ -50,7 +50,7 @@ export class ElectronPluginJsHost implements PluginJsHost {
         allowRunningInsecureContent: false,
         partition,
         preload: getPluginSdkPreloadPath(),
-        additionalArguments: [`--openpets-plugin-token=${token}`],
+        additionalArguments: [`--nekodrift-plugin-token=${token}`],
       },
     });
 
@@ -176,10 +176,10 @@ export function buildPluginRegistrationHandshakeCode(entryUrl: string): string {
     let done = false;
     const sdk = globalThis.__openPetsSdk;
     const finish = (value) => { if (done) return; done = true; globalThis.__openPetsRegisteredPlugin = value; Promise.resolve(value && typeof value.start === "function" ? value.start(sdk) : undefined).then(() => resolve(true), reject); };
-    Object.defineProperty(globalThis, "OpenPetsPlugin", { configurable: false, enumerable: false, writable: false, value: Object.freeze({ register: finish }) });
+    Object.defineProperty(globalThis, "NekoDriftPlugin", { configurable: false, enumerable: false, writable: false, value: Object.freeze({ register: finish }) });
     import(${JSON.stringify(entryUrl)}).then((mod) => {
-      if (mod && typeof mod.register === "function") Promise.resolve(mod.register(globalThis.OpenPetsPlugin)).then(finish, reject);
-      else if (mod && typeof mod.default === "function") Promise.resolve(mod.default(globalThis.OpenPetsPlugin)).then(finish, reject);
+      if (mod && typeof mod.register === "function") Promise.resolve(mod.register(globalThis.NekoDriftPlugin)).then(finish, reject);
+      else if (mod && typeof mod.default === "function") Promise.resolve(mod.default(globalThis.NekoDriftPlugin)).then(finish, reject);
       else setTimeout(() => { if (!done) reject(new Error("JavaScript plugin did not register.")); }, 0);
     }, reject);
   }))();`;

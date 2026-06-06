@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { OPENPETS_PLUGIN_MANIFEST_FILENAME, type OpenPetsDeclarativePluginManifest } from "../src/plugin-manifest.js";
+import { NEKODRIFT_PLUGIN_MANIFEST_FILENAME, type NekoDriftDeclarativePluginManifest } from "../src/plugin-manifest.js";
 import { PluginService, executeDefaultPetPluginCommand, getDefaultPetPluginCommands, setPluginServiceForTests, stopPluginService } from "../src/plugin-service.js";
 import { PluginStateStore, type PluginStateRecord } from "../src/plugin-state.js";
 
@@ -60,7 +60,7 @@ await scenario("invalid manifest appears safe broken", async ({ service, store }
 });
 
 await scenario("missing manifest does not leak absolute paths", async ({ service, store, root }) => {
-  const missingPath = join(root, "missing", OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const missingPath = join(root, "missing", NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   store.upsertRecord({ id: "missing", version: "1.0.0", manifestPath: missingPath, installPath: join(root, "missing"), source: "local", enabled: true, approvedPermissions: ["timer"], config: {} });
   const snapshot = await service.getSnapshot();
   const reason = snapshot.plugins[0].brokenReason ?? "";
@@ -69,7 +69,7 @@ await scenario("missing manifest does not leak absolute paths", async ({ service
 });
 
 await scenario("stored path-like broken reason is sanitized", async ({ service, store, root }) => {
-  addPlugin(store, { brokenReason: `ENOENT: no such file or directory, open '${join(root, "plug", OPENPETS_PLUGIN_MANIFEST_FILENAME)}'` });
+  addPlugin(store, { brokenReason: `ENOENT: no such file or directory, open '${join(root, "plug", NEKODRIFT_PLUGIN_MANIFEST_FILENAME)}'` });
   const snapshot = await service.getSnapshot();
   const reason = snapshot.plugins[0].brokenReason ?? "";
   assert.equal(reason, "Plugin needs attention. Check logs for details.");
@@ -117,7 +117,7 @@ await localScenario("loadLocal snapshots manifest disabled", async ({ service, s
   assert.equal(record?.enabled, false);
   assert.equal(record?.source, "local");
   assert.deepEqual(record?.approvedPermissions, ["pet:speak", "timer"]);
-  assert.equal(existsSync(join(record?.installPath ?? "", OPENPETS_PLUGIN_MANIFEST_FILENAME)), true);
+  assert.equal(existsSync(join(record?.installPath ?? "", NEKODRIFT_PLUGIN_MANIFEST_FILENAME)), true);
   assert.equal("installPath" in result.snapshot.plugins[0], false);
 });
 
@@ -134,7 +134,7 @@ await localScenario("loadLocal permission cancel does not install", async ({ ser
   const result = await service.loadLocal();
   assert.equal(result.ok, true);
   assert.deepEqual(store.listRecords(), []);
-  assert.equal(existsSync(join(service["__userData"] as string, "plugins-dev", "cancel-plug", OPENPETS_PLUGIN_MANIFEST_FILENAME)), false);
+  assert.equal(existsSync(join(service["__userData"] as string, "plugins-dev", "cancel-plug", NEKODRIFT_PLUGIN_MANIFEST_FILENAME)), false);
 });
 
 await localScenario("loadLocal permission cancel preserves previous snapshot", async ({ service, store, source, userData }) => {
@@ -169,7 +169,7 @@ await localScenario("loadLocal rejects source symlink", async ({ service, source
 await localScenario("loadLocal rejects manifest symlink", async ({ service, source, root }) => {
   const real = join(root, "real-manifest.json");
   writeFileSync(real, JSON.stringify(manifest({ id: "symlink-manifest" })), "utf8");
-  symlinkSync(real, join(source, OPENPETS_PLUGIN_MANIFEST_FILENAME));
+  symlinkSync(real, join(source, NEKODRIFT_PLUGIN_MANIFEST_FILENAME));
   const result = await service.loadLocal();
   assert.equal(result.ok, false);
 });
@@ -194,7 +194,7 @@ await localScenario("loadLocal rejects catalog collision", async ({ service, sto
   const result = await service.loadLocal();
   assert.equal(result.ok, false);
   assert.match(result.error, /catalog plugin/);
-  assert.equal(existsSync(join(userData, "plugins-dev", "catalog-plug", OPENPETS_PLUGIN_MANIFEST_FILENAME)), false);
+  assert.equal(existsSync(join(userData, "plugins-dev", "catalog-plug", NEKODRIFT_PLUGIN_MANIFEST_FILENAME)), false);
 });
 
 await localScenario("loadLocal rejects destination symlink before write", async ({ service, source, userData, root }) => {
@@ -204,7 +204,7 @@ await localScenario("loadLocal rejects destination symlink before write", async 
   symlinkSync(outside, join(userData, "plugins-dev", "dest-link"), "dir");
   const result = await service.loadLocal();
   assert.equal(result.ok, false);
-  assert.equal(existsSync(join(outside, OPENPETS_PLUGIN_MANIFEST_FILENAME)), false);
+  assert.equal(existsSync(join(outside, NEKODRIFT_PLUGIN_MANIFEST_FILENAME)), false);
 });
 
 await localScenario("loadLocal permission change disables", async ({ service, store, source, userData }) => {
@@ -232,7 +232,7 @@ await localScenario("loadLocal copies only manifest", async ({ service, source, 
   const result = await service.loadLocal();
   assert.equal(result.ok, true);
   const install = store.getRecord("only-manifest")?.installPath ?? join(userData, "plugins-dev", "only-manifest");
-  assert.equal(existsSync(join(install, OPENPETS_PLUGIN_MANIFEST_FILENAME)), true);
+  assert.equal(existsSync(join(install, NEKODRIFT_PLUGIN_MANIFEST_FILENAME)), true);
   assert.equal(existsSync(join(install, "extra.txt")), false);
 });
 
@@ -242,27 +242,27 @@ await localScenario("loadLocal snapshots javascript entry", async ({ service, so
   const result = await service.loadLocal();
   assert.equal(result.ok, true);
   const install = store.getRecord("js-local")?.installPath ?? join(userData, "plugins-dev", "js-local");
-  assert.equal(existsSync(join(install, OPENPETS_PLUGIN_MANIFEST_FILENAME)), true);
+  assert.equal(existsSync(join(install, NEKODRIFT_PLUGIN_MANIFEST_FILENAME)), true);
   assert.equal(readFileSync(join(install, "index.mjs"), "utf8"), "export default {};\n");
 });
 
 await localScenario("bundled seeding copies manifest and preserves user choices", async ({ userData, root, store }) => {
   const official = join(root, "official");
-  const source = join(official, "openpets.break-buddy");
-  writeManifest(source, { manifestVersion: 2, id: "openpets.break-buddy", name: "Break Buddy", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak"], configSchema: { minutes: { type: "number", default: 30 } } });
-  writeFileSync(join(source, "index.js"), "OpenPetsPlugin.register({ start() {} });\n", "utf8");
+  const source = join(official, "nekodrift.break-buddy");
+  writeManifest(source, { manifestVersion: 2, id: "nekodrift.break-buddy", name: "Break Buddy", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak"], configSchema: { minutes: { type: "number", default: 30 } } });
+  writeFileSync(join(source, "index.js"), "NekoDriftPlugin.register({ start() {} });\n", "utf8");
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: new FakeRuntime() as never, bundledPluginSourceDirs: [official] });
   await service.start();
-  let record = store.getRecord("openpets.break-buddy");
+  let record = store.getRecord("nekodrift.break-buddy");
   assert.equal(record?.source, "catalog");
   assert.equal(record?.bundled, true);
   assert.equal(record?.enabled, true);
-  assert.equal(readFileSync(join(record?.installPath ?? "", "index.js"), "utf8"), "OpenPetsPlugin.register({ start() {} });\n");
-  store.replaceConfig("openpets.break-buddy", { minutes: 45 });
-  store.setEnabled("openpets.break-buddy", false);
-  writeManifest(source, { manifestVersion: 2, id: "openpets.break-buddy", name: "Break Buddy", version: "2.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak", "pet:reaction"] });
+  assert.equal(readFileSync(join(record?.installPath ?? "", "index.js"), "utf8"), "NekoDriftPlugin.register({ start() {} });\n");
+  store.replaceConfig("nekodrift.break-buddy", { minutes: 45 });
+  store.setEnabled("nekodrift.break-buddy", false);
+  writeManifest(source, { manifestVersion: 2, id: "nekodrift.break-buddy", name: "Break Buddy", version: "2.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak", "pet:reaction"] });
   await service.seedBundledPlugins();
-  record = store.getRecord("openpets.break-buddy");
+  record = store.getRecord("nekodrift.break-buddy");
   assert.equal(record?.version, "2.0.0");
   assert.equal(record?.enabled, false);
   assert.deepEqual(record?.config, { minutes: 45 });
@@ -270,44 +270,44 @@ await localScenario("bundled seeding copies manifest and preserves user choices"
 });
 
 await localScenario("bundled seeding prunes stale ids and blocks uninstall update", async ({ userData, root, store }) => {
-  const oldInstall = join(userData, "plugins", "openpets.pomodoro");
-  const oldManifest = writeManifest(oldInstall, manifest({ id: "openpets.pomodoro" }));
-  store.upsertRecord({ id: "openpets.pomodoro", version: "1.0.0", installPath: oldInstall, manifestPath: oldManifest, source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
+  const oldInstall = join(userData, "plugins", "nekodrift.pomodoro");
+  const oldManifest = writeManifest(oldInstall, manifest({ id: "nekodrift.pomodoro" }));
+  store.upsertRecord({ id: "nekodrift.pomodoro", version: "1.0.0", installPath: oldInstall, manifestPath: oldManifest, source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
   const official = join(root, "official");
-  const source = join(official, "openpets.github-notifications");
-  writeManifest(source, { manifestVersion: 2, id: "openpets.github-notifications", name: "GitHub", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["network"], network: { hosts: ["api.github.com"] } });
-  writeFileSync(join(source, "index.js"), "OpenPetsPlugin.register({ start() {} });\n", "utf8");
+  const source = join(official, "nekodrift.github-notifications");
+  writeManifest(source, { manifestVersion: 2, id: "nekodrift.github-notifications", name: "GitHub", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["network"], network: { hosts: ["api.github.com"] } });
+  writeFileSync(join(source, "index.js"), "NekoDriftPlugin.register({ start() {} });\n", "utf8");
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: new FakeRuntime() as never, bundledPluginSourceDirs: [official] });
   await service.start();
-  assert.equal(store.getRecord("openpets.pomodoro"), undefined);
-  assert.equal(store.getRecord("openpets.github-notifications")?.enabled, false);
-  assert.deepEqual(store.getRecord("openpets.github-notifications")?.approvedNetworkHosts, ["api.github.com"]);
-  assert.equal((await service.uninstall("openpets.github-notifications")).ok, false);
-  const update = await service.updateCatalog("openpets.github-notifications");
+  assert.equal(store.getRecord("nekodrift.pomodoro"), undefined);
+  assert.equal(store.getRecord("nekodrift.github-notifications")?.enabled, false);
+  assert.deepEqual(store.getRecord("nekodrift.github-notifications")?.approvedNetworkHosts, ["api.github.com"]);
+  assert.equal((await service.uninstall("nekodrift.github-notifications")).ok, false);
+  const update = await service.updateCatalog("nekodrift.github-notifications");
   assert.equal(update.ok, false);
   assert.match(update.error, /Bundled plugins update/);
 });
 
 await localScenario("bundled seeding prunes stale local old ids", async ({ userData, store }) => {
-  const oldInstall = join(userData, "plugins-dev", "openpets.daily-reminders");
-  const oldManifest = writeManifest(oldInstall, manifest({ id: "openpets.daily-reminders" }));
-  store.upsertRecord({ id: "openpets.daily-reminders", version: "1.0.0", installPath: oldInstall, manifestPath: oldManifest, source: "local", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
+  const oldInstall = join(userData, "plugins-dev", "nekodrift.daily-reminders");
+  const oldManifest = writeManifest(oldInstall, manifest({ id: "nekodrift.daily-reminders" }));
+  store.upsertRecord({ id: "nekodrift.daily-reminders", version: "1.0.0", installPath: oldInstall, manifestPath: oldManifest, source: "local", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: new FakeRuntime() as never, bundledPluginSourceDirs: [] });
   await service.seedBundledPlugins();
-  assert.equal(store.getRecord("openpets.daily-reminders"), undefined);
+  assert.equal(store.getRecord("nekodrift.daily-reminders"), undefined);
   assert.equal(existsSync(oldInstall), false);
 });
 
 await localScenario("bundled stale prune refuses unsafe path", async ({ userData, root, store }) => {
   const outside = join(root, "outside-stale");
   mkdirSync(outside, { recursive: true });
-  const link = join(userData, "plugins", "openpets.pomodoro");
+  const link = join(userData, "plugins", "nekodrift.pomodoro");
   symlinkSync(outside, link, "dir");
-  store.upsertRecord({ id: "openpets.pomodoro", version: "1.0.0", installPath: link, manifestPath: join(link, OPENPETS_PLUGIN_MANIFEST_FILENAME), source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
+  store.upsertRecord({ id: "nekodrift.pomodoro", version: "1.0.0", installPath: link, manifestPath: join(link, NEKODRIFT_PLUGIN_MANIFEST_FILENAME), source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
   const runtime = new FakeRuntime();
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: runtime as never, bundledPluginSourceDirs: [] });
   await service.seedBundledPlugins();
-  assert.equal(store.getRecord("openpets.pomodoro")?.id, "openpets.pomodoro");
+  assert.equal(store.getRecord("nekodrift.pomodoro")?.id, "nekodrift.pomodoro");
   assert.equal(existsSync(outside), true);
   assert.equal(runtime.logs.some((entry) => entry.message.includes("Refused to prune")), true);
 });
@@ -318,41 +318,41 @@ await localScenario("bundled seeding rejects plugins root symlink", async ({ use
   mkdirSync(outsideRoot, { recursive: true });
   symlinkSync(outsideRoot, join(userData, "plugins"), "dir");
   const official = join(root, "official");
-  const source = join(official, "openpets.break-buddy");
-  writeManifest(source, { manifestVersion: 2, id: "openpets.break-buddy", name: "Break Buddy", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak"] });
-  writeFileSync(join(source, "index.js"), "OpenPetsPlugin.register({ start() {} });\n", "utf8");
+  const source = join(official, "nekodrift.break-buddy");
+  writeManifest(source, { manifestVersion: 2, id: "nekodrift.break-buddy", name: "Break Buddy", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak"] });
+  writeFileSync(join(source, "index.js"), "NekoDriftPlugin.register({ start() {} });\n", "utf8");
   const runtime = new FakeRuntime();
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: runtime as never, bundledPluginSourceDirs: [official] });
   await service.seedBundledPlugins();
-  assert.equal(store.getRecord("openpets.break-buddy"), undefined);
-  assert.equal(existsSync(join(outsideRoot, "openpets.break-buddy")), false);
+  assert.equal(store.getRecord("nekodrift.break-buddy"), undefined);
+  assert.equal(existsSync(join(outsideRoot, "nekodrift.break-buddy")), false);
   assert.equal(runtime.logs.some((entry) => entry.message.includes("Bundled plugin seed failed")), true);
 });
 
 await localScenario("start skips bundled seeding when disabled", async ({ userData, root, store }) => {
   const official = join(root, "official");
-  const source = join(official, "openpets.break-buddy");
-  writeManifest(source, { manifestVersion: 2, id: "openpets.break-buddy", name: "Break Buddy", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak"] });
-  writeFileSync(join(source, "index.js"), "OpenPetsPlugin.register({ start() {} });\n", "utf8");
+  const source = join(official, "nekodrift.break-buddy");
+  writeManifest(source, { manifestVersion: 2, id: "nekodrift.break-buddy", name: "Break Buddy", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["pet:speak"] });
+  writeFileSync(join(source, "index.js"), "NekoDriftPlugin.register({ start() {} });\n", "utf8");
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: new FakeRuntime() as never, bundledPluginSourceDirs: [official], seedBundledPlugins: false });
   await service.start();
-  assert.equal(store.getRecord("openpets.break-buddy"), undefined);
+  assert.equal(store.getRecord("nekodrift.break-buddy"), undefined);
 });
 
 await scenario("catalog metadata ignores bundled records", async ({ userData, store, runtime }) => {
-  const install = join(userData, "plugins", "openpets.break-buddy");
-  const manifestPath = writeManifest(install, manifest({ id: "openpets.break-buddy" }));
-  store.upsertRecord({ id: "openpets.break-buddy", version: "1.0.0", installPath: install, manifestPath, source: "catalog", bundled: true, enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
-  const fetchImpl = async (): Promise<Response> => new Response(JSON.stringify({ version: 1, generatedAt: new Date().toISOString(), plugins: [{ ...catalogEntry("openpets.break-buddy", "1.0.0"), disabled: true, statusReason: "disabled" }] }), { status: 200 });
+  const install = join(userData, "plugins", "nekodrift.break-buddy");
+  const manifestPath = writeManifest(install, manifest({ id: "nekodrift.break-buddy" }));
+  store.upsertRecord({ id: "nekodrift.break-buddy", version: "1.0.0", installPath: install, manifestPath, source: "catalog", bundled: true, enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
+  const fetchImpl = async (): Promise<Response> => new Response(JSON.stringify({ version: 1, generatedAt: new Date().toISOString(), plugins: [{ ...catalogEntry("nekodrift.break-buddy", "1.0.0"), disabled: true, statusReason: "disabled" }] }), { status: 200 });
   const service = new PluginService({ userDataPath: userData, stateStore: store, runtime: runtime as never, fetchImpl });
   await service.getCatalogSnapshot(true);
-  assert.equal(store.getRecord("openpets.break-buddy")?.enabled, true);
-  assert.equal(store.getRecord("openpets.break-buddy")?.catalogDisabled, undefined);
+  assert.equal(store.getRecord("nekodrift.break-buddy")?.enabled, true);
+  assert.equal(store.getRecord("nekodrift.break-buddy")?.catalogDisabled, undefined);
 });
 
 await localScenario("loadLocalPath auto-approves explicit dev path", async ({ service, source, store }) => {
   writeManifest(source, { manifestVersion: 2, id: "dev-js", name: "Dev JS", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.js", permissions: ["network"], network: { hosts: ["api.github.com"] } });
-  writeFileSync(join(source, "index.js"), "OpenPetsPlugin.register({ start() {} });\n", "utf8");
+  writeFileSync(join(source, "index.js"), "NekoDriftPlugin.register({ start() {} });\n", "utf8");
   service["__denyPermissions"] = true;
   const result = await service.loadLocalPath(source, { autoApprove: true });
   assert.equal(result.ok, true);
@@ -420,7 +420,7 @@ await localScenario("uninstall removes state reloads and rejects symlink deletio
   mkdirSync(outside, { recursive: true });
   const link = join(userData, "plugins", "link-plug");
   symlinkSync(outside, link, "dir");
-  store.upsertRecord({ id: "link-plug", version: "1.0.0", installPath: link, manifestPath: join(link, OPENPETS_PLUGIN_MANIFEST_FILENAME), source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
+  store.upsertRecord({ id: "link-plug", version: "1.0.0", installPath: link, manifestPath: join(link, NEKODRIFT_PLUGIN_MANIFEST_FILENAME), source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
   const rejected = await service.uninstall("link-plug");
   assert.equal(rejected.ok, false);
   assert.equal(store.getRecord("link-plug")?.id, "link-plug");
@@ -430,7 +430,7 @@ await localScenario("uninstall removes state reloads and rejects symlink deletio
   mkdirSync(rootOutside, { recursive: true });
   rmSync(join(userData, "plugins"), { recursive: true, force: true });
   symlinkSync(rootOutside, join(userData, "plugins"), "dir");
-  store.upsertRecord({ id: "root-link", version: "1.0.0", installPath: join(userData, "plugins", "root-link"), manifestPath: join(userData, "plugins", "root-link", OPENPETS_PLUGIN_MANIFEST_FILENAME), source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
+  store.upsertRecord({ id: "root-link", version: "1.0.0", installPath: join(userData, "plugins", "root-link"), manifestPath: join(userData, "plugins", "root-link", NEKODRIFT_PLUGIN_MANIFEST_FILENAME), source: "catalog", enabled: true, approvedPermissions: ["timer", "pet:speak"], config: {} });
   const rootRejected = await service.uninstall("root-link");
   assert.equal(rootRejected.ok, false);
   assert.equal(store.getRecord("root-link")?.id, "root-link");
@@ -455,7 +455,7 @@ await catalogCompatibilityScenario("catalog filters and blocks incompatible plug
   assert.deepEqual(snapshot.plugins.map((plugin) => plugin.id), ["compatible-plug"]);
   const result = await service.installCatalog("future-plug");
   assert.equal(result.ok, false);
-  assert.match(result.error, /newer OpenPets/);
+  assert.match(result.error, /newer NekoDrift/);
 });
 
 await scenario("disabled catalog returns no discover plugins", async ({ userData, store, runtime }) => {
@@ -488,9 +488,9 @@ await scenario("right-click command helper groups caps and ignores stale command
 console.error("Plugin service validation passed.");
 
 async function scenario(name: string, fn: (ctx: { root: string; userData: string; store: PluginStateStore; service: PluginService; runtime: FakeRuntime }) => Promise<void>): Promise<void> {
-  const root = mkdtempSync(join(tmpdir(), "openpets-plugin-service-root-"));
+  const root = mkdtempSync(join(tmpdir(), "nekodrift-plugin-service-root-"));
   lastRoot = root;
-  const userData = mkdtempSync(join(tmpdir(), "openpets-plugin-service-user-"));
+  const userData = mkdtempSync(join(tmpdir(), "nekodrift-plugin-service-user-"));
   const store = new PluginStateStore({ statePath: join(userData, "state.json") });
   store.initialize();
   const runtime = new FakeRuntime();
@@ -499,8 +499,8 @@ async function scenario(name: string, fn: (ctx: { root: string; userData: string
 }
 
 async function localScenario(name: string, fn: (ctx: { root: string; userData: string; source: string; store: PluginStateStore; service: PluginService & Record<string, unknown>; runtime: FakeRuntime }) => Promise<void>): Promise<void> {
-  const root = mkdtempSync(join(tmpdir(), "openpets-plugin-local-root-"));
-  const userData = mkdtempSync(join(tmpdir(), "openpets-plugin-local-user-"));
+  const root = mkdtempSync(join(tmpdir(), "nekodrift-plugin-local-root-"));
+  const userData = mkdtempSync(join(tmpdir(), "nekodrift-plugin-local-user-"));
   const source = join(root, "source");
   mkdirSync(source, { recursive: true });
   mkdirSync(join(userData, "plugins"), { recursive: true });
@@ -516,16 +516,16 @@ async function localScenario(name: string, fn: (ctx: { root: string; userData: s
 }
 
 async function catalogRollbackScenario(name: string, fn: (ctx: { root: string; userData: string; store: ThrowingStateStore; service: PluginService; runtime: FakeRuntime }) => Promise<void>): Promise<void> {
-  const root = mkdtempSync(join(tmpdir(), "openpets-plugin-catalog-root-"));
-  const userData = mkdtempSync(join(tmpdir(), "openpets-plugin-catalog-user-"));
+  const root = mkdtempSync(join(tmpdir(), "nekodrift-plugin-catalog-root-"));
+  const userData = mkdtempSync(join(tmpdir(), "nekodrift-plugin-catalog-user-"));
   mkdirSync(join(userData, "plugins"), { recursive: true });
   mkdirSync(join(userData, "plugins-dev"), { recursive: true });
   const store = new ThrowingStateStore({ statePath: join(userData, "state.json") });
   store.initialize();
   const runtime = new FakeRuntime();
   const nextManifest = manifest({ id: "rollback-plug", version: "2.0.0" });
-  const zip = makeZip(OPENPETS_PLUGIN_MANIFEST_FILENAME, Buffer.from(JSON.stringify(nextManifest), "utf8"));
-  const downloadUrl = "https://zip.openpets.dev/plugins/rollback-plug.zip";
+  const zip = makeZip(NEKODRIFT_PLUGIN_MANIFEST_FILENAME, Buffer.from(JSON.stringify(nextManifest), "utf8"));
+  const downloadUrl = "https://zip.nekodrift.app/plugins/rollback-plug.zip";
   const catalog = { version: 1, generatedAt: new Date().toISOString(), plugins: [{ id: nextManifest.id, name: nextManifest.name, version: nextManifest.version, description: "Rollback", runtime: "declarative", permissions: nextManifest.permissions, downloadUrl, sha256: createHash("sha256").update(zip).digest("hex") }] };
   const fetchImpl = async (url: string | URL | Request): Promise<Response> => {
     const value = String(url);
@@ -537,7 +537,7 @@ async function catalogRollbackScenario(name: string, fn: (ctx: { root: string; u
 }
 
 async function catalogCompatibilityScenario(name: string, fn: (ctx: { service: PluginService }) => Promise<void>): Promise<void> {
-  const userData = mkdtempSync(join(tmpdir(), "openpets-plugin-compat-user-"));
+  const userData = mkdtempSync(join(tmpdir(), "nekodrift-plugin-compat-user-"));
   const store = new PluginStateStore({ statePath: join(userData, "state.json") });
   store.initialize();
   const catalog = { version: 1, generatedAt: new Date().toISOString(), plugins: [catalogEntry("compatible-plug", "1.0.0"), catalogEntry("future-plug", "9.0.0")] };
@@ -546,8 +546,8 @@ async function catalogCompatibilityScenario(name: string, fn: (ctx: { service: P
   try { await fn({ service }); } catch (error) { throw new Error(`${name}: ${error instanceof Error ? error.message : String(error)}`); }
 }
 
-function catalogEntry(id: string, minOpenPetsVersion: string): object {
-  return { id, name: id, version: "1.0.0", description: "Test", runtime: "declarative", permissions: ["timer", "pet:speak"], downloadUrl: `https://zip.openpets.dev/plugins/${id}.zip`, sha256: "0".repeat(64), minOpenPetsVersion };
+function catalogEntry(id: string, minNekoDriftVersion: string): object {
+  return { id, name: id, version: "1.0.0", description: "Test", runtime: "declarative", permissions: ["timer", "pet:speak"], downloadUrl: `https://zip.nekodrift.app/plugins/${id}.zip`, sha256: "0".repeat(64), minNekoDriftVersion };
 }
 
 function addPlugin(store: PluginStateStore, patch: Partial<PluginStateRecord> = {}, data: unknown = manifest()): void {
@@ -567,13 +567,13 @@ function addCommandPlugin(store: PluginStateStore, userData: string, id: string,
 
 function currentRootFromStore(_store: PluginStateStore): string { return lastRoot; }
 
-function manifest(patch: Partial<OpenPetsDeclarativePluginManifest> & { everyMinutes?: OpenPetsDeclarativePluginManifest["triggers"][number]["everyMinutes"] } = {}): OpenPetsDeclarativePluginManifest {
+function manifest(patch: Partial<NekoDriftDeclarativePluginManifest> & { everyMinutes?: NekoDriftDeclarativePluginManifest["triggers"][number]["everyMinutes"] } = {}): NekoDriftDeclarativePluginManifest {
   return { manifestVersion: 1, id: patch.id ?? "plug", name: "Plug", version: patch.version ?? "1.0.0", runtime: "declarative", permissions: patch.permissions ?? ["timer", "pet:speak"], configSchema: patch.configSchema, triggers: patch.triggers ?? [{ on: "timer", everyMinutes: patch.everyMinutes ?? 5, actions: [{ type: "pet.speak", message: "Stretch" }] }] };
 }
 
 function writeManifest(dir: string, data: unknown): string {
   mkdirSync(dir, { recursive: true });
-  const path = join(dir, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const path = join(dir, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   writeFileSync(path, JSON.stringify(data), "utf8");
   return path;
 }

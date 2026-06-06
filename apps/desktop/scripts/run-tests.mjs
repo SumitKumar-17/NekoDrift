@@ -44,7 +44,7 @@ function run(command, args = [], options = {}) {
     const child = spawn(command, args, {
       stdio: "inherit",
       cwd: rootDir,
-      env: { ...process.env, OPENPETS_DESKTOP_ROOT: rootDir },
+      env: { ...process.env, NEKODRIFT_DESKTOP_ROOT: rootDir },
       ...options,
     });
     child.on("close", (code) => {

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Build and release automation scripts for the OpenPets desktop application. Handles packaging cleanup and local release orchestration (macOS-focused).
+Build and release automation scripts for the NekoDrift desktop application. Handles packaging cleanup and local release orchestration (macOS-focused).
 
 ## Design
 
@@ -37,7 +37,7 @@ Check preload syntax → Compile tests to .test-dist → Run behavior tests → 
 
 - **File System**: `apps/desktop/dist-electron/` (build output), `apps/desktop/dist/` (compiled JS)
 - **Git**: Working tree status, remote sync verification, tag existence checks
-- **GitHub**: `gh release create`, `gh release upload` to `alvinunreal/openpets`
+- **GitHub**: `gh release create`, `gh release upload` to `alvinunreal/nekodrift`
 - **Build Tools**: `pnpm`, `electron-builder`, `node --check`
 - **Node APIs**: `crypto` (SHA256), `fs`, `path`, `child_process.spawnSync`
 

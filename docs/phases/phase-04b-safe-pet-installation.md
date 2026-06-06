@@ -120,7 +120,7 @@ Download URL must come from a validated v2 catalog entry.
 Zip URL rules:
 
 - `https:` only.
-- Host exactly `zip.openpets.dev`.
+- Host exactly `zip.nekodrift.app`.
 - Path starts with `/pets/`.
 - No credentials.
 - No custom port.
@@ -130,7 +130,7 @@ Zip URL rules:
 
 Install-from-fixture behavior:
 
-- Installing from the validated fixture fallback is allowed in development because fixture entries use the same `zip.openpets.dev` URLs and URL validation rules.
+- Installing from the validated fixture fallback is allowed in development because fixture entries use the same `zip.nekodrift.app` URLs and URL validation rules.
 - UI should not hide that the catalog source is fixture fallback.
 
 Reinstall policy:
@@ -255,9 +255,9 @@ Disable duplicate actions while an operation for a pet is in progress.
 Extend the current narrow internal UI API:
 
 ```ts
-installPet(petId: string): Promise<OpenPetsStateV1>
-removePet(petId: string): Promise<OpenPetsStateV1>
-setDefaultPet(petId: string): Promise<OpenPetsStateV1>
+installPet(petId: string): Promise<NekoDriftStateV1>
+removePet(petId: string): Promise<NekoDriftStateV1>
+setDefaultPet(petId: string): Promise<NekoDriftStateV1>
 ```
 
 Rules:
@@ -290,7 +290,7 @@ Final Phase 04B choice:
 
 - Use `yauzl@3.3.0` with `lazyEntries: true` and `validateEntrySizes: true`.
 - Rationale: pure JavaScript, works with Node/npm without Bun or native build steps, exposes central-directory entry metadata before extraction, supports sequential entry processing, exposes compressed/uncompressed sizes, encryption flags, compression method, and external file attributes needed for fail-closed validation.
-- Phase 04B extraction still applies OpenPets' own path, size, duplicate, collision, file type, and final-shape validation instead of relying only on the library defaults.
+- Phase 04B extraction still applies NekoDrift' own path, size, duplicate, collision, file type, and final-shape validation instead of relying only on the library defaults.
 
 ## Risks and tradeoffs
 
@@ -326,7 +326,7 @@ Mitigation:
 - No remote HTML.
 - No script execution from downloaded pets.
 - No shell command execution.
-- No pet zip contents outside OpenPets userData paths.
+- No pet zip contents outside NekoDrift userData paths.
 - All downloaded files are untrusted.
 - Fail closed on validation errors.
 
@@ -353,7 +353,7 @@ Phase 04B must add automated checks for:
 1. Run:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. Open `Manage Pets...`.

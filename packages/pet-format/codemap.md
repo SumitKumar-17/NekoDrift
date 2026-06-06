@@ -1,10 +1,10 @@
 # packages/pet-format/
 
-Minimal package providing a type marker for OpenPets package identification.
+Minimal package providing a type marker for NekoDrift package identification.
 
 ## Responsibility
 
-Exports a simple interface and constant to identify the pet-format package in the OpenPets ecosystem. Used for type-level package identification and workspace boundary marking.
+Exports a simple interface and constant to identify the pet-format package in the NekoDrift ecosystem. Used for type-level package identification and workspace boundary marking.
 
 ## Design
 
@@ -22,4 +22,4 @@ No data flow - this is a static marker package.
 
 **Exports**:
 - `PetFormatPackageMarker` interface with readonly `packageName`
-- `petFormatPackageName` constant (`"@open-pets/pet-format"`)
+- `petFormatPackageName` constant (`"@neko-drift/pet-format"`)

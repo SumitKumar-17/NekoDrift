@@ -1,22 +1,22 @@
 # OpenCode integration
 
-This document describes how OpenPets Desktop integrates with OpenCode, what files are configured, how OpenCode reaches the desktop app, and which OpenCode events trigger pet reactions or speech.
+This document describes how NekoDrift Desktop integrates with OpenCode, what files are configured, how OpenCode reaches the desktop app, and which OpenCode events trigger pet reactions or speech.
 
 ## Integration surfaces
 
 OpenCode support has three related surfaces:
 
-1. **MCP tools** — OpenCode gets the `openpets_status`, `openpets_react`, and `openpets_say` tools through `@open-pets/cli mcp`.
-2. **OpenCode instructions** — OpenCode loads a managed `openpets.md` instruction file telling agents when to use the tools.
-3. **OpenCode plugin hooks** — `@open-pets/opencode` turns OpenCode activity into automatic pet reactions and short safe speech.
+1. **MCP tools** — OpenCode gets the `nekodrift_status`, `nekodrift_react`, and `nekodrift_say` tools through `@neko-drift/cli mcp`.
+2. **OpenCode instructions** — OpenCode loads a managed `nekodrift.md` instruction file telling agents when to use the tools.
+3. **OpenCode plugin hooks** — `@neko-drift/opencode` turns OpenCode activity into automatic pet reactions and short safe speech.
 
-The desktop setup UI for OpenCode is implemented in `apps/desktop/src/agent-setup.ts`. It previews, installs, doctors, and removes global OpenCode setup through `@open-pets/opencode` helpers.
+The desktop setup UI for OpenCode is implemented in `apps/desktop/src/agent-setup.ts`. It previews, installs, doctors, and removes global OpenCode setup through `@neko-drift/opencode` helpers.
 
 This document covers **Desktop global setup** first. The CLI also supports **project-local OpenCode setup**; see [Project-local OpenCode setup](#project-local-opencode-setup).
 
 ## Global config location
 
-OpenPets uses OpenCode's global config directory:
+NekoDrift uses OpenCode's global config directory:
 
 ```text
 OPENCODE_CONFIG_DIR, if set
@@ -24,7 +24,7 @@ Windows: %APPDATA%/opencode
 macOS/Linux: $XDG_CONFIG_HOME/opencode, or ~/.config/opencode fallback
 ```
 
-Inside that directory OpenPets considers these config files, in order:
+Inside that directory NekoDrift considers these config files, in order:
 
 ```text
 config.json
@@ -38,13 +38,13 @@ If no file exists, the default creation target is:
 opencode.jsonc
 ```
 
-OpenPets also writes a global instruction file:
+NekoDrift also writes a global instruction file:
 
 ```text
-<opencode-config-dir>/openpets.md
+<opencode-config-dir>/nekodrift.md
 ```
 
-## Files and config managed by OpenPets
+## Files and config managed by NekoDrift
 
 OpenCode global setup writes or updates three config fields.
 
@@ -55,9 +55,9 @@ Published setup creates an MCP entry like:
 ```jsonc
 {
   "mcp": {
-    "openpets": {
+    "nekodrift": {
       "type": "local",
-      "command": ["npx", "-y", "@open-pets/cli@<version>", "mcp"],
+      "command": ["npx", "-y", "@neko-drift/cli@<version>", "mcp"],
       "enabled": true
     }
   }
@@ -67,10 +67,10 @@ Published setup creates an MCP entry like:
 If a pet is selected, the command includes it:
 
 ```jsonc
-"command": ["npx", "-y", "@open-pets/cli@<version>", "mcp", "--pet", "<petId>"]
+"command": ["npx", "-y", "@neko-drift/cli@<version>", "mcp", "--pet", "<petId>"]
 ```
 
-In local development or packaged desktop mode, OpenPets can use:
+In local development or packaged desktop mode, NekoDrift can use:
 
 ```jsonc
 "command": ["node", "<local-or-bundled-cli-entry>", "mcp", ...]
@@ -80,11 +80,11 @@ Packaged and local `node <entry>` commands require `node` to be available on Ope
 
 ### Instructions
 
-OpenPets adds the managed instruction file to OpenCode's `instructions` array:
+NekoDrift adds the managed instruction file to OpenCode's `instructions` array:
 
 ```jsonc
 {
-  "instructions": ["<opencode-config-dir>/openpets.md"]
+  "instructions": ["<opencode-config-dir>/nekodrift.md"]
 }
 ```
 
@@ -92,27 +92,27 @@ That file contains:
 
 ```md
 <!-- OPENPETS:START -->
-## OpenPets
+## NekoDrift
 
-OpenPets MCP tools may be available.
+NekoDrift MCP tools may be available.
 
-Use OpenPets as a short visible status channel for meaningful coding progress:
-- Use `openpets_say` when starting, completing, blocking, or needing review on non-trivial work.
+Use NekoDrift as a short visible status channel for meaningful coding progress:
+- Use `nekodrift_say` when starting, completing, blocking, or needing review on non-trivial work.
 - Keep messages brief, user-facing, and non-sensitive.
 - Do not include code, logs, secrets, URLs, or file paths.
-- Use `openpets_react` for small visual or emotional feedback.
-- Use `openpets_status` only when checking availability or the targeted pet.
+- Use `nekodrift_react` for small visual or emotional feedback.
+- Use `nekodrift_status` only when checking availability or the targeted pet.
 - Do not spam every internal step.
 <!-- OPENPETS:END -->
 ```
 
 ### Plugin
 
-OpenPets adds the OpenCode plugin:
+NekoDrift adds the OpenCode plugin:
 
 ```jsonc
 {
-  "plugin": ["@open-pets/opencode@<version>"]
+  "plugin": ["@neko-drift/opencode@<version>"]
 }
 ```
 
@@ -120,73 +120,73 @@ If a pet is selected, the plugin entry includes options:
 
 ```jsonc
 {
-  "plugin": [["@open-pets/opencode@<version>", { "pet": "<petId>" }]]
+  "plugin": [["@neko-drift/opencode@<version>", { "pet": "<petId>" }]]
 }
 ```
 
 The plugin id is:
 
 ```text
-open-pets-opencode
+neko-drift-opencode
 ```
 
 ## Setup behavior
 
-OpenPets global setup is conservative:
+NekoDrift global setup is conservative:
 
 - It parses OpenCode config as JSONC, not strict JSON.
 - It preserves unrelated user config.
 - It avoids unsafe symlinks and oversized files.
 - It writes temp files and backups before replacing existing files.
-- It refuses to overwrite custom OpenPets-like config entries that it cannot prove are managed by OpenPets.
+- It refuses to overwrite custom NekoDrift-like config entries that it cannot prove are managed by NekoDrift.
 - It cleans up stale managed entries from any non-selected global config file when one selected config file becomes the owner.
 
-OpenPets chooses one global config file as the owner for the managed MCP, instructions, and plugin entries. It first prefers the effective owner of relevant array fields such as `plugin` or `instructions`, then reuses an existing managed OpenPets owner, then uses the highest-precedence existing global config file, and finally creates `opencode.jsonc` if none exists. Setup refuses ambiguous cases, such as plugin and instruction arrays living in different files, managed OpenPets entries appearing in multiple global files, or higher-precedence arrays shadowing lower-precedence user entries.
+NekoDrift chooses one global config file as the owner for the managed MCP, instructions, and plugin entries. It first prefers the effective owner of relevant array fields such as `plugin` or `instructions`, then reuses an existing managed NekoDrift owner, then uses the highest-precedence existing global config file, and finally creates `opencode.jsonc` if none exists. Setup refuses ambiguous cases, such as plugin and instruction arrays living in different files, managed NekoDrift entries appearing in multiple global files, or higher-precedence arrays shadowing lower-precedence user entries.
 
-Removal deletes only OpenPets-managed MCP, instructions, and plugin entries. It leaves unrelated OpenCode config intact.
+Removal deletes only NekoDrift-managed MCP, instructions, and plugin entries. It leaves unrelated OpenCode config intact.
 
 ## Project-local OpenCode setup
 
-The `@open-pets/cli` package can configure OpenCode inside a project:
+The `@neko-drift/cli` package can configure OpenCode inside a project:
 
 ```sh
-openpets configure --agent opencode --pet <petId>
+nekodrift configure --agent opencode --pet <petId>
 ```
 
 Project-local setup writes inside the current project directory:
 
 ```text
 .opencode/opencode.jsonc
-.opencode/openpets.md
+.opencode/nekodrift.md
 ```
 
-If another supported OpenCode project config already exists, OpenPets updates that file instead of creating `.opencode/opencode.jsonc`. Project-local setup adds the same three kinds of entries as global setup:
+If another supported OpenCode project config already exists, NekoDrift updates that file instead of creating `.opencode/opencode.jsonc`. Project-local setup adds the same three kinds of entries as global setup:
 
-- `mcp.openpets` using `@open-pets/cli mcp --pet <petId>`.
-- `instructions` pointing to `.opencode/openpets.md`.
-- `plugin` using `@open-pets/opencode` with `{ "pet": "<petId>" }`.
+- `mcp.nekodrift` using `@neko-drift/cli mcp --pet <petId>`.
+- `instructions` pointing to `.opencode/nekodrift.md`.
+- `plugin` using `@neko-drift/opencode` with `{ "pet": "<petId>" }`.
 
 Project-local config and instructions can be committed to the repository and include the selected pet id. That is useful for shared project identity, but users should review those files before committing.
 
 ## Runtime path
 
-When OpenCode calls an OpenPets MCP tool or when the OpenCode plugin reacts to an event, the runtime path is:
+When OpenCode calls an NekoDrift MCP tool or when the OpenCode plugin reacts to an event, the runtime path is:
 
 ```text
 OpenCode
-  -> @open-pets/cli mcp or @open-pets/opencode plugin
-  -> @open-pets/client
-  -> OpenPets desktop local IPC discovery file
-  -> OpenPets desktop IPC socket/pipe
+  -> @neko-drift/cli mcp or @neko-drift/opencode plugin
+  -> @neko-drift/client
+  -> NekoDrift desktop local IPC discovery file
+  -> NekoDrift desktop IPC socket/pipe
   -> default pet controller or explicit agent pet controller
 ```
 
 The desktop app writes a discovery file such as:
 
 ```text
-macOS: ~/Library/Application Support/OpenPets/runtime/ipc.json
-Windows: %APPDATA%/OpenPets/runtime/ipc.json
-Linux: $XDG_RUNTIME_DIR/openpets/ipc.json, or ~/.config/OpenPets/runtime/ipc.json fallback
+macOS: ~/Library/Application Support/NekoDrift/runtime/ipc.json
+Windows: %APPDATA%/NekoDrift/runtime/ipc.json
+Linux: $XDG_RUNTIME_DIR/nekodrift/ipc.json, or ~/.config/NekoDrift/runtime/ipc.json fallback
 ```
 
 That file contains the IPC endpoint and a per-run token. Clients must send that token with every request.
@@ -197,19 +197,19 @@ OpenCode sees these tools when the MCP entry is enabled:
 
 | Tool | Purpose | Desktop IPC method |
 | --- | --- | --- |
-| `openpets_status` | Check whether OpenPets is reachable and which pet is targeted. | `status` |
-| `openpets_react` | Set a short reaction on the target pet. | `pet.react` |
-| `openpets_say` | Show a short safe speech bubble, optionally with a reaction. | `pet.say` |
+| `nekodrift_status` | Check whether NekoDrift is reachable and which pet is targeted. | `status` |
+| `nekodrift_react` | Set a short reaction on the target pet. | `pet.react` |
+| `nekodrift_say` | Show a short safe speech bubble, optionally with a reaction. | `pet.say` |
 
-Depending on OpenCode's MCP naming, tool names may appear with a server prefix, for example `openpets_openpets_say`. The OpenCode plugin explicitly ignores OpenPets tool calls so the pet does not react to its own status messages.
+Depending on OpenCode's MCP naming, tool names may appear with a server prefix, for example `nekodrift_nekodrift_say`. The OpenCode plugin explicitly ignores NekoDrift tool calls so the pet does not react to its own status messages.
 
-`openpets_say` is validated before it reaches the desktop app. Messages must be short, single-line, and must not look like code, logs, secrets, URLs, or file paths.
+`nekodrift_say` is validated before it reaches the desktop app. Messages must be short, single-line, and must not look like code, logs, secrets, URLs, or file paths.
 
 ## Pet targeting
 
 If the MCP command or plugin was configured without a pet, events target the desktop default pet.
 
-If configured with a pet, OpenPets asks the desktop app for a lease:
+If configured with a pet, NekoDrift asks the desktop app for a lease:
 
 ```text
 lease.acquire({ requestedPetId: "<petId>" })
@@ -222,11 +222,11 @@ Routing rules:
 - Invalid, missing, or broken pet -> default pet with a fallback reason.
 - Valid installed non-default pet -> explicit agent pet window.
 
-Explicit leases expire after a short TTL unless refreshed. The plugin caches and reuses a lease while it is still valid. When the last explicit lease for a pet expires or is released, OpenPets clears and closes that agent pet window.
+Explicit leases expire after a short TTL unless refreshed. The plugin caches and reuses a lease while it is still valid. When the last explicit lease for a pet expires or is released, NekoDrift clears and closes that agent pet window.
 
 ## OpenCode plugin reaction and speech mapping
 
-The OpenCode plugin is decorative and best-effort. It schedules OpenPets work in the background and returns immediately so it does not slow down OpenCode hooks. If OpenPets is closed or IPC is unavailable, the plugin swallows the error.
+The OpenCode plugin is decorative and best-effort. It schedules NekoDrift work in the background and returns immediately so it does not slow down OpenCode hooks. If NekoDrift is closed or IPC is unavailable, the plugin swallows the error.
 
 | OpenCode event/hook | Trigger condition | Reaction | Speech bubble |
 | --- | --- | --- | --- |
@@ -234,12 +234,12 @@ The OpenCode plugin is decorative and best-effort. It schedules OpenPets work in
 | `tool.execute.before` | Tool name contains `edit`, `write`, `patch`, or `apply_patch`. | `editing` | None. |
 | `tool.execute.before` | Tool name contains `bash`, `shell`, or `terminal`, and command args look test-like. | `testing` | None. |
 | `tool.execute.before` | Tool name contains `bash`, `shell`, or `terminal`, and command args do not look test-like. | None. | None. |
-| `tool.execute.before` | Any other non-OpenPets tool. | None. | None. |
-| `event` | Bus event type is `permission.asked` for a non-OpenPets tool. | `waiting` | `Approval needed`, throttled with a short cooldown. |
+| `tool.execute.before` | Any other non-NekoDrift tool. | None. | None. |
+| `event` | Bus event type is `permission.asked` for a non-NekoDrift tool. | `waiting` | `Approval needed`, throttled with a short cooldown. |
 | `event` | Bus event type is `session.error`. | `error` | One error-pool message, throttled. |
 | `event` | Bus event type is `session.status` and status type is `idle`. | `success`, throttled. | None. |
 | `tool.execute.after` | Any tool completed. | None | None. |
-| OpenPets MCP tool | Tool name is `openpets_status`, `openpets_say`, `openpets_react`, or server-prefixed equivalent. | None | None. |
+| NekoDrift MCP tool | Tool name is `nekodrift_status`, `nekodrift_say`, `nekodrift_react`, or server-prefixed equivalent. | None | None. |
 | Unknown event | Event is not recognized. | None | None. |
 
 Test-like command detection is intentionally coarse and private. It may inspect only a bounded command string to classify the reaction. The command text is never sent to speech.
@@ -269,19 +269,19 @@ Normal thinking and success hooks no longer speak, so their speech pools are ret
 OpenCode stores throttle state separately from Claude in an OpenCode-specific file, for example:
 
 ```text
-Windows: %LOCALAPPDATA%/OpenPets/opencode-hook-throttle.json
-macOS/Linux: ${XDG_STATE_HOME:-~/.local/state}/openpets/opencode-hook-throttle.json
-fallback: os.tmpdir()/openpets-<uid>/opencode-hook-throttle.json
+Windows: %LOCALAPPDATA%/NekoDrift/opencode-hook-throttle.json
+macOS/Linux: ${XDG_STATE_HOME:-~/.local/state}/nekodrift/opencode-hook-throttle.json
+fallback: os.tmpdir()/nekodrift-<uid>/opencode-hook-throttle.json
 ```
 
 Throttle state stores only speech-category and reaction timestamp keys, never prompts, commands, tool input, output, code, logs, or transcripts.
 
 ## Safety rules
 
-- Plugin hooks return immediately and never await OpenPets IPC directly.
+- Plugin hooks return immediately and never await NekoDrift IPC directly.
 - Plugin errors are swallowed unless debug logging is enabled.
 - Debug logs sanitize paths and secret-looking values.
 - Speech is static and local; it does not include model-generated text.
 - Tool args and command text are used only for coarse reaction classification.
-- The plugin ignores OpenPets MCP tools to avoid feedback loops.
-- Managed setup refuses unsafe symlinks, non-regular files, oversized config files, and conflicting custom OpenPets-like config.
+- The plugin ignores NekoDrift MCP tools to avoid feedback loops.
+- Managed setup refuses unsafe symlinks, non-regular files, oversized config files, and conflicting custom NekoDrift-like config.

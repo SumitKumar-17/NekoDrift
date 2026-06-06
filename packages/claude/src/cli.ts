@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { runClaudeHookFromStdin } from "./hooks.js";
 import { doctorClaudeHooks, installClaudeHooks, uninstallClaudeHooks } from "./hook-settings.js";
-import { validateOpenPetsPetArg } from "./claude-code.js";
+import { validateNekoDriftPetArg } from "./claude-code.js";
 
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
   if (command === "hook") {
-    const code = await runClaudeHookFromStdin(process.stdin, { configuredPetId: readPetArg(args), projectLocal: hasProjectLocalArg(args), debug: process.env.OPENPETS_DEBUG === "1" });
+    const code = await runClaudeHookFromStdin(process.stdin, { configuredPetId: readPetArg(args), projectLocal: hasProjectLocalArg(args), debug: process.env.NEKODRIFT_DEBUG === "1" });
     process.exitCode = code;
     return;
   }
@@ -22,7 +22,7 @@ async function main(): Promise<void> {
     process.stderr.write(`${JSON.stringify(uninstallClaudeHooks(readPathArg(args)), null, 2)}\n`);
     return;
   }
-  process.stderr.write("Usage: open-pets-claude <hook|doctor-hooks|install-hooks|uninstall-hooks> [--settings <path>] [--pet <id>]\n");
+  process.stderr.write("Usage: neko-drift-claude <hook|doctor-hooks|install-hooks|uninstall-hooks> [--settings <path>] [--pet <id>]\n");
   process.exitCode = 1;
 }
 
@@ -34,11 +34,11 @@ function readPathArg(args: readonly string[]): string | undefined {
 
 function readPetArg(args: readonly string[]): string | undefined {
   const equals = args.find((arg) => arg.startsWith("--pet="));
-  if (equals) return validateOpenPetsPetArg(equals.slice("--pet=".length));
+  if (equals) return validateNekoDriftPetArg(equals.slice("--pet=".length));
   const index = args.indexOf("--pet");
   const value = index >= 0 ? args[index + 1] : undefined;
   if (index >= 0 && (!value || value.startsWith("--"))) throw new Error("Missing value for --pet.");
-  return value && value.length > 0 ? validateOpenPetsPetArg(value) : undefined;
+  return value && value.length > 0 ? validateNekoDriftPetArg(value) : undefined;
 }
 
 function hasProjectLocalArg(args: readonly string[]): boolean {
@@ -46,6 +46,6 @@ function hasProjectLocalArg(args: readonly string[]): boolean {
 }
 
 main().catch((error: unknown) => {
-  process.stderr.write(`OpenPets Claude CLI failed: ${error instanceof Error ? error.message : String(error)}\n`);
+  process.stderr.write(`NekoDrift Claude CLI failed: ${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
 });

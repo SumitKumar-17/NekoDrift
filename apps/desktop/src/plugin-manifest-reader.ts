@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import type { FileHandle } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 
-import { OPENPETS_PLUGIN_MANIFEST_FILENAME, validatePluginManifest, type OpenPetsPluginManifest } from "./plugin-manifest.js";
+import { NEKODRIFT_PLUGIN_MANIFEST_FILENAME, validatePluginManifest, type NekoDriftPluginManifest } from "./plugin-manifest.js";
 
 export const defaultMaxPluginManifestBytes = 64 * 1024;
 
@@ -15,7 +15,7 @@ export type ReadPluginManifestOptions = {
   readonly expectedVersion?: string;
 };
 
-export async function readSafePluginManifest(options: ReadPluginManifestOptions): Promise<OpenPetsPluginManifest> {
+export async function readSafePluginManifest(options: ReadPluginManifestOptions): Promise<NekoDriftPluginManifest> {
   const maxBytes = options.maxManifestBytes ?? defaultMaxPluginManifestBytes;
   const realInstallPath = await fs.realpath(options.installPath);
   const allowedRoots = await Promise.all(options.allowedPluginRoots.map((root) => fs.realpath(root)));
@@ -23,7 +23,7 @@ export async function readSafePluginManifest(options: ReadPluginManifestOptions)
 
   const realManifestPath = await fs.realpath(options.manifestPath);
   if (!isUnderPath(realManifestPath, realInstallPath)) throw new Error("Plugin manifest path is outside install path.");
-  if (dirname(realManifestPath) !== realInstallPath || basename(realManifestPath) !== OPENPETS_PLUGIN_MANIFEST_FILENAME) throw new Error("Plugin manifest path is invalid.");
+  if (dirname(realManifestPath) !== realInstallPath || basename(realManifestPath) !== NEKODRIFT_PLUGIN_MANIFEST_FILENAME) throw new Error("Plugin manifest path is invalid.");
 
   const stat = await fs.stat(realManifestPath);
   if (!stat.isFile()) throw new Error("Plugin manifest path is not a file.");

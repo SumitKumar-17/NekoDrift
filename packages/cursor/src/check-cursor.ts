@@ -4,19 +4,19 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import {
-  buildCursorOpenPetsRule,
+  buildCursorNekoDriftRule,
   buildCursorRulesPreview,
   classifyCursorRulesStatus,
   cursorRulesEndMarker,
   cursorRulesStartMarker,
   executeCursorRulesWrite,
   getCursorProjectRulesPath,
-  isManagedCursorOpenPetsRule,
+  isManagedCursorNekoDriftRule,
   maxCursorRulesBytes,
   planCursorRulesInstall,
   planCursorRulesRemove,
   planCursorRulesReplace,
-  readCursorOpenPetsRules,
+  readCursorNekoDriftRules,
 } from "./cursor-rules.js";
 import {
   buildCursorMcpEntry,
@@ -24,7 +24,7 @@ import {
   getCursorGlobalMcpPath,
   getCursorProjectMcpPath,
   isValidPetId,
-  validateOpenPetsPetId,
+  validateNekoDriftPetId,
 } from "./cursor-mcp.js";
 import {
   classifyCursorMcpStatus,
@@ -35,9 +35,9 @@ import {
   planCursorMcpReplace,
   readCursorMcpConfig,
 } from "./cursor-status.js";
-import { buildOpenPetsOnlyPreview, redactCursorConfig } from "./cursor-previews.js";
+import { buildNekoDriftOnlyPreview, redactCursorConfig } from "./cursor-previews.js";
 
-const root = realpathSync(mkdtempSync(join(tmpdir(), "openpets-cursor-")));
+const root = realpathSync(mkdtempSync(join(tmpdir(), "nekodrift-cursor-")));
 
 try {
   // Test pet ID validation
@@ -50,23 +50,23 @@ try {
   assert.equal(isValidPetId("_invalid"), false);
   assert.equal(isValidPetId("invalid/slash"), false);
   assert.equal(isValidPetId("a".repeat(65)), false);
-  assert.equal(validateOpenPetsPetId("fixer"), "fixer");
-  assert.throws(() => validateOpenPetsPetId("bad/pet"));
-  assert.throws(() => validateOpenPetsPetId(""));
+  assert.equal(validateNekoDriftPetId("fixer"), "fixer");
+  assert.throws(() => validateNekoDriftPetId("bad/pet"));
+  assert.throws(() => validateNekoDriftPetId(""));
 
   // Test MCP entry building
   const publishedEntry = buildCursorMcpEntry({ mcpVersion: "2.0.6", petId: "fixer" });
   assert.deepEqual(publishedEntry, {
     type: "stdio",
     command: "npx",
-    args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+    args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
   });
 
   const publishedNoPet = buildCursorMcpEntry({ mcpVersion: "2.0.6" });
   assert.deepEqual(publishedNoPet, {
     type: "stdio",
     command: "npx",
-    args: ["-y", "@open-pets/mcp@2.0.6"],
+    args: ["-y", "@neko-drift/mcp@2.0.6"],
   });
   assert.throws(() => buildCursorMcpEntry({ mcpVersion: "latest" }));
 
@@ -88,10 +88,10 @@ try {
   const formatted = formatCursorMcpConfig({ mcpVersion: "2.0.6", petId: "fixer" });
   assert.deepEqual(formatted, {
     mcpServers: {
-      openpets: {
+      nekodrift: {
         type: "stdio",
         command: "npx",
-        args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+        args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
       },
     },
   });
@@ -188,13 +188,13 @@ try {
   const diffPetStatus = classifyCursorMcpStatus(diffPetResult, diffPetPath, { mcpVersion: "2.0.6", petId: "fixer" });
   assert.equal(diffPetStatus.status, "needs-update");
 
-  // Test conflict status for non-OpenPets openpets entry
+  // Test conflict status for non-NekoDrift nekodrift entry
   const conflictDir = join(root, "conflict");
   mkdirSync(conflictDir);
   const conflictPath = join(conflictDir, "mcp.json");
   const conflictConfig = {
     mcpServers: {
-      openpets: { type: "stdio", command: "custom", args: ["mcp"] },
+      nekodrift: { type: "stdio", command: "custom", args: ["mcp"] },
     },
   };
   writeFileSync(conflictPath, JSON.stringify(conflictConfig, null, 2), "utf8");
@@ -209,7 +209,7 @@ try {
   const unpinnedDir = join(root, "unpinned");
   mkdirSync(unpinnedDir);
   const unpinnedPath = join(unpinnedDir, "mcp.json");
-  writeFileSync(unpinnedPath, JSON.stringify({ mcpServers: { openpets: { type: "stdio", command: "npx", args: ["-y", "@open-pets/mcp@latest"] } } }), "utf8");
+  writeFileSync(unpinnedPath, JSON.stringify({ mcpServers: { nekodrift: { type: "stdio", command: "npx", args: ["-y", "@neko-drift/mcp@latest"] } } }), "utf8");
   const unpinnedStatus = classifyCursorMcpStatus(readCursorMcpConfig(unpinnedPath), unpinnedPath, { mcpVersion: "2.0.6" });
   assert.equal(unpinnedStatus.status, "conflict");
 
@@ -310,11 +310,11 @@ try {
     assert.equal(badServersResult.reason, "invalid-schema");
   }
 
-  // Test malformed mcpServers.openpets (not an object)
+  // Test malformed mcpServers.nekodrift (not an object)
   const malformedEntryDir = join(root, "malformed-entry");
   mkdirSync(malformedEntryDir);
   const malformedEntryPath = join(malformedEntryDir, "mcp.json");
-  writeFileSync(malformedEntryPath, JSON.stringify({ mcpServers: { openpets: "string" } }), "utf8");
+  writeFileSync(malformedEntryPath, JSON.stringify({ mcpServers: { nekodrift: "string" } }), "utf8");
 
   const malformedEntryResult = readCursorMcpConfig(malformedEntryPath);
   assert.equal(malformedEntryResult.ok, true);
@@ -350,20 +350,20 @@ try {
     executeCursorMcpWrite(atomicPlan);
     assert.equal(existsSync(atomicPath), true);
     const writtenContent = JSON.parse(readFileSync(atomicPath, "utf8"));
-    assert.deepEqual(writtenContent.mcpServers.openpets, {
+    assert.deepEqual(writtenContent.mcpServers.nekodrift, {
       type: "stdio",
       command: "npx",
-      args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+      args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
     });
   }
 
-  // Test uninstall removes only OpenPets entry
+  // Test uninstall removes only NekoDrift entry
   const uninstallDir = join(root, "uninstall");
   mkdirSync(uninstallDir);
   const uninstallPath = join(uninstallDir, "mcp.json");
   const uninstallConfig = {
     mcpServers: {
-      openpets: { type: "stdio", command: "npx", args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"] },
+      nekodrift: { type: "stdio", command: "npx", args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"] },
       other: { type: "stdio", command: "test", args: [] },
     },
     otherField: "keep",
@@ -375,7 +375,7 @@ try {
   if ("targetPath" in removePlan) {
     executeCursorMcpWrite(removePlan);
     const removedContent = JSON.parse(readFileSync(uninstallPath, "utf8"));
-    assert.equal(removedContent.mcpServers.openpets, undefined);
+    assert.equal(removedContent.mcpServers.nekodrift, undefined);
     assert.deepEqual(removedContent.mcpServers.other, { type: "stdio", command: "test", args: [] });
     assert.equal(removedContent.otherField, "keep");
   }
@@ -396,7 +396,7 @@ try {
   const noWriteConflictDir = join(root, "no-write-conflict");
   mkdirSync(noWriteConflictDir);
   const noWriteConflictPath = join(noWriteConflictDir, "mcp.json");
-  writeFileSync(noWriteConflictPath, JSON.stringify({ mcpServers: { openpets: { type: "stdio", command: "custom", args: [] } } }), "utf8");
+  writeFileSync(noWriteConflictPath, JSON.stringify({ mcpServers: { nekodrift: { type: "stdio", command: "custom", args: [] } } }), "utf8");
 
   const noWriteConflictPlan = planCursorMcpInstall(noWriteConflictPath, { mcpVersion: "2.0.6", petId: "fixer" });
   assert.equal("ok" in noWriteConflictPlan, true);
@@ -409,13 +409,13 @@ try {
     assert.equal(noRemoveConflictPlan.ok, false);
   }
 
-  // Test explicit replace overwrites only openpets and preserves unrelated servers
+  // Test explicit replace overwrites only nekodrift and preserves unrelated servers
   const replaceDir = join(root, "replace");
   mkdirSync(replaceDir);
   const replacePath = join(replaceDir, "mcp.json");
   const replaceConfig = {
     mcpServers: {
-      openpets: { type: "stdio", command: "custom", args: [] },
+      nekodrift: { type: "stdio", command: "custom", args: [] },
       other: { type: "stdio", command: "test", args: [] },
     },
     topLevelField: "preserve",
@@ -427,10 +427,10 @@ try {
   if ("targetPath" in replacePlan) {
     executeCursorMcpWrite(replacePlan);
     const replacedContent = JSON.parse(readFileSync(replacePath, "utf8"));
-    assert.deepEqual(replacedContent.mcpServers.openpets, {
+    assert.deepEqual(replacedContent.mcpServers.nekodrift, {
       type: "stdio",
       command: "npx",
-      args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+      args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
     });
     assert.deepEqual(replacedContent.mcpServers.other, { type: "stdio", command: "test", args: [] });
     assert.equal(replacedContent.topLevelField, "preserve");
@@ -439,7 +439,7 @@ try {
   // Test preview redaction
   const redactedConfig = {
     mcpServers: {
-      openpets: { type: "stdio", command: "npx", args: ["-y", "@open-pets/mcp@2.0.6"] },
+      nekodrift: { type: "stdio", command: "npx", args: ["-y", "@neko-drift/mcp@2.0.6"] },
       other: {
         type: "stdio",
         command: "test",
@@ -451,7 +451,7 @@ try {
   };
 
   const redacted = redactCursorConfig(redactedConfig);
-  assert.deepEqual(redacted.mcpServers?.openpets, { type: "stdio", command: "npx", args: ["-y", "@open-pets/mcp@2.0.6"] });
+  assert.deepEqual(redacted.mcpServers?.nekodrift, { type: "stdio", command: "npx", args: ["-y", "@neko-drift/mcp@2.0.6"] });
   const otherServer = redacted.mcpServers?.other as Record<string, unknown>;
   assert.deepEqual(otherServer.args, ["--token=[REDACTED]", "--api-key=[REDACTED]"]);
   assert.equal(otherServer.env, "[REDACTED]");
@@ -498,12 +498,12 @@ try {
   assert.ok(urlArgs[0].includes("[REDACTED]"));
   assert.ok(!urlArgs[0].includes("secret"));
 
-  // Test OpenPets-only preview
-  const preview = buildOpenPetsOnlyPreview({ mcpVersion: "2.0.6", petId: "fixer" });
-  assert.deepEqual(preview.openpets, {
+  // Test NekoDrift-only preview
+  const preview = buildNekoDriftOnlyPreview({ mcpVersion: "2.0.6", petId: "fixer" });
+  assert.deepEqual(preview.nekodrift, {
     type: "stdio",
     command: "npx",
-    args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+    args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
   });
 
   // Test existing unrelated MCP servers preserved during install
@@ -525,10 +525,10 @@ try {
     const preservedContent = JSON.parse(readFileSync(preservePath, "utf8"));
     assert.deepEqual(preservedContent.mcpServers.other, { type: "stdio", command: "test", args: [] });
     assert.equal(preservedContent.topLevel, "keep");
-    assert.deepEqual(preservedContent.mcpServers.openpets, {
+    assert.deepEqual(preservedContent.mcpServers.nekodrift, {
       type: "stdio",
       command: "npx",
-      args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+      args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
     });
   }
 
@@ -584,7 +584,7 @@ try {
   const emptyAfterRemoveDir = join(root, "empty-after-remove");
   mkdirSync(emptyAfterRemoveDir);
   const emptyAfterRemovePath = join(emptyAfterRemoveDir, "mcp.json");
-  writeFileSync(emptyAfterRemovePath, JSON.stringify({ mcpServers: { openpets: { type: "stdio", command: "npx", args: ["-y", "@open-pets/mcp@2.0.6"] } } }), "utf8");
+  writeFileSync(emptyAfterRemovePath, JSON.stringify({ mcpServers: { nekodrift: { type: "stdio", command: "npx", args: ["-y", "@neko-drift/mcp@2.0.6"] } } }), "utf8");
 
   const emptyRemovePlan = planCursorMcpRemove(emptyAfterRemovePath);
   assert.equal("targetPath" in emptyRemovePlan, true);
@@ -598,15 +598,15 @@ try {
   const rulesProject = join(root, "rules-project");
   mkdirSync(rulesProject);
   const rulesPath = getCursorProjectRulesPath(rulesProject);
-  assert.equal(rulesPath, join(rulesProject, ".cursor", "rules", "openpets.mdc"));
-  const expectedRule = buildCursorOpenPetsRule();
+  assert.equal(rulesPath, join(rulesProject, ".cursor", "rules", "nekodrift.mdc"));
+  const expectedRule = buildCursorNekoDriftRule();
   assert.equal(buildCursorRulesPreview(), expectedRule);
-  assert.match(expectedRule, /description: Use OpenPets MCP tools/);
+  assert.match(expectedRule, /description: Use NekoDrift MCP tools/);
   assert.doesNotMatch(expectedRule, /alwaysApply:\s*true/);
-  assert.match(expectedRule, /openpets_say/);
+  assert.match(expectedRule, /nekodrift_say/);
   assert.match(expectedRule, /Do not send prompts, tool input\/output/);
 
-  const missingRulesResult = readCursorOpenPetsRules(rulesProject);
+  const missingRulesResult = readCursorNekoDriftRules(rulesProject);
   assert.equal(missingRulesResult.ok, true);
   if (missingRulesResult.ok) {
     assert.equal(missingRulesResult.exists, false);
@@ -624,15 +624,15 @@ try {
     assert.equal(readFileSync(rulesPath, "utf8"), expectedRule);
   }
 
-  const installedRulesStatus = classifyCursorRulesStatus(readCursorOpenPetsRules(rulesProject), rulesPath);
+  const installedRulesStatus = classifyCursorRulesStatus(readCursorNekoDriftRules(rulesProject), rulesPath);
   assert.equal(installedRulesStatus.status, "installed");
   assert.equal(installedRulesStatus.canInstall, false);
   assert.equal(installedRulesStatus.canRemove, true);
-  assert.equal(isManagedCursorOpenPetsRule(expectedRule), true);
+  assert.equal(isManagedCursorNekoDriftRule(expectedRule), true);
 
   const changedManagedRule = expectedRule.replace("major milestones", "meaningful milestones");
   writeFileSync(rulesPath, changedManagedRule, "utf8");
-  const needsUpdateRulesStatus = classifyCursorRulesStatus(readCursorOpenPetsRules(rulesProject), rulesPath);
+  const needsUpdateRulesStatus = classifyCursorRulesStatus(readCursorNekoDriftRules(rulesProject), rulesPath);
   assert.equal(needsUpdateRulesStatus.status, "needs-update");
   const updateRulesPlan = planCursorRulesInstall(rulesProject);
   assert.equal("targetPath" in updateRulesPlan, true);
@@ -655,7 +655,7 @@ try {
   // Test rules conflicts and marker/frontmatter edge cases
   mkdirSync(join(rulesProject, ".cursor", "rules"), { recursive: true });
   writeFileSync(rulesPath, "User-authored Cursor rule\n", "utf8");
-  const unmanagedStatus = classifyCursorRulesStatus(readCursorOpenPetsRules(rulesProject), rulesPath);
+  const unmanagedStatus = classifyCursorRulesStatus(readCursorNekoDriftRules(rulesProject), rulesPath);
   assert.equal(unmanagedStatus.status, "conflict");
   assert.equal(unmanagedStatus.canInstall, false);
   assert.equal(unmanagedStatus.canReplace, true);
@@ -680,14 +680,14 @@ try {
   }
 
   const duplicateMarkers = expectedRule.replace(cursorRulesEndMarker, `${cursorRulesEndMarker}\n${cursorRulesEndMarker}`);
-  const reversedMarkers = `---\ndescription: Use OpenPets MCP tools for lightweight coding-status feedback.\n---\n\n${cursorRulesEndMarker}\nbody\n${cursorRulesStartMarker}\n`;
+  const reversedMarkers = `---\ndescription: Use NekoDrift MCP tools for lightweight coding-status feedback.\n---\n\n${cursorRulesEndMarker}\nbody\n${cursorRulesStartMarker}\n`;
   const missingMarker = expectedRule.replace(cursorRulesStartMarker, "");
   const userBefore = `User note\n${expectedRule}`;
   const userAfter = `${expectedRule}\nUser note\n`;
   const unknownFrontmatter = expectedRule.replace("---\ndescription", "---\nalwaysApply: true\ndescription");
   for (const content of [duplicateMarkers, reversedMarkers, missingMarker, userBefore, userAfter, unknownFrontmatter]) {
     writeFileSync(rulesPath, content, "utf8");
-    const status = classifyCursorRulesStatus(readCursorOpenPetsRules(rulesProject), rulesPath);
+    const status = classifyCursorRulesStatus(readCursorNekoDriftRules(rulesProject), rulesPath);
     assert.equal(status.status, "conflict");
   }
 
@@ -695,7 +695,7 @@ try {
   const rulesFileParentProject = join(root, "rules-file-parent");
   mkdirSync(rulesFileParentProject);
   writeFileSync(join(rulesFileParentProject, ".cursor"), "not a dir", "utf8");
-  const rulesFileParentResult = readCursorOpenPetsRules(rulesFileParentProject);
+  const rulesFileParentResult = readCursorNekoDriftRules(rulesFileParentProject);
   assert.equal(rulesFileParentResult.ok, false);
   if (!rulesFileParentResult.ok) assert.equal(rulesFileParentResult.reason, "unsafe-path");
 
@@ -704,7 +704,7 @@ try {
   mkdirSync(rulesSymlinkProject);
   mkdirSync(rulesSymlinkOutside);
   symlinkSync(rulesSymlinkOutside, join(rulesSymlinkProject, ".cursor"));
-  const rulesSymlinkResult = readCursorOpenPetsRules(rulesSymlinkProject);
+  const rulesSymlinkResult = readCursorNekoDriftRules(rulesSymlinkProject);
   assert.equal(rulesSymlinkResult.ok, false);
   if (!rulesSymlinkResult.ok) assert.equal(rulesSymlinkResult.reason, "symlink");
 
@@ -713,7 +713,7 @@ try {
   const rulesFileSymlinkTarget = join(root, "rules-file-target.mdc");
   writeFileSync(rulesFileSymlinkTarget, expectedRule, "utf8");
   symlinkSync(rulesFileSymlinkTarget, getCursorProjectRulesPath(rulesFileSymlinkProject));
-  const rulesFileSymlinkResult = readCursorOpenPetsRules(rulesFileSymlinkProject);
+  const rulesFileSymlinkResult = readCursorNekoDriftRules(rulesFileSymlinkProject);
   assert.equal(rulesFileSymlinkResult.ok, false);
   if (!rulesFileSymlinkResult.ok) assert.equal(rulesFileSymlinkResult.reason, "symlink");
   const rulesFileSymlinkPlan = planCursorRulesInstall(rulesFileSymlinkProject);
@@ -723,14 +723,14 @@ try {
   const danglingRulesSymlinkProject = join(root, "rules-dangling-symlink");
   mkdirSync(join(danglingRulesSymlinkProject, ".cursor", "rules"), { recursive: true });
   symlinkSync(join(root, "missing-rules-target.mdc"), getCursorProjectRulesPath(danglingRulesSymlinkProject));
-  const danglingRulesResult = readCursorOpenPetsRules(danglingRulesSymlinkProject);
+  const danglingRulesResult = readCursorNekoDriftRules(danglingRulesSymlinkProject);
   assert.equal(danglingRulesResult.ok, false);
   if (!danglingRulesResult.ok) assert.equal(danglingRulesResult.reason, "symlink");
 
   const nonRegularRulesProject = join(root, "rules-non-regular");
   mkdirSync(join(nonRegularRulesProject, ".cursor", "rules"), { recursive: true });
   mkdirSync(getCursorProjectRulesPath(nonRegularRulesProject));
-  const nonRegularRules = readCursorOpenPetsRules(nonRegularRulesProject);
+  const nonRegularRules = readCursorNekoDriftRules(nonRegularRulesProject);
   assert.equal(nonRegularRules.ok, false);
   if (!nonRegularRules.ok) assert.equal(nonRegularRules.reason, "not-regular");
   const nonRegularRulesInstallPlan = planCursorRulesInstall(nonRegularRulesProject);
@@ -741,7 +741,7 @@ try {
   const oversizedRulesProject = join(root, "rules-oversized");
   mkdirSync(join(oversizedRulesProject, ".cursor", "rules"), { recursive: true });
   writeFileSync(getCursorProjectRulesPath(oversizedRulesProject), "x".repeat(maxCursorRulesBytes + 1), "utf8");
-  const oversizedRules = readCursorOpenPetsRules(oversizedRulesProject);
+  const oversizedRules = readCursorNekoDriftRules(oversizedRulesProject);
   assert.equal(oversizedRules.ok, false);
   if (!oversizedRules.ok) assert.equal(oversizedRules.reason, "size");
   const oversizedBefore = readFileSync(getCursorProjectRulesPath(oversizedRulesProject), "utf8");

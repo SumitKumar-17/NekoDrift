@@ -5,44 +5,44 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { validatePluginCatalog } from "../src/plugin-catalog-validation.js";
 import { installCatalogPluginPackage, safeDeletePluginInstallDir, validatePluginZipUrl } from "../src/plugin-package.js";
-import type { OpenPetsPluginManifest } from "../src/plugin-manifest.js";
+import type { NekoDriftPluginManifest } from "../src/plugin-manifest.js";
 
-const manifest: OpenPetsPluginManifest = { manifestVersion: 1, id: "zip-plug", name: "Zip Plug", version: "1.0.0", runtime: "declarative", permissions: ["timer", "pet:speak"], triggers: [{ on: "timer", everyMinutes: 5, actions: [{ type: "pet.speak", message: "hi" }] }] };
+const manifest: NekoDriftPluginManifest = { manifestVersion: 1, id: "zip-plug", name: "Zip Plug", version: "1.0.0", runtime: "declarative", permissions: ["timer", "pet:speak"], triggers: [{ on: "timer", everyMinutes: 5, actions: [{ type: "pet.speak", message: "hi" }] }] };
 const text = JSON.stringify(manifest);
-const zip = makeZip("openpets.plugin.json", Buffer.from(text));
-const entry = { id: manifest.id, name: manifest.name, version: manifest.version, description: "desc", runtime: "declarative" as const, permissions: manifest.permissions, downloadUrl: "https://zip.openpets.dev/plugins/zip-plug.zip", sha256: createHash("sha256").update(zip).digest("hex") };
+const zip = makeZip("nekodrift.plugin.json", Buffer.from(text));
+const entry = { id: manifest.id, name: manifest.name, version: manifest.version, description: "desc", runtime: "declarative" as const, permissions: manifest.permissions, downloadUrl: "https://zip.nekodrift.app/plugins/zip-plug.zip", sha256: createHash("sha256").update(zip).digest("hex") };
 
 validatePluginZipUrl(entry.downloadUrl);
-assert.throws(() => validatePluginZipUrl("http://zip.openpets.dev/plugins/x.zip"), /not allowed/);
-assert.throws(() => validatePluginZipUrl("https://zip.openpets.dev:444/plugins/x.zip"), /not allowed/);
+assert.throws(() => validatePluginZipUrl("http://zip.nekodrift.app/plugins/x.zip"), /not allowed/);
+assert.throws(() => validatePluginZipUrl("https://zip.nekodrift.app:444/plugins/x.zip"), /not allowed/);
 
-const userData = mkdtempSync(join(tmpdir(), "openpets-plugin-package-"));
+const userData = mkdtempSync(join(tmpdir(), "nekodrift-plugin-package-"));
 const installed = await installCatalogPluginPackage({ userDataPath: userData, catalogEntry: entry, zip });
 assert.equal(installed.manifest.id, manifest.id);
-assert.equal(readFileSync(join(userData, "plugins", manifest.id, "openpets.plugin.json"), "utf8"), text);
+assert.equal(readFileSync(join(userData, "plugins", manifest.id, "nekodrift.plugin.json"), "utf8"), text);
 assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: { ...entry, name: "Other" }, zip }), /does not match/);
-assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: entry, zip: makeZip("nested/openpets.plugin.json", Buffer.from(text)) }), /invalid|exactly one root manifest|must contain openpets/);
+assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: entry, zip: makeZip("nested/nekodrift.plugin.json", Buffer.from(text)) }), /invalid|exactly one root manifest|must contain nekodrift/);
 
-const jsManifest: OpenPetsPluginManifest = { manifestVersion: 2, id: "js-plug", name: "JS Plug", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.mjs", permissions: ["pet:speak"] };
+const jsManifest: NekoDriftPluginManifest = { manifestVersion: 2, id: "js-plug", name: "JS Plug", version: "1.0.0", runtime: "javascript", sdkVersion: "1.0.0", entry: "index.mjs", permissions: ["pet:speak"] };
 const jsText = JSON.stringify(jsManifest);
 const jsEntryText = "export default {};\n";
-const jsZip = makeZipFiles([{ name: "openpets.plugin.json", data: Buffer.from(jsText) }, { name: "index.mjs", data: Buffer.from(jsEntryText) }]);
-const jsCatalogEntry = { id: jsManifest.id, name: jsManifest.name, version: jsManifest.version, description: "desc", runtime: "javascript" as const, sdkVersion: "1.0.0", permissions: jsManifest.permissions, downloadUrl: "https://zip.openpets.dev/plugins/js-plug.zip", sha256: createHash("sha256").update(jsZip).digest("hex") };
+const jsZip = makeZipFiles([{ name: "nekodrift.plugin.json", data: Buffer.from(jsText) }, { name: "index.mjs", data: Buffer.from(jsEntryText) }]);
+const jsCatalogEntry = { id: jsManifest.id, name: jsManifest.name, version: jsManifest.version, description: "desc", runtime: "javascript" as const, sdkVersion: "1.0.0", permissions: jsManifest.permissions, downloadUrl: "https://zip.nekodrift.app/plugins/js-plug.zip", sha256: createHash("sha256").update(jsZip).digest("hex") };
 const jsInstalled = await installCatalogPluginPackage({ userDataPath: userData, catalogEntry: jsCatalogEntry, zip: jsZip });
 assert.equal(readFileSync(join(jsInstalled.installPath, "index.mjs"), "utf8"), jsEntryText);
-await assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: jsCatalogEntry, zip: makeZipFiles([{ name: "openpets.plugin.json", data: Buffer.from(jsText) }]) }), /manifest and entry/);
-await assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: jsCatalogEntry, zip: makeZipFiles([{ name: "openpets.plugin.json", data: Buffer.from(jsText) }, { name: "index.mjs", data: Buffer.from(jsEntryText) }, { name: "extra.js", data: Buffer.from("") }]) }), /manifest and entry|too many entries/);
+await assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: jsCatalogEntry, zip: makeZipFiles([{ name: "nekodrift.plugin.json", data: Buffer.from(jsText) }]) }), /manifest and entry/);
+await assert.rejects(() => installCatalogPluginPackage({ userDataPath: userData, catalogEntry: jsCatalogEntry, zip: makeZipFiles([{ name: "nekodrift.plugin.json", data: Buffer.from(jsText) }, { name: "index.mjs", data: Buffer.from(jsEntryText) }, { name: "extra.js", data: Buffer.from("") }]) }), /manifest and entry|too many entries/);
 
 const canonicalEntry = validatePluginCatalog({ version: 1, generatedAt: new Date().toISOString(), plugins: [{ ...entry, permissions: ["timer", "pet:speak"] }] }).plugins[0];
 await installCatalogPluginPackage({ userDataPath: userData, catalogEntry: canonicalEntry, zip });
 
 const oldText = JSON.stringify({ ...manifest, version: "0.9.0" });
-writeFileSync(join(userData, "plugins", manifest.id, "openpets.plugin.json"), oldText, "utf8");
+writeFileSync(join(userData, "plugins", manifest.id, "nekodrift.plugin.json"), oldText, "utf8");
 await installCatalogPluginPackage({ userDataPath: userData, catalogEntry: entry, zip });
-assert.equal(readFileSync(join(userData, "plugins", manifest.id, "openpets.plugin.json"), "utf8"), text);
+assert.equal(readFileSync(join(userData, "plugins", manifest.id, "nekodrift.plugin.json"), "utf8"), text);
 
-const deleteRoot = mkdtempSync(join(tmpdir(), "openpets-plugin-delete-"));
-const outside = mkdtempSync(join(tmpdir(), "openpets-plugin-outside-"));
+const deleteRoot = mkdtempSync(join(tmpdir(), "nekodrift-plugin-delete-"));
+const outside = mkdtempSync(join(tmpdir(), "nekodrift-plugin-outside-"));
 symlinkSync(outside, join(deleteRoot, "plugins"), "dir");
 await assert.rejects(() => safeDeletePluginInstallDir(deleteRoot, manifest.id, join(deleteRoot, "plugins", manifest.id), "catalog"), /invalid|unexpected/);
 

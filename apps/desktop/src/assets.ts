@@ -17,7 +17,7 @@ export function createAppIcon(): NativeImage {
     return cachedAppIcon;
   }
 
-  console.error(`OpenPets app icon asset could not be loaded from ${assetPath}; using generated fallback icon.`);
+  console.error(`NekoDrift app icon asset could not be loaded from ${assetPath}; using generated fallback icon.`);
   cachedAppIcon = createFallbackTrayIcon();
   return cachedAppIcon;
 }
@@ -30,7 +30,7 @@ export function createTrayIcon(): NativeImage {
     return assetImage.resize({ width: 22, height: 22 });
   }
 
-  console.error(`OpenPets tray icon asset could not be loaded from ${assetPath}; using generated fallback icon.`);
+  console.error(`NekoDrift tray icon asset could not be loaded from ${assetPath}; using generated fallback icon.`);
   return createFallbackTrayIcon();
 }
 
@@ -63,7 +63,7 @@ function createFallbackTrayIcon(): NativeImage {
   });
 
   if (image.isEmpty()) {
-    console.error("OpenPets tray icon creation produced an empty image.");
+    console.error("NekoDrift tray icon creation produced an empty image.");
   }
 
   if (process.platform === "darwin") {

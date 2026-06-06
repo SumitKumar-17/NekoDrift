@@ -1,25 +1,25 @@
 import assert from "node:assert/strict";
 
 import extension from "./extension.js";
-import { createOpenPetsPiExtension, type OpenPetsPiExtensionApi } from "./runtime.js";
+import { createNekoDriftPiExtension, type NekoDriftPiExtensionApi } from "./runtime.js";
 
 const handlers = new Map<string, (event: unknown, ctx?: unknown) => unknown>();
 let commandHandler: ((args: string, ctx?: unknown) => unknown) | undefined;
 const notifications: string[] = [];
 const calls: string[] = [];
 
-const api: OpenPetsPiExtensionApi = {
+const api: NekoDriftPiExtensionApi = {
   on(eventName, handler) {
     handlers.set(eventName, handler);
   },
   registerCommand(name, command) {
-    assert.equal(name, "openpets");
+    assert.equal(name, "nekodrift");
     commandHandler = command.handler;
   },
 };
 
 const scheduled: Array<() => Promise<void>> = [];
-const runtime = createOpenPetsPiExtension(api, {
+const runtime = createNekoDriftPiExtension(api, {
   now: () => Date.now(),
   random: () => 0,
   schedule: (work) => { scheduled.push(work); },
@@ -46,7 +46,7 @@ for (const eventName of ["session_start", "session_shutdown", "agent_start", "ag
 handlers.get("session_start")?.({ reason: "startup", prompt: "PRIVATE_PROMPT" });
 handlers.get("tool_execution_start")?.({ toolName: "bash", args: { command: "pnpm test /Users/alvin/private token=abc" } });
 handlers.get("tool_execution_end")?.({ isError: true, result: "STACK /Users/alvin/private token=abc" });
-assert.equal(calls.length, 0, "Pi event callbacks must not block on OpenPets IPC");
+assert.equal(calls.length, 0, "Pi event callbacks must not block on NekoDrift IPC");
 while (scheduled.length) await scheduled.shift()?.();
 
 assert.deepEqual(calls.slice(0, 3), ["react:waving", "react:testing", "say:Something failed:error"]);
@@ -55,7 +55,7 @@ assert.ok(!calls.join("\n").includes("token=abc"));
 
 await commandHandler?.("status", { ui: { notify: (message: string) => notifications.push(message) } });
 await commandHandler?.("test", { ui: { notify: (message: string) => notifications.push(message) } });
-assert.ok(notifications.includes("OpenPets is connected."));
+assert.ok(notifications.includes("NekoDrift is connected."));
 assert.ok(calls.includes("say:Pi connected:waving"));
 
 console.log("Pi compatibility smoke checks passed.");

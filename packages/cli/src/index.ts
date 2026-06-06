@@ -7,12 +7,12 @@ import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 
-import { allowedReactions, createOpenPetsClient, OpenPetsClientError, type OpenPetsPetListItem, type OpenPetsReaction } from "@open-pets/client";
-import { claudeHookEvents, openPetsHookMarker, removeOpenPetsHooks, runClaudeHookFromStdin, validateOpenPetsPetArg } from "@open-pets/claude";
-import { buildCursorRulesPreview, buildOpenPetsOnlyPreview, classifyCursorMcpStatus, classifyCursorRulesStatus, executeCursorMcpWrite, executeCursorRulesWrite, getCursorProjectMcpPath, getCursorProjectRulesPath, planCursorMcpInstall, planCursorMcpReplace, planCursorRulesInstall, planCursorRulesRemove, planCursorRulesReplace, readCursorMcpConfig, readCursorOpenPetsRules } from "@open-pets/cursor";
-import { prepareOpenCodeProjectSetup, writePreparedOpenCodeProjectSetup } from "@open-pets/opencode";
+import { allowedReactions, createNekoDriftClient, NekoDriftClientError, type NekoDriftPetListItem, type NekoDriftReaction } from "@neko-drift/client";
+import { claudeHookEvents, openPetsHookMarker, removeNekoDriftHooks, runClaudeHookFromStdin, validateNekoDriftPetArg } from "@neko-drift/claude";
+import { buildCursorRulesPreview, buildNekoDriftOnlyPreview, classifyCursorMcpStatus, classifyCursorRulesStatus, executeCursorMcpWrite, executeCursorRulesWrite, getCursorProjectMcpPath, getCursorProjectRulesPath, planCursorMcpInstall, planCursorMcpReplace, planCursorRulesInstall, planCursorRulesRemove, planCursorRulesReplace, readCursorMcpConfig, readCursorNekoDriftRules } from "@neko-drift/cursor";
+import { prepareOpenCodeProjectSetup, writePreparedOpenCodeProjectSetup } from "@neko-drift/opencode";
 
-export const cliPackageName = "@open-pets/cli";
+export const cliPackageName = "@neko-drift/cli";
 
 interface ConfigureOptions {
   readonly agent: "claude" | "opencode" | "cursor";
@@ -29,12 +29,12 @@ interface InstallOptions {
 }
 
 interface ReactOptions {
-  readonly reaction: OpenPetsReaction;
+  readonly reaction: NekoDriftReaction;
 }
 
 interface SayOptions {
   readonly message: string;
-  readonly reaction?: OpenPetsReaction;
+  readonly reaction?: NekoDriftReaction;
 }
 
 interface CommandSpec {
@@ -121,7 +121,7 @@ async function main(): Promise<void> {
       printHookUsage();
       return;
     }
-    const code = await runClaudeHookFromStdin(process.stdin, { configuredPetId: readPetArg(args), projectLocal: hasProjectLocalArg(args), debug: process.env.OPENPETS_DEBUG === "1" });
+    const code = await runClaudeHookFromStdin(process.stdin, { configuredPetId: readPetArg(args), projectLocal: hasProjectLocalArg(args), debug: process.env.NEKODRIFT_DEBUG === "1" });
     process.exitCode = code;
     return;
   }
@@ -129,21 +129,21 @@ async function main(): Promise<void> {
 }
 
 async function installPetFromCatalog(options: InstallOptions): Promise<void> {
-  const client = createOpenPetsClient({ responseTimeoutMs: 60_000 });
+  const client = createNekoDriftClient({ responseTimeoutMs: 60_000 });
   const result = await client.installPet(options.petId);
-  process.stdout.write(`Installed OpenPets pet: ${sanitizeTerminalText(result.displayName)} (${result.petId})\n`);
+  process.stdout.write(`Installed NekoDrift pet: ${sanitizeTerminalText(result.displayName)} (${result.petId})\n`);
 }
 
 async function showStatus(args: readonly string[]): Promise<void> {
   if (args.length !== 0) throw new CliError(`Unknown status option: ${args[0]}`);
-  const result = await createOpenPetsClient().status();
+  const result = await createNekoDriftClient().status();
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   if (!result.ok || !result.appRunning) process.exitCode = 1;
 }
 
 async function showPets(args: readonly string[]): Promise<void> {
   if (args.length !== 0) throw new CliError(`Unknown pets option: ${args[0]}`);
-  const result = await createOpenPetsClient().listPets();
+  const result = await createNekoDriftClient().listPets();
   for (const pet of result.pets) {
     const flags = [pet.id === result.defaultPetId ? "default" : undefined, pet.broken ? "broken" : undefined].filter(Boolean).join(", ");
     process.stdout.write(`${sanitizeTerminalText(pet.displayName)} (${pet.id})${flags ? ` [${flags}]` : ""}\n`);
@@ -151,13 +151,13 @@ async function showPets(args: readonly string[]): Promise<void> {
 }
 
 async function sendReaction(options: ReactOptions): Promise<void> {
-  await createOpenPetsClient().react(options.reaction);
-  process.stdout.write(`OpenPets reaction sent: ${options.reaction}\n`);
+  await createNekoDriftClient().react(options.reaction);
+  process.stdout.write(`NekoDrift reaction sent: ${options.reaction}\n`);
 }
 
 async function sendMessage(options: SayOptions): Promise<void> {
-  await createOpenPetsClient().say(options.message, options.reaction ? { reaction: options.reaction } : undefined);
-  process.stdout.write("OpenPets message sent.\n");
+  await createNekoDriftClient().say(options.message, options.reaction ? { reaction: options.reaction } : undefined);
+  process.stdout.write("NekoDrift message sent.\n");
 }
 
 export async function configureProject(options: ConfigureOptions): Promise<void> {
@@ -172,7 +172,7 @@ export async function configureProject(options: ConfigureOptions): Promise<void>
   }
   assertClaudeAvailable();
   assertSafeProjectHookPath(projectDir);
-  const client = createOpenPetsClient();
+  const client = createNekoDriftClient();
   const selectedPet = await resolveConfiguredPet(client, options.petId);
   const petId = selectedPet.id;
   const packageVersion = getPackageVersion();
@@ -182,7 +182,7 @@ export async function configureProject(options: ConfigureOptions): Promise<void>
   const preparedHooks = prepareProjectLocalHooks(projectDir, hookCommand);
   runClaudeMcpAddJson(projectDir, mcpConfig, options.force);
   writePreparedHooks(preparedHooks);
-  process.stdout.write(`OpenPets configured for Claude in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\n`);
+  process.stdout.write(`NekoDrift configured for Claude in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\n`);
 }
 
 async function configureCursorProject(options: ConfigureOptions, projectDir: string): Promise<void> {
@@ -199,36 +199,36 @@ async function configureCursorProject(options: ConfigureOptions, projectDir: str
     return;
   }
 
-  const client = createOpenPetsClient();
+  const client = createNekoDriftClient();
   const selectedPet = await resolveConfiguredPet(client, options.petId);
   const packageVersion = getPackageVersion();
-  const previewOptions = { mcpVersion: packageVersion, petId: selectedPet.id, commandMode: options.localDev ? "local" as const : "published" as const, mcpEntryPath: options.localDev ? require.resolve("@open-pets/mcp") : undefined };
+  const previewOptions = { mcpVersion: packageVersion, petId: selectedPet.id, commandMode: options.localDev ? "local" as const : "published" as const, mcpEntryPath: options.localDev ? require.resolve("@neko-drift/mcp") : undefined };
   const readResult = readCursorMcpConfig(configPath);
   const status = classifyCursorMcpStatus(readResult, configPath, previewOptions);
-  process.stdout.write(`Cursor config: ${configPath}\nStatus: ${status.status} - ${status.message}\nOpenPets MCP preview:\n${JSON.stringify(buildOpenPetsOnlyPreview(previewOptions), null, 2)}\n`);
+  process.stdout.write(`Cursor config: ${configPath}\nStatus: ${status.status} - ${status.message}\nNekoDrift MCP preview:\n${JSON.stringify(buildNekoDriftOnlyPreview(previewOptions), null, 2)}\n`);
 
   const rulesRequested = options.cursorRulesMode === "with";
-  const rulesReadResult = rulesRequested ? readCursorOpenPetsRules(projectDir) : undefined;
+  const rulesReadResult = rulesRequested ? readCursorNekoDriftRules(projectDir) : undefined;
   const rulesStatus = rulesReadResult ? classifyCursorRulesStatus(rulesReadResult, rulesPath) : undefined;
   if (rulesStatus) {
-    process.stdout.write(`Cursor rules: ${rulesPath}\nRules status: ${rulesStatus.status} - ${rulesStatus.message}\nOpenPets rules preview:\n${buildCursorRulesPreview()}\n`);
+    process.stdout.write(`Cursor rules: ${rulesPath}\nRules status: ${rulesStatus.status} - ${rulesStatus.message}\nNekoDrift rules preview:\n${buildCursorRulesPreview()}\n`);
   }
 
   if (status.status === "installed" && (!rulesRequested || rulesStatus?.status === "installed")) {
-    process.stdout.write(`OpenPets is already configured for Cursor in ${projectDir}.\nRestart or reload Cursor or start a new chat in this project to load OpenPets.\n`);
+    process.stdout.write(`NekoDrift is already configured for Cursor in ${projectDir}.\nRestart or reload Cursor or start a new chat in this project to load NekoDrift.\n`);
     return;
   }
   if (status.status === "invalid" || status.status === "error") {
     throw new CliError(`${status.message} Fix ${configPath}, then rerun setup.`);
   }
   if (status.status === "conflict" && !options.force) {
-    throw new CliError(`Cursor already has a non-OpenPets openpets MCP entry. Rerun with --force to replace only mcpServers.openpets.`);
+    throw new CliError(`Cursor already has a non-NekoDrift nekodrift MCP entry. Rerun with --force to replace only mcpServers.nekodrift.`);
   }
   if (rulesStatus && (rulesStatus.status === "invalid" || rulesStatus.status === "error")) {
     throw new CliError(`${rulesStatus.message} Fix ${rulesPath}, then rerun setup.`);
   }
   if (rulesStatus?.status === "conflict" && !options.force) {
-    throw new CliError("Cursor already has .cursor/rules/openpets.mdc with user content. Rerun with --force to replace only that file.");
+    throw new CliError("Cursor already has .cursor/rules/nekodrift.mdc with user content. Rerun with --force to replace only that file.");
   }
 
   const plan = status.status === "installed" ? undefined : status.status === "conflict" ? planCursorMcpReplace(configPath, previewOptions) : planCursorMcpInstall(configPath, previewOptions, options.force);
@@ -240,58 +240,58 @@ async function configureCursorProject(options: ConfigureOptions, projectDir: str
   if (rulesPlan) executeCursorRulesWrite(rulesPlan);
 
   const backups = [plan?.backupPath ? `MCP backup: ${plan.backupPath}` : undefined, rulesPlan?.backupPath ? `Rules backup: ${rulesPlan.backupPath}` : undefined].filter(Boolean).join("\n");
-  process.stdout.write(`OpenPets configured for Cursor in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\n${backups ? `${backups}\n` : ""}Restart or reload Cursor or start a new chat in this project to load OpenPets.\nTo remove MCP, delete mcpServers.openpets from ${configPath}. To remove rules, run with --remove-rules.\n`);
+  process.stdout.write(`NekoDrift configured for Cursor in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\n${backups ? `${backups}\n` : ""}Restart or reload Cursor or start a new chat in this project to load NekoDrift.\nTo remove MCP, delete mcpServers.nekodrift from ${configPath}. To remove rules, run with --remove-rules.\n`);
 }
 
 function configureCursorRulesOnly(projectDir: string, rulesPath: string, force: boolean): void {
-  const readResult = readCursorOpenPetsRules(projectDir);
+  const readResult = readCursorNekoDriftRules(projectDir);
   const status = classifyCursorRulesStatus(readResult, rulesPath);
-  process.stdout.write(`Cursor rules: ${rulesPath}\nRules status: ${status.status} - ${status.message}\nOpenPets rules preview:\n${buildCursorRulesPreview()}\n`);
+  process.stdout.write(`Cursor rules: ${rulesPath}\nRules status: ${status.status} - ${status.message}\nNekoDrift rules preview:\n${buildCursorRulesPreview()}\n`);
   if (status.status === "installed") {
-    process.stdout.write("OpenPets Cursor rules are already installed. Cursor may use changed rules in a new or refreshed chat.\n");
+    process.stdout.write("NekoDrift Cursor rules are already installed. Cursor may use changed rules in a new or refreshed chat.\n");
     return;
   }
   if (status.status === "invalid" || status.status === "error") throw new CliError(`${status.message} Fix ${rulesPath}, then rerun setup.`);
-  if (status.status === "conflict" && !force) throw new CliError("Cursor already has .cursor/rules/openpets.mdc with user content. Rerun with --force to replace only that file.");
+  if (status.status === "conflict" && !force) throw new CliError("Cursor already has .cursor/rules/nekodrift.mdc with user content. Rerun with --force to replace only that file.");
   const plan = status.status === "conflict" ? planCursorRulesReplace(projectDir) : planCursorRulesInstall(projectDir, force);
   if ("ok" in plan) throw new CliError(plan.message);
   executeCursorRulesWrite(plan);
-  process.stdout.write(`Installed OpenPets Cursor rules in ${projectDir}.\nRules file: ${rulesPath}\n${plan.backupPath ? `Backup: ${plan.backupPath}\n` : ""}Cursor may use changed rules in a new or refreshed chat.\n`);
+  process.stdout.write(`Installed NekoDrift Cursor rules in ${projectDir}.\nRules file: ${rulesPath}\n${plan.backupPath ? `Backup: ${plan.backupPath}\n` : ""}Cursor may use changed rules in a new or refreshed chat.\n`);
 }
 
 function removeCursorRulesOnly(projectDir: string, rulesPath: string): void {
-  const readResult = readCursorOpenPetsRules(projectDir);
+  const readResult = readCursorNekoDriftRules(projectDir);
   const status = classifyCursorRulesStatus(readResult, rulesPath);
   process.stdout.write(`Cursor rules: ${rulesPath}\nRules status: ${status.status} - ${status.message}\n`);
   if (status.status === "missing") {
-    process.stdout.write("OpenPets Cursor rules are already absent.\n");
+    process.stdout.write("NekoDrift Cursor rules are already absent.\n");
     return;
   }
   if (status.status === "invalid" || status.status === "error") throw new CliError(`${status.message} Fix ${rulesPath}, then rerun setup.`);
-  if (status.status === "conflict") throw new CliError("Cannot remove .cursor/rules/openpets.mdc because it is not managed by OpenPets.");
+  if (status.status === "conflict") throw new CliError("Cannot remove .cursor/rules/nekodrift.mdc because it is not managed by NekoDrift.");
   const plan = planCursorRulesRemove(projectDir);
   if ("ok" in plan) throw new CliError(plan.message);
   executeCursorRulesWrite(plan);
-  process.stdout.write(`Removed OpenPets Cursor rules from ${projectDir}.\n${plan.backupPath ? `Backup: ${plan.backupPath}\n` : ""}Cursor may use changed rules in a new or refreshed chat.\n`);
+  process.stdout.write(`Removed NekoDrift Cursor rules from ${projectDir}.\n${plan.backupPath ? `Backup: ${plan.backupPath}\n` : ""}Cursor may use changed rules in a new or refreshed chat.\n`);
 }
 
 async function configureOpenCodeProject(options: ConfigureOptions, projectDir: string): Promise<void> {
-  const client = createOpenPetsClient();
+  const client = createNekoDriftClient();
   const selectedPet = await resolveConfiguredPet(client, options.petId);
   const packageVersion = getPackageVersion();
   const prepared = prepareOpenCodeProjectSetup({ projectDir, petId: selectedPet.id, cliVersion: packageVersion, commandMode: options.localDev ? "local" : "published", cliEntryPath: options.localDev ? fileURLToPath(import.meta.url) : undefined });
   writePreparedOpenCodeProjectSetup(prepared);
-  process.stdout.write(`OpenPets configured for OpenCode in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\nConfig: ${prepared.configPath}\nInstructions: ${prepared.instructionPath}\nWarning: .opencode config/instructions can be committed and include the selected pet id.\nRestart OpenCode in this project to load OpenPets.\n`);
+  process.stdout.write(`NekoDrift configured for OpenCode in ${projectDir}.\nPet: ${sanitizeTerminalText(selectedPet.displayName)} (${selectedPet.id})\nConfig: ${prepared.configPath}\nInstructions: ${prepared.instructionPath}\nWarning: .opencode config/instructions can be committed and include the selected pet id.\nRestart OpenCode in this project to load NekoDrift.\n`);
 }
 
-export async function resolveConfiguredPet(client: Pick<ReturnType<typeof createOpenPetsClient>, "listPets">, petId?: string): Promise<ConfiguredPet> {
+export async function resolveConfiguredPet(client: Pick<ReturnType<typeof createNekoDriftClient>, "listPets">, petId?: string): Promise<ConfiguredPet> {
   if (petId) {
-    const id = validateOpenPetsPetArg(petId);
+    const id = validateNekoDriftPetArg(petId);
     return { id, displayName: id };
   }
 
   const petList = await getInstalledPets(client);
-  const id = validateOpenPetsPetArg(await pickPet(petList.pets));
+  const id = validateNekoDriftPetArg(await pickPet(petList.pets));
   const selectedPet = petList.pets.find((pet) => pet.id === id);
   if (!selectedPet || selectedPet.broken) throw new CliError(`Pet is not installed or usable: ${id}`);
   return { id: selectedPet.id, displayName: selectedPet.displayName };
@@ -315,8 +315,8 @@ export function parseConfigureArgs(args: readonly string[]): ConfigureOptions {
     else if (arg === "--remove-rules") cursorRulesMode = setCursorRulesMode(cursorRulesMode, "remove");
     else if (arg === "--agent") { agent = readRequiredArg(args, index, "--agent"); index += 1; }
     else if (arg.startsWith("--agent=")) agent = arg.slice("--agent=".length);
-    else if (arg === "--pet") { petId = validateOpenPetsPetArg(readRequiredArg(args, index, "--pet")); index += 1; }
-    else if (arg.startsWith("--pet=")) petId = validateOpenPetsPetArg(arg.slice("--pet=".length));
+    else if (arg === "--pet") { petId = validateNekoDriftPetArg(readRequiredArg(args, index, "--pet")); index += 1; }
+    else if (arg.startsWith("--pet=")) petId = validateNekoDriftPetArg(arg.slice("--pet=".length));
     else if (arg === "--cwd") { cwd = readRequiredArg(args, index, "--cwd"); index += 1; }
     else if (arg.startsWith("--cwd=")) cwd = arg.slice("--cwd=".length);
     else throw new CliError(`Unknown configure option: ${arg}`);
@@ -332,17 +332,17 @@ function setCursorRulesMode(current: ConfigureOptions["cursorRulesMode"], next: 
 }
 
 export function parseInstallArgs(args: readonly string[]): InstallOptions {
-  if (args.length !== 1) throw new CliError("Usage: openpets install <pet-id>");
-  return { petId: validateOpenPetsPetArg(args[0] ?? "") };
+  if (args.length !== 1) throw new CliError("Usage: nekodrift install <pet-id>");
+  return { petId: validateNekoDriftPetArg(args[0] ?? "") };
 }
 
 export function parseReactArgs(args: readonly string[]): ReactOptions {
-  if (args.length !== 1) throw new CliError("Usage: openpets react <reaction>");
+  if (args.length !== 1) throw new CliError("Usage: nekodrift react <reaction>");
   return { reaction: parseReaction(args[0] ?? "") };
 }
 
 export function parseSayArgs(args: readonly string[]): SayOptions {
-  let reaction: OpenPetsReaction | undefined;
+  let reaction: NekoDriftReaction | undefined;
   const messageParts: string[] = [];
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -358,15 +358,15 @@ export function parseSayArgs(args: readonly string[]): SayOptions {
     }
   }
   const message = messageParts.join(" ").trim();
-  if (!message) throw new CliError("Usage: openpets say <message> [--reaction <reaction>]");
+  if (!message) throw new CliError("Usage: nekodrift say <message> [--reaction <reaction>]");
   return { message, reaction };
 }
 
-function parseReaction(value: string): OpenPetsReaction {
-  if (!allowedReactions.includes(value as OpenPetsReaction)) {
-    throw new CliError(`Invalid OpenPets reaction: ${value}. Allowed reactions: ${allowedReactions.join(", ")}.`);
+function parseReaction(value: string): NekoDriftReaction {
+  if (!allowedReactions.includes(value as NekoDriftReaction)) {
+    throw new CliError(`Invalid NekoDrift reaction: ${value}. Allowed reactions: ${allowedReactions.join(", ")}.`);
   }
-  return value as OpenPetsReaction;
+  return value as NekoDriftReaction;
 }
 
 export function createVersionPinnedCliCommand(version: string, args: readonly string[]): CommandSpec {
@@ -378,7 +378,7 @@ export function createLocalDevCliCommand(args: readonly string[]): CommandSpec {
 }
 
 export function createClaudeMcpAddJsonArgs(config: unknown): readonly string[] {
-  return ["mcp", "add-json", "openpets", JSON.stringify(config), "--scope", "local"];
+  return ["mcp", "add-json", "nekodrift", JSON.stringify(config), "--scope", "local"];
 }
 
 export function installProjectLocalHooks(projectDir: string, hookCommand: string): void {
@@ -389,7 +389,7 @@ export function prepareProjectLocalHooks(projectDir: string, hookCommand: string
   assertSafeProjectHookPath(projectDir);
   const settingsPath = getProjectLocalSettingsPath(realpathSync(projectDir));
   const current = readJsonObject(settingsPath);
-  const cleaned = removeOpenPetsHooks(current);
+  const cleaned = removeNekoDriftHooks(current);
   const hooks = isRecord(cleaned.hooks) ? { ...cleaned.hooks } : {};
   for (const event of claudeHookEvents) {
     if (hooks[event] !== undefined && !Array.isArray(hooks[event])) throw new CliError(`Claude local settings hooks.${event} must be an array.`);
@@ -415,7 +415,7 @@ export function runClaudeMcpAddJson(projectDir: string, config: unknown, force =
 }
 
 function runClaudeMcpRemove(projectDir: string): void {
-  const result = spawnSync("claude", ["mcp", "remove", "openpets", "--scope", "local"], { cwd: projectDir, encoding: "utf8", shell: false, stdio: ["ignore", "pipe", "pipe"], timeout: 10_000 });
+  const result = spawnSync("claude", ["mcp", "remove", "nekodrift", "--scope", "local"], { cwd: projectDir, encoding: "utf8", shell: false, stdio: ["ignore", "pipe", "pipe"], timeout: 10_000 });
   if (result.error) throw new CliError(`Claude Code is unavailable on PATH: ${result.error.message}`);
   const output = `${result.stderr || ""}\n${result.stdout || ""}`;
   if (result.status !== 0 && !/not found|does not exist|no server|unknown/i.test(output)) {
@@ -424,7 +424,7 @@ function runClaudeMcpRemove(projectDir: string): void {
 }
 
 async function runMcp(args: readonly string[]): Promise<void> {
-  const entry = require.resolve("@open-pets/mcp");
+  const entry = require.resolve("@neko-drift/mcp");
   await new Promise<void>((resolvePromise, rejectPromise) => {
     const child = spawn(process.execPath, [entry, ...args], { stdio: "inherit" });
     const forwardSigint = (): void => { child.kill("SIGINT"); };
@@ -442,18 +442,18 @@ async function runMcp(args: readonly string[]): Promise<void> {
   });
 }
 
-async function getInstalledPets(client: Pick<ReturnType<typeof createOpenPetsClient>, "listPets">) {
+async function getInstalledPets(client: Pick<ReturnType<typeof createNekoDriftClient>, "listPets">) {
   try {
     return await client.listPets();
   } catch (error) {
-    if (error instanceof OpenPetsClientError && error.code === "unknown_method") throw new CliError("OpenPets desktop app is too old for project setup. Update/restart OpenPets and try again.");
-    throw new CliError("OpenPets desktop app is not running. Open OpenPets, then run this command again.");
+    if (error instanceof NekoDriftClientError && error.code === "unknown_method") throw new CliError("NekoDrift desktop app is too old for project setup. Update/restart NekoDrift and try again.");
+    throw new CliError("NekoDrift desktop app is not running. Open NekoDrift, then run this command again.");
   }
 }
 
-async function pickPet(pets: readonly OpenPetsPetListItem[]): Promise<string> {
+async function pickPet(pets: readonly NekoDriftPetListItem[]): Promise<string> {
   const usable = pets.filter((pet) => !pet.broken);
-  if (usable.length === 0) throw new CliError("No usable installed pets found. Open OpenPets and install a pet first.");
+  if (usable.length === 0) throw new CliError("No usable installed pets found. Open NekoDrift and install a pet first.");
   if (!process.stdin.isTTY) throw new CliError("Missing --pet <id>. Non-interactive shells must pass --pet.");
   process.stdout.write("Pick pet for this project:\n");
   usable.forEach((pet, index) => process.stdout.write(`  ${index + 1}. ${sanitizeTerminalText(pet.displayName)} (${pet.id})\n`));
@@ -529,11 +529,11 @@ function writeJsonFile(path: string, value: Record<string, unknown>): void {
 
 function readPetArg(args: readonly string[]): string | undefined {
   const equals = args.find((arg) => arg.startsWith("--pet="));
-  if (equals) return validateOpenPetsPetArg(equals.slice("--pet=".length));
+  if (equals) return validateNekoDriftPetArg(equals.slice("--pet=".length));
   const index = args.indexOf("--pet");
   const value = index >= 0 ? args[index + 1] : undefined;
   if (index >= 0 && (!value || value.startsWith("--"))) throw new CliError("Missing value for --pet.");
-  return value && value.length > 0 ? validateOpenPetsPetArg(value) : undefined;
+  return value && value.length > 0 ? validateNekoDriftPetArg(value) : undefined;
 }
 
 function hasProjectLocalArg(args: readonly string[]): boolean {
@@ -558,44 +558,44 @@ function shellQuote(value: string): string {
 
 function getPackageVersion(): string {
   const parsed = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as unknown;
-  if (!isRecord(parsed) || typeof parsed.version !== "string") throw new CliError("Cannot read OpenPets CLI package version.");
+  if (!isRecord(parsed) || typeof parsed.version !== "string") throw new CliError("Cannot read NekoDrift CLI package version.");
   return parsed.version;
 }
 
 function printUsage(): void {
-  process.stdout.write("Usage:\n  openpets status\n  openpets pets\n  openpets react <reaction>\n  openpets say <message> [--reaction <reaction>]\n  openpets install <pet-id>\n  openpets configure [--agent claude|opencode|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n  openpets mcp [--pet <id>]\n  openpets hook --openpets-managed [--pet <id>]\n\nRun `openpets <command> --help` for command options.\n");
+  process.stdout.write("Usage:\n  nekodrift status\n  nekodrift pets\n  nekodrift react <reaction>\n  nekodrift say <message> [--reaction <reaction>]\n  nekodrift install <pet-id>\n  nekodrift configure [--agent claude|opencode|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n  nekodrift mcp [--pet <id>]\n  nekodrift hook --nekodrift-managed [--pet <id>]\n\nRun `nekodrift <command> --help` for command options.\n");
 }
 
 function printInstallUsage(): void {
-  process.stdout.write("Usage:\n  openpets install <pet-id>\n\nDownloads a gallery pet through the running OpenPets desktop app and installs it locally.\n");
+  process.stdout.write("Usage:\n  nekodrift install <pet-id>\n\nDownloads a gallery pet through the running NekoDrift desktop app and installs it locally.\n");
 }
 
 function printStatusUsage(): void {
-  process.stdout.write("Usage:\n  openpets status\n\nChecks whether the OpenPets desktop app is reachable and prints the status response as JSON.\n");
+  process.stdout.write("Usage:\n  nekodrift status\n\nChecks whether the NekoDrift desktop app is reachable and prints the status response as JSON.\n");
 }
 
 function printPetsUsage(): void {
-  process.stdout.write("Usage:\n  openpets pets\n\nLists pets installed in the running OpenPets desktop app.\n");
+  process.stdout.write("Usage:\n  nekodrift pets\n\nLists pets installed in the running NekoDrift desktop app.\n");
 }
 
 function printReactUsage(): void {
-  process.stdout.write(`Usage:\n  openpets react <reaction>\n\nSends a reaction to the running OpenPets desktop app.\nAllowed reactions: ${allowedReactions.join(", ")}.\n`);
+  process.stdout.write(`Usage:\n  nekodrift react <reaction>\n\nSends a reaction to the running NekoDrift desktop app.\nAllowed reactions: ${allowedReactions.join(", ")}.\n`);
 }
 
 function printSayUsage(): void {
-  process.stdout.write(`Usage:\n  openpets say <message> [--reaction <reaction>]\n\nShows a short message in the running OpenPets desktop app. Optionally sends a reaction with the message.\nAllowed reactions: ${allowedReactions.join(", ")}.\n`);
+  process.stdout.write(`Usage:\n  nekodrift say <message> [--reaction <reaction>]\n\nShows a short message in the running NekoDrift desktop app. Optionally sends a reaction with the message.\nAllowed reactions: ${allowedReactions.join(", ")}.\n`);
 }
 
 function printConfigureUsage(): void {
-  process.stdout.write("Usage:\n  openpets configure [--agent claude|opencode|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n\nOptions:\n  --pet <id>           Pet id to use for this project. If omitted, prompts with installed pets. Cursor --rules-only/--remove-rules do not need a pet.\n  --agent <agent>      Agent to configure: claude, opencode, or cursor. Defaults to claude.\n  --cwd <path>         Project directory to configure. Defaults to current directory. Cursor uses <cwd>/.cursor/mcp.json and <cwd>/.cursor/rules/openpets.mdc; global Cursor setup is not enabled here.\n  --with-rules         For Cursor, install MCP config and project rules after preflighting both writes.\n  --rules-only         For Cursor, install/update only .cursor/rules/openpets.mdc.\n  --remove-rules       For Cursor, remove only managed .cursor/rules/openpets.mdc.\n  --yes, -y            Accepted for scripts; no confirmation prompt is shown.\n  --force              Replace supported managed entries where applicable. Required for conflicting Cursor rules.\n  --replace            Alias for --force.\n  --local-dev          Use local development command paths where supported.\n  -h, --help           Show this help.\n");
+  process.stdout.write("Usage:\n  nekodrift configure [--agent claude|opencode|cursor] [--pet <id>] [--cwd <path>] [--yes] [--force] [--with-rules|--rules-only|--remove-rules]\n\nOptions:\n  --pet <id>           Pet id to use for this project. If omitted, prompts with installed pets. Cursor --rules-only/--remove-rules do not need a pet.\n  --agent <agent>      Agent to configure: claude, opencode, or cursor. Defaults to claude.\n  --cwd <path>         Project directory to configure. Defaults to current directory. Cursor uses <cwd>/.cursor/mcp.json and <cwd>/.cursor/rules/nekodrift.mdc; global Cursor setup is not enabled here.\n  --with-rules         For Cursor, install MCP config and project rules after preflighting both writes.\n  --rules-only         For Cursor, install/update only .cursor/rules/nekodrift.mdc.\n  --remove-rules       For Cursor, remove only managed .cursor/rules/nekodrift.mdc.\n  --yes, -y            Accepted for scripts; no confirmation prompt is shown.\n  --force              Replace supported managed entries where applicable. Required for conflicting Cursor rules.\n  --replace            Alias for --force.\n  --local-dev          Use local development command paths where supported.\n  -h, --help           Show this help.\n");
 }
 
 function printMcpUsage(): void {
-  process.stdout.write("Usage:\n  openpets mcp [--pet <id>]\n\nStarts the OpenPets MCP server wrapper. This command is written into Claude MCP config by `openpets configure`.\n");
+  process.stdout.write("Usage:\n  nekodrift mcp [--pet <id>]\n\nStarts the NekoDrift MCP server wrapper. This command is written into Claude MCP config by `nekodrift configure`.\n");
 }
 
 function printHookUsage(): void {
-  process.stdout.write("Usage:\n  openpets hook --openpets-managed [--pet <id>]\n\nRuns one Claude hook event from stdin. This command is written into Claude project hooks by `openpets configure`.\n");
+  process.stdout.write("Usage:\n  nekodrift hook --nekodrift-managed [--pet <id>]\n\nRuns one Claude hook event from stdin. This command is written into Claude project hooks by `nekodrift configure`.\n");
 }
 
 function hasHelp(args: readonly string[]): boolean {

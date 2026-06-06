@@ -1,7 +1,7 @@
-import { createOpenPetsClient } from "./index.js";
-import { validateReaction, type OpenPetsReaction } from "./protocol.js";
+import { createNekoDriftClient } from "./index.js";
+import { validateReaction, type NekoDriftReaction } from "./protocol.js";
 
-const client = createOpenPetsClient();
+const client = createNekoDriftClient();
 const [command = "status", first, second] = process.argv.slice(2);
 
 try {
@@ -12,7 +12,7 @@ try {
       : command === "react"
         ? await client.react(validateReaction(first ?? "idle"))
         : command === "say"
-          ? await client.say(first ?? "Working on it", second ? { reaction: validateReaction(second) as OpenPetsReaction } : undefined)
+          ? await client.say(first ?? "Working on it", second ? { reaction: validateReaction(second) as NekoDriftReaction } : undefined)
           : command === "invalid-token"
             ? await runInvalidTokenCheck()
             : await client.status();

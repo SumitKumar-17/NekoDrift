@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-Core TypeScript source for the OpenPets desktop application. Organized into: lifecycle management, state persistence, Control Center and pet windows, IPC server, agent integrations, pet installation/management, and declarative plus JavaScript plugin runtimes.
+Core TypeScript source for the NekoDrift desktop application. Organized into: lifecycle management, state persistence, Control Center and pet windows, IPC server, agent integrations, pet installation/management, and declarative plus JavaScript plugin runtimes.
 
 ## Design
 
@@ -62,9 +62,9 @@ windows.ts (IPC handlers)
     ├── runAgentSetupAction()
     │   ├── configure/replace/remove (MCP commands)
     │   ├── install-memory (claude-memory.ts)
-    │   └── install-hooks/uninstall-hooks/doctor-hooks (@open-pets/claude)
-    ├── OpenCode global config management (@open-pets/opencode)
-    └── Cursor global MCP config management (@open-pets/cursor)
+    │   └── install-hooks/uninstall-hooks/doctor-hooks (@neko-drift/claude)
+    ├── OpenCode global config management (@neko-drift/opencode)
+    └── Cursor global MCP config management (@neko-drift/cursor)
 ```
 
 **Pet Installation Flow**:
@@ -90,7 +90,7 @@ tray.ts → openControlCenterWindow(route) → windows.ts
 **Plugin Flow**:
 ```
 main.ts → initializePluginService(userData, defaultPluginPetApi, appVersion, ElectronPluginJsHost).start()
-├── plugin-state.ts reads/writes userData/openpets-plugin-state.json
+├── plugin-state.ts reads/writes userData/nekodrift-plugin-state.json
 ├── plugin-runtime.ts reloads enabled manifests
 │   ├── declarative runtime schedules timer triggers
 │   ├── plugin-js-host.ts starts hidden sandboxed BrowserWindow hosts for JavaScript plugins
@@ -100,14 +100,14 @@ main.ts → initializePluginService(userData, defaultPluginPetApi, appVersion, E
 
 Control Center plugins route:
 tray.ts → openControlCenterWindow("plugins") → windows.ts → renderer React app
-└── openpets:plugins-* IPC handlers call PluginService methods
+└── nekodrift:plugins-* IPC handlers call PluginService methods
 
 Catalog install/update:
 plugin-catalog.ts → plugin-catalog-validation.ts
 └── plugin-package.ts downloads HTTPS ZIP, validates SHA-256, extracts root manifest only, and installs to userData/plugins/{id}
 
 Local development load:
-plugin-local-loader.ts validates selected folder manifest and snapshots only openpets.plugin.json to userData/plugins-dev/{id}
+plugin-local-loader.ts validates selected folder manifest and snapshots only nekodrift.plugin.json to userData/plugins-dev/{id}
 ```
 
 ## Integration Points
@@ -122,14 +122,14 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only ope
   - `plugin-service.ts` ↔ `plugin-state.ts`, `plugin-runtime.ts`, `plugin-catalog.ts`, `plugin-package.ts`, `plugin-local-loader.ts`, `plugin-js-host.ts`, `plugin-sdk-bridge.ts`
 
 - **To packages/**:
-  - `@open-pets/claude`: `buildClaudeMcpPreview`, `installClaudeHooks`, `doctorClaudeHooks`, etc.
-  - `@open-pets/opencode`: `prepareOpenCodeGlobalSetup`, `doctorOpenCodeGlobalSetup`
-  - `@open-pets/cursor`: `planCursorMcpInstall`, `executeCursorMcpWrite`, `buildCursorRulesPreview`, etc.
-  - `@open-pets/cli`: Version lookup for bundled mode
+  - `@neko-drift/claude`: `buildClaudeMcpPreview`, `installClaudeHooks`, `doctorClaudeHooks`, etc.
+  - `@neko-drift/opencode`: `prepareOpenCodeGlobalSetup`, `doctorOpenCodeGlobalSetup`
+  - `@neko-drift/cursor`: `planCursorMcpInstall`, `executeCursorMcpWrite`, `buildCursorRulesPreview`, etc.
+  - `@neko-drift/cli`: Version lookup for bundled mode
 
 - **To System**:
   - File system: `app.getPath("userData")`, `userData/plugins/`, `userData/plugins-dev/`, plugin storage JSON, `~/.codex/pets/`, `~/.claude/`, `~/.opencode/`
-  - Network: `fetch()` to openpets.dev, GitHub API, plugin catalog at `https://openpets.dev/plugins/catalog.v1.json`, plugin ZIPs restricted to `https://zip.openpets.dev/plugins/`
+  - Network: `fetch()` to nekodrift.app, GitHub API, plugin catalog at `https://nekodrift.app/plugins/catalog.v1.json`, plugin ZIPs restricted to `https://zip.nekodrift.app/plugins/`
   - Processes: `spawn()` for `claude`, `opencode`, `node`
 
 ## Key Modules
@@ -176,12 +176,12 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only ope
 - `plugin-manifest.ts`: Manifest V1/V2 schema/types and validation for declarative and JavaScript runtimes, permissions (`timer`/`schedule`, `pet:speak`, `pet:reaction`, `storage`, `status`, `commands`, `network`), config schema, timer triggers, entry files, and pet actions.
 - `plugin-manifest-reader.ts`: Safe manifest reader with realpath/allowed-root checks, root filename enforcement, size limit, and expected id/version matching.
 - `plugin-config.ts`: Config defaulting, replacement validation, and runtime resolution for string/number config references.
-- `plugin-state.ts`: Persistent plugin state store (`openpets-plugin-state.json`) with atomic temp+rename writes, normalized records, approved permissions, config, source, and broken reason.
+- `plugin-state.ts`: Persistent plugin state store (`nekodrift-plugin-state.json`) with atomic temp+rename writes, normalized records, approved permissions, config, source, and broken reason.
 - `plugin-runtime.ts`: Runtime that compiles enabled declarative timer triggers, starts/stops JavaScript plugin hosts, verifies approved permissions, exposes public command/status state, validates actions, schedules cancellable timers, and marks broken plugins on validation/action failure.
 - `plugin-pet-api.ts`: Narrow adapter from plugin actions to default pet external `say`/`react` controller calls.
 - `plugin-service.ts`: Application-facing plugin orchestrator for safe snapshots, enable/disable, config save, command execution, reload, catalog install/update, local load, uninstall, permission prompts, compatibility checks, JavaScript host/SDK bridge integration, and runtime reloads.
 - `plugin-catalog.ts`: Remote plugin catalog fetch with timeout, redirect rejection, response size cap, cache, and refresh support.
-- `plugin-catalog-validation.ts`: Catalog V1 schema validation, duplicate id checks, semver/SHA fields, permissions canonicalization, and optional minimum OpenPets version.
+- `plugin-catalog-validation.ts`: Catalog V1 schema validation, duplicate id checks, semver/SHA fields, permissions canonicalization, and optional minimum NekoDrift version.
 - `plugin-package.ts`: Catalog plugin package download/install with HTTPS host/path allowlist, SHA-256 verification, ZIP size/entry restrictions, manifest/catalog consistency checks, and safe uninstall path resolution.
 - `plugin-local-loader.ts`: Developer loader that validates a selected local folder and snapshots only the manifest into `plugins-dev` with symlink/path/size protections.
 - `plugin-js-host.ts`: Sandboxed hidden BrowserWindow host for JavaScript plugin entry modules with per-plugin session partitioning, navigation/window-open hardening, SDK IPC tokening, registration handshake, config listener cleanup, and teardown.
@@ -189,7 +189,7 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only ope
 
 **Agent Integration**:
 - `agent-setup.ts`: Claude/OpenCode/Cursor detection, MCP configuration, hooks management, action journaling
-- `claude-memory.ts`: Claude instructions file management (`~/.claude/openpets.md`)
+- `claude-memory.ts`: Claude instructions file management (`~/.claude/nekodrift.md`)
 - `update-checker.ts`: GitHub release polling, update status
 - `update-version.ts`: Version parsing and comparison
 
@@ -204,15 +204,15 @@ plugin-local-loader.ts validates selected folder manifest and snapshots only ope
 |--------|-------------|------|
 | Catalog API | `catalog.ts` | `CatalogV2/V3` JSON with pagination |
 | ZIP Download | `pet-installation.ts` | Extracted to `userData/pets/{id}/` |
-| `app-state.ts` | `userData/openpets-state.json` | Atomic JSON writes with reaction animation overrides |
+| `app-state.ts` | `userData/nekodrift-state.json` | Atomic JSON writes with reaction animation overrides |
 | CLI via IPC | `local-ipc.ts` | `pet.react`, `pet.say`, `lease.*` |
 | `lease-manager.ts` | `agent-pet-controller.ts` | Show/close agent pets |
 | `windows.ts` | Renderer | State snapshots via IPC invoke |
 | `agent-setup.ts` | Claude/OpenCode/Cursor CLI | MCP add/remove, config writes |
-| All modules | `logger.ts` | Structured logs to `userData/logs/openpets.log` |
+| All modules | `logger.ts` | Structured logs to `userData/logs/nekodrift.log` |
 | Plugin catalog | `plugin-catalog.ts`/`plugin-service.ts` | Discoverable plugin metadata filtered by app version and install state |
 | Plugin ZIP/local folder | `plugin-package.ts`/`plugin-local-loader.ts` | Validated manifest snapshot installed under `userData/plugins*` |
-| `plugin-state.ts` | `userData/openpets-plugin-state.json` | Installed plugins, enabled flag, approved permissions, config, broken status |
+| `plugin-state.ts` | `userData/nekodrift-plugin-state.json` | Installed plugins, enabled flag, approved permissions, config, broken status |
 | Control Center renderer | `control-center-preload.cjs`/`windows.ts` | Narrow Dashboard/Pets/Integrations/Plugins/Settings snapshots and route-targeted actions |
 | `plugin-runtime.ts` | `plugin-pet-api.ts`/`plugin-js-host.ts`/`plugin-sdk-bridge.ts` | Declarative timers and JavaScript SDK actions on default pet, schedules, storage, commands, status, logs, and network |
 | Plugins renderer | `windows.ts`/`plugin-service.ts` | Snapshot, enable, config, command, reload, install/update/uninstall, local-load operations |

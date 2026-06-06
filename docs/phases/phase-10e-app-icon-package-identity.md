@@ -2,7 +2,7 @@
 
 ## Goal
 
-Replace the default Electron packaged-app icon with OpenPets-owned package icon assets while keeping tray icon behavior unchanged.
+Replace the default Electron packaged-app icon with NekoDrift-owned package icon assets while keeping tray icon behavior unchanged.
 
 This phase removes the remaining default-icon packaging warning for the current macOS package and documents Windows/Linux icon follow-up if needed.
 
@@ -16,7 +16,7 @@ This phase removes the remaining default-icon packaging warning for the current 
 
 ## User-visible/manual outcome
 
-The packaged app no longer uses Electron's default app icon. On macOS package output, `OpenPets.app` has an OpenPets MVP app icon. If generated from the current 64×64 source, the icon is temporary and may look soft at large sizes.
+The packaged app no longer uses Electron's default app icon. On macOS package output, `NekoDrift.app` has an NekoDrift MVP app icon. If generated from the current 64×64 source, the icon is temporary and may look soft at large sizes.
 
 ## Acceptance criteria
 
@@ -35,7 +35,7 @@ The packaged app no longer uses Electron's default app icon. On macOS package ou
 ## Proposed files/directories
 
 - `apps/desktop/assets/app-icon.icns`
-  - macOS app icon generated from OpenPets-owned source art.
+  - macOS app icon generated from NekoDrift-owned source art.
 - `apps/desktop/electron-builder.yml`
   - Add macOS icon config.
 - `apps/desktop/src/check-packaging-contract.ts`

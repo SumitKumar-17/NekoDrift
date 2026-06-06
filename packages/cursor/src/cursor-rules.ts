@@ -39,35 +39,35 @@ export const maxCursorRulesBytes = 64 * 1024;
 export const cursorRulesStartMarker = "<!-- OPENPETS:CURSOR_RULES:START -->";
 export const cursorRulesEndMarker = "<!-- OPENPETS:CURSOR_RULES:END -->";
 
-const cursorRulesFrontmatter = "---\ndescription: Use OpenPets MCP tools for lightweight coding-status feedback.\n---";
+const cursorRulesFrontmatter = "---\ndescription: Use NekoDrift MCP tools for lightweight coding-status feedback.\n---";
 
 export function getCursorProjectRulesPath(projectDir: string): string {
-  return join(projectDir, ".cursor", "rules", "openpets.mdc");
+  return join(projectDir, ".cursor", "rules", "nekodrift.mdc");
 }
 
-export function buildCursorOpenPetsRule(): string {
+export function buildCursorNekoDriftRule(): string {
   return `${cursorRulesFrontmatter}
 
 ${cursorRulesStartMarker}
-# OpenPets status feedback
+# NekoDrift status feedback
 
-You may use the OpenPets MCP tools as a brief, safe status channel during meaningful coding work.
+You may use the NekoDrift MCP tools as a brief, safe status channel during meaningful coding work.
 
-- Use \`openpets_say\` sparingly for major milestones, blocking states, completion, or when review is needed.
-- Prefer \`openpets_react\` over speech for lightweight progress such as thinking, working, testing, success, or error.
+- Use \`nekodrift_say\` sparingly for major milestones, blocking states, completion, or when review is needed.
+- Prefer \`nekodrift_react\` over speech for lightweight progress such as thinking, working, testing, success, or error.
 - Keep messages short, user-facing, and safe.
-- Do not send prompts, tool input/output, code, logs, stack traces, credentials, private file contents, URLs, file paths, or other sensitive content through OpenPets.
-- Do not spam every internal step; use OpenPets only for meaningful progress changes and continue normally if a status update is unnecessary.
-- If OpenPets is unavailable, continue the coding task without failing.
+- Do not send prompts, tool input/output, code, logs, stack traces, credentials, private file contents, URLs, file paths, or other sensitive content through NekoDrift.
+- Do not spam every internal step; use NekoDrift only for meaningful progress changes and continue normally if a status update is unnecessary.
+- If NekoDrift is unavailable, continue the coding task without failing.
 ${cursorRulesEndMarker}
 `;
 }
 
 export function buildCursorRulesPreview(): string {
-  return buildCursorOpenPetsRule();
+  return buildCursorNekoDriftRule();
 }
 
-export function readCursorOpenPetsRules(projectDir: string): CursorRulesReadResult | CursorRulesError {
+export function readCursorNekoDriftRules(projectDir: string): CursorRulesReadResult | CursorRulesError {
   try {
     const rulesPath = getCursorProjectRulesPath(projectDir);
     const pathSafety = assertSafeRulesPath(projectDir, rulesPath);
@@ -80,7 +80,7 @@ export function readCursorOpenPetsRules(projectDir: string): CursorRulesReadResu
 
     const content = readFileSync(rulesPath, "utf8");
     if (Buffer.byteLength(content, "utf8") > maxCursorRulesBytes) {
-      return { ok: false, message: "Cursor OpenPets rule file exceeds 64 KiB limit.", reason: "size" };
+      return { ok: false, message: "Cursor NekoDrift rule file exceeds 64 KiB limit.", reason: "size" };
     }
 
     return { ok: true, content, exists: true };
@@ -92,7 +92,7 @@ export function readCursorOpenPetsRules(projectDir: string): CursorRulesReadResu
 export function classifyCursorRulesStatus(
   readResult: CursorRulesReadResult | CursorRulesError,
   rulesPath: string,
-  expectedContent = buildCursorOpenPetsRule()
+  expectedContent = buildCursorNekoDriftRule()
 ): CursorRulesStatusResult {
   if (!readResult.ok) {
     return {
@@ -109,7 +109,7 @@ export function classifyCursorRulesStatus(
   if (!readResult.exists) {
     return {
       status: "missing",
-      message: "Cursor OpenPets project rule is not installed.",
+      message: "Cursor NekoDrift project rule is not installed.",
       rulesPath,
       canInstall: true,
       canReplace: false,
@@ -127,14 +127,14 @@ export function classifyCursorRulesStatus(
       canInstall: false,
       canReplace: true,
       canRemove: false,
-      redactedDetails: "Existing .cursor/rules/openpets.mdc is not an exact OpenPets-managed rules file.",
+      redactedDetails: "Existing .cursor/rules/nekodrift.mdc is not an exact NekoDrift-managed rules file.",
     };
   }
 
   if (normalizeNewlines(readResult.content) === normalizeNewlines(expectedContent)) {
     return {
       status: "installed",
-      message: "Cursor OpenPets project rule is installed and up to date.",
+      message: "Cursor NekoDrift project rule is installed and up to date.",
       rulesPath,
       canInstall: false,
       canReplace: false,
@@ -145,7 +145,7 @@ export function classifyCursorRulesStatus(
 
   return {
     status: "needs-update",
-    message: "Cursor OpenPets project rule needs update.",
+    message: "Cursor NekoDrift project rule needs update.",
     rulesPath,
     canInstall: true,
     canReplace: true,
@@ -154,13 +154,13 @@ export function classifyCursorRulesStatus(
   };
 }
 
-export function isManagedCursorOpenPetsRule(content: string): boolean {
+export function isManagedCursorNekoDriftRule(content: string): boolean {
   return classifyManagedRuleShape(content) === "managed";
 }
 
 export function planCursorRulesInstall(projectDir: string, allowReplace = false): CursorRulesPlannedWrite | CursorRulesError {
   const rulesPath = getCursorProjectRulesPath(projectDir);
-  const existing = readCursorOpenPetsRules(projectDir);
+  const existing = readCursorNekoDriftRules(projectDir);
   if (!existing.ok) return existing;
   const status = classifyCursorRulesStatus(existing, rulesPath);
 
@@ -168,18 +168,18 @@ export function planCursorRulesInstall(projectDir: string, allowReplace = false)
     return { ok: false, message: status.message, reason: "io" };
   }
   if (status.status === "conflict" && !allowReplace) {
-    return { ok: false, message: "Cannot install: .cursor/rules/openpets.mdc has user content. Use --force to replace only that file.", reason: "unsafe-path" };
+    return { ok: false, message: "Cannot install: .cursor/rules/nekodrift.mdc has user content. Use --force to replace only that file.", reason: "unsafe-path" };
   }
   if (status.status === "installed") {
-    return { ok: false, message: "Cursor OpenPets project rule is already installed.", reason: "io" };
+    return { ok: false, message: "Cursor NekoDrift project rule is already installed.", reason: "io" };
   }
 
-  return buildRulesWritePlan(projectDir, buildCursorOpenPetsRule());
+  return buildRulesWritePlan(projectDir, buildCursorNekoDriftRule());
 }
 
 export function planCursorRulesReplace(projectDir: string): CursorRulesPlannedWrite | CursorRulesError {
   const rulesPath = getCursorProjectRulesPath(projectDir);
-  const existing = readCursorOpenPetsRules(projectDir);
+  const existing = readCursorNekoDriftRules(projectDir);
   if (!existing.ok) return existing;
   const status = classifyCursorRulesStatus(existing, rulesPath);
 
@@ -187,23 +187,23 @@ export function planCursorRulesReplace(projectDir: string): CursorRulesPlannedWr
     return { ok: false, message: status.message, reason: "io" };
   }
   if (status.status === "missing") {
-    return { ok: false, message: "Cannot replace: Cursor OpenPets project rule is not installed. Use install instead.", reason: "io" };
+    return { ok: false, message: "Cannot replace: Cursor NekoDrift project rule is not installed. Use install instead.", reason: "io" };
   }
   if (status.status === "installed") {
-    return { ok: false, message: "Cannot replace: Cursor OpenPets project rule is already installed.", reason: "io" };
+    return { ok: false, message: "Cannot replace: Cursor NekoDrift project rule is already installed.", reason: "io" };
   }
 
-  return buildRulesWritePlan(projectDir, buildCursorOpenPetsRule());
+  return buildRulesWritePlan(projectDir, buildCursorNekoDriftRule());
 }
 
 export function planCursorRulesRemove(projectDir: string): CursorRulesPlannedWrite | CursorRulesError {
   const rulesPath = getCursorProjectRulesPath(projectDir);
-  const existing = readCursorOpenPetsRules(projectDir);
+  const existing = readCursorNekoDriftRules(projectDir);
   if (!existing.ok) return existing;
   const status = classifyCursorRulesStatus(existing, rulesPath);
 
-  if (status.status === "missing") return { ok: false, message: "Cursor OpenPets project rule is not installed.", reason: "io" };
-  if (status.status === "conflict") return { ok: false, message: "Cannot remove: .cursor/rules/openpets.mdc is not managed by OpenPets.", reason: "unsafe-path" };
+  if (status.status === "missing") return { ok: false, message: "Cursor NekoDrift project rule is not installed.", reason: "io" };
+  if (status.status === "conflict") return { ok: false, message: "Cannot remove: .cursor/rules/nekodrift.mdc is not managed by NekoDrift.", reason: "unsafe-path" };
   if (status.status === "invalid" || status.status === "error") return { ok: false, message: status.message, reason: "io" };
 
   return buildRulesWritePlan(projectDir, undefined, true);
@@ -255,8 +255,8 @@ function buildRulesWritePlan(projectDir: string, content?: string, remove = fals
 
   const parent = resolve(rulesPath, "..");
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
-  const backupPath = existsSync(rulesPath) ? uniquePath(`${rulesPath}.openpets-backup-${stamp}.mdc`) : undefined;
-  const tempPath = uniquePath(join(parent, `.openpets-rules-${stamp}.tmp`));
+  const backupPath = existsSync(rulesPath) ? uniquePath(`${rulesPath}.nekodrift-backup-${stamp}.mdc`) : undefined;
+  const tempPath = uniquePath(join(parent, `.nekodrift-rules-${stamp}.tmp`));
 
   return { targetPath: rulesPath, backupPath, tempPath, content, remove };
 }
@@ -264,28 +264,28 @@ function buildRulesWritePlan(projectDir: string, content?: string, remove = fals
 function classifyManagedRuleShape(content: string): "managed" | string {
   const normalized = normalizeNewlines(content);
   if (countOccurrences(normalized, cursorRulesStartMarker) !== 1 || countOccurrences(normalized, cursorRulesEndMarker) !== 1) {
-    return "Cursor OpenPets rule file has missing or duplicate managed markers.";
+    return "Cursor NekoDrift rule file has missing or duplicate managed markers.";
   }
 
   const start = normalized.indexOf(cursorRulesStartMarker);
   const end = normalized.indexOf(cursorRulesEndMarker);
-  if (start < 0 || end < 0 || start > end) return "Cursor OpenPets rule file has malformed managed markers.";
+  if (start < 0 || end < 0 || start > end) return "Cursor NekoDrift rule file has malformed managed markers.";
 
   const before = normalized.slice(0, start).trim();
   const after = normalized.slice(end + cursorRulesEndMarker.length).trim();
-  if (before !== cursorRulesFrontmatter) return "Cursor OpenPets rule file has unknown frontmatter or user content before the managed block.";
-  if (after !== "") return "Cursor OpenPets rule file has user content after the managed block.";
+  if (before !== cursorRulesFrontmatter) return "Cursor NekoDrift rule file has unknown frontmatter or user content before the managed block.";
+  if (after !== "") return "Cursor NekoDrift rule file has user content after the managed block.";
 
   return "managed";
 }
 
 function cursorRulesErrorMessage(reason: CursorRulesError["reason"]): string {
   const messages: Record<CursorRulesError["reason"], string> = {
-    size: "Cursor OpenPets rule file is too large.",
-    symlink: "Cursor OpenPets rule path is a symlink.",
-    "not-regular": "Cursor OpenPets rule path is not a regular file.",
-    "unsafe-path": "Cursor OpenPets rule path is unsafe.",
-    io: "Failed to read Cursor OpenPets rule file.",
+    size: "Cursor NekoDrift rule file is too large.",
+    symlink: "Cursor NekoDrift rule path is a symlink.",
+    "not-regular": "Cursor NekoDrift rule path is not a regular file.",
+    "unsafe-path": "Cursor NekoDrift rule path is unsafe.",
+    io: "Failed to read Cursor NekoDrift rule file.",
   };
   return messages[reason];
 }
@@ -295,7 +295,7 @@ function assertSafeRulesPath(projectDir: string, rulesPath: string): CursorRules
   const expected = resolve(getCursorProjectRulesPath(projectRoot));
   const resolvedRulesPath = resolve(rulesPath);
   if (resolvedRulesPath !== expected) {
-    return { ok: false, message: "Cursor rules path must be <project>/.cursor/rules/openpets.mdc.", reason: "unsafe-path" };
+    return { ok: false, message: "Cursor rules path must be <project>/.cursor/rules/nekodrift.mdc.", reason: "unsafe-path" };
   }
   return assertSafeParentDirectory(resolve(rulesPath, ".."));
 }

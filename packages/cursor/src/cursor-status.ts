@@ -83,7 +83,7 @@ export function classifyCursorMcpStatus(
   if (mcpServers === undefined || mcpServers[cursorMcpServerName] === undefined) {
     return {
       status: "missing",
-      message: "OpenPets MCP entry is not configured.",
+      message: "NekoDrift MCP entry is not configured.",
       configPath,
       canInstall: true,
       canReplace: false,
@@ -92,26 +92,26 @@ export function classifyCursorMcpStatus(
     };
   }
 
-  const openpetsEntry = mcpServers[cursorMcpServerName];
+  const nekodriftEntry = mcpServers[cursorMcpServerName];
 
-  if (!isRecord(openpetsEntry)) {
+  if (!isRecord(nekodriftEntry)) {
     return {
       status: "conflict",
-      message: "Cursor MCP config has malformed openpets entry.",
+      message: "Cursor MCP config has malformed nekodrift entry.",
       configPath,
       canInstall: false,
       canReplace: true,
       canRemove: false,
-      redactedDetails: "mcpServers.openpets is not an object",
+      redactedDetails: "mcpServers.nekodrift is not an object",
     };
   }
 
   const expectedEntry = buildCursorMcpEntry(expected);
 
-  if (isSameMcpEntry(openpetsEntry, expectedEntry)) {
+  if (isSameMcpEntry(nekodriftEntry, expectedEntry)) {
     return {
       status: "installed",
-      message: "OpenPets MCP is installed and up to date.",
+      message: "NekoDrift MCP is installed and up to date.",
       configPath,
       canInstall: false,
       canReplace: false,
@@ -120,10 +120,10 @@ export function classifyCursorMcpStatus(
     };
   }
 
-  if (isManagedOpenPetsMcpEntry(openpetsEntry)) {
+  if (isManagedNekoDriftMcpEntry(nekodriftEntry)) {
     return {
       status: "needs-update",
-      message: "OpenPets MCP needs update (version or pet differs).",
+      message: "NekoDrift MCP needs update (version or pet differs).",
       configPath,
       canInstall: true,
       canReplace: true,
@@ -134,16 +134,16 @@ export function classifyCursorMcpStatus(
 
   return {
     status: "conflict",
-    message: "Cursor MCP config has a non-OpenPets openpets entry.",
+    message: "Cursor MCP config has a non-NekoDrift nekodrift entry.",
     configPath,
     canInstall: false,
     canReplace: true,
     canRemove: false,
-    redactedDetails: "Existing openpets entry is not managed by OpenPets",
+    redactedDetails: "Existing nekodrift entry is not managed by NekoDrift",
   };
 }
 
-export function isManagedOpenPetsMcpEntry(value: unknown): boolean {
+export function isManagedNekoDriftMcpEntry(value: unknown): boolean {
   if (!isRecord(value)) return false;
   if (value.type !== "stdio") return false;
   if (typeof value.command !== "string") return false;
@@ -153,35 +153,35 @@ export function isManagedOpenPetsMcpEntry(value: unknown): boolean {
   const args = value.args as readonly string[];
 
   if (value.command === "npx") {
-    return isPublishedOpenPetsMcpArgs(args);
+    return isPublishedNekoDriftMcpArgs(args);
   }
 
   if (value.command === "node") {
-    return isNodeOpenPetsMcpArgs(args);
+    return isNodeNekoDriftMcpArgs(args);
   }
 
   return false;
 }
 
-function isPublishedOpenPetsMcpArgs(args: readonly string[]): boolean {
+function isPublishedNekoDriftMcpArgs(args: readonly string[]): boolean {
   if (args.length < 2) return false;
   if (args[0] !== "-y") return false;
   const packageArg = args[1];
   if (typeof packageArg !== "string") return false;
-  const match = packageArg.match(/^@open-pets\/mcp@(\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?)$/);
+  const match = packageArg.match(/^@neko-drift\/mcp@(\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?)$/);
   if (!match) return false;
   const version = match[1];
   if (!version) return false;
   return hasValidPetArgs(args.slice(2));
 }
 
-function isNodeOpenPetsMcpArgs(args: readonly string[]): boolean {
+function isNodeNekoDriftMcpArgs(args: readonly string[]): boolean {
   if (args.length < 1) return false;
   const scriptPath = args[0];
   if (typeof scriptPath !== "string") return false;
-  const isOpenPetsPath = /(?:^|[\\/])node_modules[\\/]@open-pets[\\/]mcp[\\/]dist[\\/]index\.js$/u.test(scriptPath) ||
+  const isNekoDriftPath = /(?:^|[\\/])node_modules[\\/]@neko-drift[\\/]mcp[\\/]dist[\\/]index\.js$/u.test(scriptPath) ||
     /(?:^|[\\/])packages[\\/]mcp[\\/]dist[\\/]index\.js$/u.test(scriptPath);
-  if (!isOpenPetsPath) return false;
+  if (!isNekoDriftPath) return false;
   return hasValidPetArgs(args.slice(1));
 }
 
@@ -256,7 +256,7 @@ export function planCursorMcpInstall(
   }
 
   if (status.status === "conflict" && !allowReplace) {
-    return { ok: false, message: "Cannot install: config has conflicting openpets entry. Use replace instead.", reason: "invalid-schema" };
+    return { ok: false, message: "Cannot install: config has conflicting nekodrift entry. Use replace instead.", reason: "invalid-schema" };
   }
 
   if (status.status === "installed") {
@@ -290,10 +290,10 @@ export function planCursorMcpReplace(
   }
 
   if (status.status === "missing") {
-    return { ok: false, message: "Cannot replace: no existing openpets entry. Use install instead.", reason: "invalid-schema" };
+    return { ok: false, message: "Cannot replace: no existing nekodrift entry. Use install instead.", reason: "invalid-schema" };
   }
   if (status.status === "installed") {
-    return { ok: false, message: "Cannot replace: OpenPets MCP entry is already installed.", reason: "invalid-schema" };
+    return { ok: false, message: "Cannot replace: NekoDrift MCP entry is already installed.", reason: "invalid-schema" };
   }
 
   const newEntry = buildCursorMcpEntry(options);
@@ -315,10 +315,10 @@ export function planCursorMcpRemove(configPath: string): CursorPlannedWrite | Cu
 
   const mcpServers = isRecord(existing.config.mcpServers) ? existing.config.mcpServers : undefined;
   if (mcpServers === undefined || mcpServers[cursorMcpServerName] === undefined) {
-    return { ok: false, message: "OpenPets MCP entry is not installed.", reason: "invalid-schema" };
+    return { ok: false, message: "NekoDrift MCP entry is not installed.", reason: "invalid-schema" };
   }
-  if (!isManagedOpenPetsMcpEntry(mcpServers[cursorMcpServerName])) {
-    return { ok: false, message: "Cannot remove: existing openpets entry is not managed by OpenPets.", reason: "invalid-schema" };
+  if (!isManagedNekoDriftMcpEntry(mcpServers[cursorMcpServerName])) {
+    return { ok: false, message: "Cannot remove: existing nekodrift entry is not managed by NekoDrift.", reason: "invalid-schema" };
   }
 
   const newConfig: Record<string, unknown> = { ...existing.config };
@@ -341,8 +341,8 @@ function buildWritePlan(configPath: string, content: string): CursorPlannedWrite
   if (!existing.ok) return existing;
 
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
-  const backupPath = existsSync(configPath) ? uniquePath(`${configPath}.openpets-backup-${stamp}.json`) : undefined;
-  const tempPath = uniquePath(join(parent, `.openpets-${stamp}.tmp`));
+  const backupPath = existsSync(configPath) ? uniquePath(`${configPath}.nekodrift-backup-${stamp}.json`) : undefined;
+  const tempPath = uniquePath(join(parent, `.nekodrift-${stamp}.tmp`));
 
   return { targetPath: configPath, backupPath, tempPath, content };
 }

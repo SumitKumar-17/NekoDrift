@@ -1,0 +1,36 @@
+{
+  "manifestVersion": 2,
+  "id": "nekodrift.reminders",
+  "name": "Daily Reminders",
+  "description": "Set daily reminders at specific times — your pet meows the message at that time every day.",
+  "version": "1.0.0",
+  "runtime": "javascript",
+  "icon": "bell",
+  "sdkVersion": "1.0.0",
+  "entry": "index.js",
+  "permissions": ["pet:speak", "pet:reaction", "schedule", "storage", "status"],
+  "configSchema": {
+    "reminders": {
+      "type": "list",
+      "label": "Daily Reminders",
+      "description": "Add reminders — your pet will meow each message at the set time every day.",
+      "default": [],
+      "maxItems": 10,
+      "itemSchema": {
+        "time": {
+          "type": "time",
+          "label": "Time (HH:MM)",
+          "description": "When to remind you each day.",
+          "default": "09:00"
+        },
+        "message": {
+          "type": "text",
+          "label": "Message",
+          "description": "What your pet will say.",
+          "default": "Time for a break!",
+          "maxLength": 140
+        }
+      }
+    }
+  }
+}

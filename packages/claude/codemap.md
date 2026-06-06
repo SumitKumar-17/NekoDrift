@@ -1,6 +1,6 @@
 # packages/claude/
 
-Claude Code integration for OpenPets.
+Claude Code integration for NekoDrift.
 
 ## Responsibility
 
@@ -17,7 +17,7 @@ Provides Claude Code editor integration via MCP configuration and lifecycle hook
 - `runClaudeHookFromStdin()` - Main entry for Claude hook protocol
 - Event mapping: `UserPromptSubmit` → thinking, `PermissionRequest` → waiting, `Stop` → success, `StopFailure` → error, `PreToolUse` → tool-specific
 - Tool classification: Edit/Write/MultiEdit → "editing", Bash with test commands → "testing"
-- Project-local detection: Checks `.claude/settings.local.json` for `--openpets-managed --project-local`
+- Project-local detection: Checks `.claude/settings.local.json` for `--nekodrift-managed --project-local`
 - Throttling: 20s speech, 3s permission, 10s reaction cooldowns via JSON state file
 - Lease acquisition for targeted pets
 - Error handling: Debug logging, graceful degradation
@@ -26,21 +26,21 @@ Provides Claude Code editor integration via MCP configuration and lifecycle hook
 - Settings path: `~/.claude/settings.json`
 - Hook events: `UserPromptSubmit`, `PreToolUse`, `PermissionRequest`, `Notification`, `Stop`, `StopFailure`
 - Command entry: `{ type: "command", command, timeout: 3, async: true, asyncRewake: false }`
-- Marker: `--openpets-managed` in command for identification
+- Marker: `--nekodrift-managed` in command for identification
 - Install modes: `published` (npx), `local` (node path), `bundled` (asar unpacked)
 - Safety: Backup before write, atomic rename, permission checks
 - Status: `not_installed`, `installed`, `needs_update`, `error`
 
 **MCP Configuration** (`claude-code.ts`):
-- MCP server name: `openpets`
-- Command modes: `published` (npx -y @open-pets/mcp), `local`/`bundled` (node path)
+- MCP server name: `nekodrift`
+- Command modes: `published` (npx -y @neko-drift/mcp), `local`/`bundled` (node path)
 - Claude CLI integration: `claude mcp add`, `claude mcp get`, `claude mcp remove`
 - Output parsing: Handles both JSON and text formats from `claude mcp get`
 - Path safety: Validates local/bundled paths are within expected directories
 - Asar handling: `mapAsarPathToUnpacked()` for Electron apps
 
 **Speech Messages** (`hook-messages.ts`):
-- Re-exports from `@open-pets/agent-events`
+- Re-exports from `@neko-drift/agent-events`
 
 ## Flow
 
@@ -53,7 +53,7 @@ parseHookPayload() → mapClaudeHookEvent()
     ↓
 Decision: { reaction?, speechCategory? }
     ↓
-hasProjectLocalOpenPetsHook() → Skip if project-local exists
+hasProjectLocalNekoDriftHook() → Skip if project-local exists
     ↓
 shouldSendSpeech() / shouldSendReaction() → Throttle check
     ↓
@@ -65,18 +65,18 @@ client.say(message, { reaction, leaseId }) or client.react(reaction, { leaseId }
 ## Integration Points
 
 **Dependencies**:
-- `@open-pets/client` - IPC communication
-- `@open-pets/agent-events` - Speech pools
+- `@neko-drift/client` - IPC communication
+- `@neko-drift/agent-events` - Speech pools
 
 **External Commands**:
 - `claude` - Claude Code CLI for MCP and settings management
 
 **Consumers**:
-- `@open-pets/cli` - `configure` command for Claude projects
+- `@neko-drift/cli` - `configure` command for Claude projects
 
 **Exports**:
 - `claudePackageName` constant
 - `runClaudeHookFromStdin()`, `handleClaudeHookPayload()`
 - `installClaudeHooks()`, `uninstallClaudeHooks()`, `doctorClaudeHooks()`
 - `buildClaudeMcpPreview()`, `parseClaudeMcpGetOutput()`, `classifyClaudeMcpStatus()`
-- `validateOpenPetsPetArg()`, `openPetsHookMarker`, `claudeHookEvents`
+- `validateNekoDriftPetArg()`, `openPetsHookMarker`, `claudeHookEvents`

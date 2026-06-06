@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 
 import { parseIpcEndpoint, validateDiscovery } from "../src/discovery.js";
 import { parsePetInstallResult, parsePetListResult } from "../src/index.js";
-import { OpenPetsClientError, parseIpcResponse, validateReaction } from "../src/protocol.js";
+import { NekoDriftClientError, parseIpcResponse, validateReaction } from "../src/protocol.js";
 
 const baseDiscovery = {
   protocolVersion: 1,
-  protocol: "openpets-ipc",
-  endpoint: process.platform === "win32" ? "\\\\.\\pipe\\openpets-abc-123" : "/tmp/openpets-501/openpets-123.sock",
+  protocol: "nekodrift-ipc",
+  endpoint: process.platform === "win32" ? "\\\\.\\pipe\\nekodrift-abc-123" : "/tmp/nekodrift-501/nekodrift-123.sock",
   token: "x".repeat(32),
   appVersion: "0.0.0",
   pid: 123,
@@ -73,7 +73,7 @@ function assertRejects(callback: () => unknown): void {
   try {
     callback();
   } catch (error) {
-    if (error instanceof OpenPetsClientError || error instanceof Error) return;
+    if (error instanceof NekoDriftClientError || error instanceof Error) return;
   }
   throw new Error("Expected validation to reject.");
 }

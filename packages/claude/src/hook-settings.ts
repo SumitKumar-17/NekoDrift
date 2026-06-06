@@ -3,9 +3,9 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-import { mapAsarPathToUnpacked, validateOpenPetsPetArg, type OpenPetsCommandMode } from "./claude-code.js";
+import { mapAsarPathToUnpacked, validateNekoDriftPetArg, type NekoDriftCommandMode } from "./claude-code.js";
 
-export const openPetsHookMarker = "--openpets-managed";
+export const openPetsHookMarker = "--nekodrift-managed";
 export const claudeHookEvents = ["UserPromptSubmit", "PreToolUse", "PermissionRequest", "Notification", "Stop", "StopFailure"] as const;
 
 export type ClaudeHookInstallStatus = "not_installed" | "installed" | "needs_update" | "error";
@@ -29,14 +29,14 @@ export function getClaudeUserSettingsPath(): string {
   return join(homedir(), ".claude", "settings.json");
 }
 
-export function createOpenPetsHookCommand(commandMode: OpenPetsCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): string {
-  const petArgs = selectedPetId === undefined ? "" : ` --pet ${shellQuote(validateOpenPetsPetArg(selectedPetId))}`;
+export function createNekoDriftHookCommand(commandMode: NekoDriftCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): string {
+  const petArgs = selectedPetId === undefined ? "" : ` --pet ${shellQuote(validateNekoDriftPetArg(selectedPetId))}`;
   if (commandMode === "local" || commandMode === "bundled") {
     const cliPath = commandMode === "bundled" ? getBundledClaudeCliPath() : getLocalClaudeCliPath();
     commandMode === "bundled" ? assertBundledClaudeCliPath() : assertLocalClaudeCliPath();
     return `${shellQuote(nodeCommand)} ${shellQuote(cliPath)} hook ${openPetsHookMarker}${petArgs}`;
   }
-  return `npx -y @open-pets/claude hook ${openPetsHookMarker}${petArgs}`;
+  return `npx -y @neko-drift/claude hook ${openPetsHookMarker}${petArgs}`;
 }
 
 export function getLocalClaudeCliPath(): string {
@@ -50,7 +50,7 @@ export function getBundledClaudeCliPath(): string {
 export function assertLocalClaudeCliPath(): void {
   const path = getLocalClaudeCliPath();
   const expectedPrefix = dirname(fileURLToPath(import.meta.url));
-  if (!path.startsWith(expectedPrefix)) throw new Error("Local Claude hook path is outside the OpenPets package.");
+  if (!path.startsWith(expectedPrefix)) throw new Error("Local Claude hook path is outside the NekoDrift package.");
   const stat = statSync(path);
   if (!stat.isFile()) throw new Error("Local Claude hook CLI path is not a regular file.");
 }
@@ -65,14 +65,14 @@ export function assertBundledClaudeCliPath(): void {
   const expectedRoot = realpathSync(mapAsarPathToUnpacked(join(dirname(fileURLToPath(import.meta.url)), "..", "..")));
   const realPath = realpathSync(path);
   const rel = relative(expectedRoot, realPath);
-  if (rel.startsWith("..") || isAbsolute(rel)) throw new Error("Bundled Claude hook CLI path is outside the packaged OpenPets resources.");
+  if (rel.startsWith("..") || isAbsolute(rel)) throw new Error("Bundled Claude hook CLI path is outside the packaged NekoDrift resources.");
 }
 
 function isTrueAsarPath(path: string): boolean {
   return /app\.asar(?:$|[\\/])/.test(path) && !/app\.asar\.unpacked(?:$|[\\/])/.test(path);
 }
 
-export function createOpenPetsHookSettingsPreview(commandMode: OpenPetsCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): Record<string, unknown> {
+export function createNekoDriftHookSettingsPreview(commandMode: NekoDriftCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): Record<string, unknown> {
   const hooks: Record<string, unknown> = {};
   for (const event of claudeHookEvents) {
     hooks[event] = [{ hooks: [createHookCommandEntry(commandMode, selectedPetId, nodeCommand)] }];
@@ -80,8 +80,8 @@ export function createOpenPetsHookSettingsPreview(commandMode: OpenPetsCommandMo
   return { hooks };
 }
 
-export function doctorClaudeHooks(settingsPath = getClaudeUserSettingsPath(), commandMode: OpenPetsCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): ClaudeHookDoctorResult {
-  const preview = createOpenPetsHookSettingsPreview(commandMode, selectedPetId, nodeCommand);
+export function doctorClaudeHooks(settingsPath = getClaudeUserSettingsPath(), commandMode: NekoDriftCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): ClaudeHookDoctorResult {
+  const preview = createNekoDriftHookSettingsPreview(commandMode, selectedPetId, nodeCommand);
   const asyncSupported = isClaudeHookAsyncSupported();
   try {
     const settings = readClaudeSettings(settingsPath);
@@ -91,7 +91,7 @@ export function doctorClaudeHooks(settingsPath = getClaudeUserSettingsPath(), co
       settingsPath,
       exists: existsSync(settingsPath),
       valid: true,
-      message: `${asyncSupported ? status === "installed" ? "OpenPets Claude hooks are installed. Async hook install is enabled by OpenPets." : status === "needs_update" ? "OpenPets Claude hooks need update. Async hook install is enabled by OpenPets." : "OpenPets Claude hooks are not installed. Async hook install is enabled by OpenPets." : "Async hook install is disabled by OpenPets."} ${selectedPetId ? `Hook events target ${selectedPetId}.` : "Hook events target the default pet."}`,
+      message: `${asyncSupported ? status === "installed" ? "NekoDrift Claude hooks are installed. Async hook install is enabled by NekoDrift." : status === "needs_update" ? "NekoDrift Claude hooks need update. Async hook install is enabled by NekoDrift." : "NekoDrift Claude hooks are not installed. Async hook install is enabled by NekoDrift." : "Async hook install is disabled by NekoDrift."} ${selectedPetId ? `Hook events target ${selectedPetId}.` : "Hook events target the default pet."}`,
       preview,
       asyncSupported,
     };
@@ -100,47 +100,47 @@ export function doctorClaudeHooks(settingsPath = getClaudeUserSettingsPath(), co
   }
 }
 
-export function installClaudeHooks(settingsPath = getClaudeUserSettingsPath(), commandMode: OpenPetsCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): ClaudeHookWriteResult {
-  if (!isClaudeHookAsyncSupported()) throw new Error("Claude async hook support is not enabled for this OpenPets build.");
+export function installClaudeHooks(settingsPath = getClaudeUserSettingsPath(), commandMode: NekoDriftCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): ClaudeHookWriteResult {
+  if (!isClaudeHookAsyncSupported()) throw new Error("Claude async hook support is not enabled for this NekoDrift build.");
   const settings = readClaudeSettings(settingsPath);
   const status = getHookInstallStatus(settings, commandMode, selectedPetId, nodeCommand);
   if (status === "installed") return { ...doctorClaudeHooks(settingsPath, commandMode, selectedPetId, nodeCommand), changed: false };
   const backupPath = backupSettings(settingsPath);
-  const next = addOpenPetsHooks(removeOpenPetsHooks(settings), commandMode, selectedPetId, nodeCommand);
+  const next = addNekoDriftHooks(removeNekoDriftHooks(settings), commandMode, selectedPetId, nodeCommand);
   writeClaudeSettings(settingsPath, next);
   return { ...doctorClaudeHooks(settingsPath, commandMode, selectedPetId, nodeCommand), backupPath, changed: true };
 }
 
-export function uninstallClaudeHooks(settingsPath = getClaudeUserSettingsPath(), commandMode: OpenPetsCommandMode = "published"): ClaudeHookWriteResult {
+export function uninstallClaudeHooks(settingsPath = getClaudeUserSettingsPath(), commandMode: NekoDriftCommandMode = "published"): ClaudeHookWriteResult {
   const settings = readClaudeSettings(settingsPath);
   const status = getHookInstallStatus(settings, commandMode);
   if (status === "not_installed") return { ...doctorClaudeHooks(settingsPath, commandMode), changed: false };
   const backupPath = backupSettings(settingsPath);
-  const next = removeOpenPetsHooks(settings);
+  const next = removeNekoDriftHooks(settings);
   writeClaudeSettings(settingsPath, next);
   return { ...doctorClaudeHooks(settingsPath, commandMode), backupPath, changed: true };
 }
 
-export function addOpenPetsHooks(settings: Record<string, unknown>, commandMode: OpenPetsCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): Record<string, unknown> {
+export function addNekoDriftHooks(settings: Record<string, unknown>, commandMode: NekoDriftCommandMode = "published", selectedPetId?: string, nodeCommand = "node"): Record<string, unknown> {
   const next = structuredClone(settings) as Record<string, unknown>;
   assertSelectedHookEventsAreArrays(next);
   const hooks = isRecord(next.hooks) ? { ...next.hooks } : {};
   for (const event of claudeHookEvents) {
-    const existing = Array.isArray(hooks[event]) ? hooks[event].filter((entry) => !containsOpenPetsHook(entry)) : [];
+    const existing = Array.isArray(hooks[event]) ? hooks[event].filter((entry) => !containsNekoDriftHook(entry)) : [];
     hooks[event] = [...existing, { hooks: [createHookCommandEntry(commandMode, selectedPetId, nodeCommand)] }];
   }
   next.hooks = hooks;
   return next;
 }
 
-export function removeOpenPetsHooks(settings: Record<string, unknown>): Record<string, unknown> {
+export function removeNekoDriftHooks(settings: Record<string, unknown>): Record<string, unknown> {
   const next = structuredClone(settings) as Record<string, unknown>;
   if (!isRecord(next.hooks)) return next;
   assertSelectedHookEventsAreArrays(next);
   const hooks: Record<string, unknown> = { ...next.hooks };
   for (const [event, entries] of Object.entries(hooks)) {
     if (!Array.isArray(entries)) continue;
-    const cleaned = entries.map(removeOpenPetsHooksFromMatcher).filter((entry) => entry !== null);
+    const cleaned = entries.map(removeNekoDriftHooksFromMatcher).filter((entry) => entry !== null);
     if (cleaned.length > 0) hooks[event] = cleaned;
     else delete hooks[event];
   }
@@ -149,7 +149,7 @@ export function removeOpenPetsHooks(settings: Record<string, unknown>): Record<s
   return next;
 }
 
-function getHookInstallStatus(settings: Record<string, unknown>, commandMode: OpenPetsCommandMode, selectedPetId?: string, nodeCommand = "node"): ClaudeHookInstallStatus {
+function getHookInstallStatus(settings: Record<string, unknown>, commandMode: NekoDriftCommandMode, selectedPetId?: string, nodeCommand = "node"): ClaudeHookInstallStatus {
   if (settings.hooks !== undefined && !isRecord(settings.hooks)) throw new Error("Claude settings hooks field is not an object.");
   const hooks = isRecord(settings.hooks) ? settings.hooks : {};
   let foundAny = false;
@@ -157,8 +157,8 @@ function getHookInstallStatus(settings: Record<string, unknown>, commandMode: Op
   for (const event of claudeHookEvents) {
     const entries = hooks[event];
     if (!Array.isArray(entries)) return foundAny ? "needs_update" : "not_installed";
-    const currentCount = entries.filter((entry) => containsCurrentOpenPetsHook(entry, commandMode, selectedPetId, nodeCommand)).length;
-    const managedCount = entries.filter((entry) => containsOpenPetsHook(entry)).length;
+    const currentCount = entries.filter((entry) => containsCurrentNekoDriftHook(entry, commandMode, selectedPetId, nodeCommand)).length;
+    const managedCount = entries.filter((entry) => containsNekoDriftHook(entry)).length;
     const hasCurrent = currentCount === 1;
     if (managedCount > 0) foundAny = true;
     if (managedCount !== currentCount || currentCount > 1) staleManaged = true;
@@ -168,25 +168,25 @@ function getHookInstallStatus(settings: Record<string, unknown>, commandMode: Op
   return staleManaged ? "needs_update" : "installed";
 }
 
-function createHookCommandEntry(commandMode: OpenPetsCommandMode, selectedPetId?: string, nodeCommand = "node"): Record<string, unknown> {
-  return { type: "command", command: createOpenPetsHookCommand(commandMode, selectedPetId, nodeCommand), timeout: 3, async: true, asyncRewake: false };
+function createHookCommandEntry(commandMode: NekoDriftCommandMode, selectedPetId?: string, nodeCommand = "node"): Record<string, unknown> {
+  return { type: "command", command: createNekoDriftHookCommand(commandMode, selectedPetId, nodeCommand), timeout: 3, async: true, asyncRewake: false };
 }
 
-function containsCurrentOpenPetsHook(value: unknown, commandMode: OpenPetsCommandMode, selectedPetId?: string, nodeCommand = "node"): boolean {
+function containsCurrentNekoDriftHook(value: unknown, commandMode: NekoDriftCommandMode, selectedPetId?: string, nodeCommand = "node"): boolean {
   if (!isRecord(value) || !Array.isArray(value.hooks)) return false;
-  const command = createOpenPetsHookCommand(commandMode, selectedPetId, nodeCommand);
+  const command = createNekoDriftHookCommand(commandMode, selectedPetId, nodeCommand);
   return value.hooks.some((hook) => isRecord(hook) && hook.type === "command" && hook.command === command && hook.timeout === 3 && hook.async === true && hook.asyncRewake === false);
 }
 
-function containsOpenPetsHook(value: unknown): boolean {
+function containsNekoDriftHook(value: unknown): boolean {
   if (isRecord(value) && typeof value.command === "string" && value.command.includes(openPetsHookMarker)) return true;
-  if (isRecord(value) && Array.isArray(value.hooks)) return value.hooks.some(containsOpenPetsHook);
+  if (isRecord(value) && Array.isArray(value.hooks)) return value.hooks.some(containsNekoDriftHook);
   return false;
 }
 
-function removeOpenPetsHooksFromMatcher(value: unknown): unknown | null {
-  if (!isRecord(value) || !Array.isArray(value.hooks)) return containsOpenPetsHook(value) ? null : value;
-  const hooks = value.hooks.filter((hook) => !containsOpenPetsHook(hook));
+function removeNekoDriftHooksFromMatcher(value: unknown): unknown | null {
+  if (!isRecord(value) || !Array.isArray(value.hooks)) return containsNekoDriftHook(value) ? null : value;
+  const hooks = value.hooks.filter((hook) => !containsNekoDriftHook(hook));
   if (hooks.length === 0) return null;
   return { ...value, hooks };
 }
@@ -211,7 +211,7 @@ function assertSelectedHookEventsAreArrays(settings: Record<string, unknown>): v
 }
 
 function isClaudeHookAsyncSupported(): boolean {
-  return process.env.OPENPETS_DISABLE_CLAUDE_ASYNC_HOOKS !== "1";
+  return process.env.NEKODRIFT_DISABLE_CLAUDE_ASYNC_HOOKS !== "1";
 }
 
 function shellQuote(value: string): string {
@@ -231,7 +231,7 @@ function writeClaudeSettings(path: string, settings: Record<string, unknown>): v
 function backupSettings(path: string): string | undefined {
   if (!existsSync(path)) return undefined;
   assertSafeSettingsPath(path);
-  const backupPath = `${path}.openpets-backup-${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z")}.json`;
+  const backupPath = `${path}.nekodrift-backup-${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z")}.json`;
   writeFileSync(backupPath, readFileSync(path), { mode: 0o600 });
   try { chmodSync(backupPath, 0o600); } catch { /* best effort */ }
   return backupPath;

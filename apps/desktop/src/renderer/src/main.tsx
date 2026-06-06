@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
-import openPetsLogoUrl from "../../../assets/openpets.webp";
+import nekoDriftLogoUrl from "../../../assets/nekodrift.webp";
 import defaultThumbUrl from "../../../assets/default-pet-thumbnail.png";
 
 import claudeLogoUrl from "../../../assets/integrations/claude.svg";
@@ -22,7 +22,7 @@ type CodexState = { pets: PetEntry[]; error?: string };
 type PetScaleOption = { label: string; value: number };
 type UserSelectableAnimationState = "idle" | "review" | "running" | "waiting" | "waving" | "jumping" | "failed";
 type ReactionAnimationOverrides = Record<string, UserSelectableAnimationState>;
-type SettingsState = { preferences: { openDefaultPetOnLaunch: boolean; petScale: number; reactionAnimationOverrides?: ReactionAnimationOverrides }; petScaleOptions: PetScaleOption[] };
+type SettingsState = { preferences: { openDefaultPetOnLaunch: boolean; petScale: number; reactionAnimationOverrides?: ReactionAnimationOverrides; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean }; petScaleOptions: PetScaleOption[] };
 type LaunchAtLoginState = { supported: boolean; enabled: boolean };
 type UpdateStatus = { state: "idle" | "checking" | "available" | "current" | "error"; currentVersion: string; latestVersion?: string; releaseUrl?: string; checkedAt?: number; error?: string };
 type DashboardActivity = { messagesSent: number; reactionsSent: number; reactionCounts: Record<string, number>; perPetActivityCounts: Record<string, number>; lastActivityAt?: number };
@@ -87,17 +87,17 @@ type AgentSetupAction = "configure" | "replace" | "remove" | "install-memory" | 
 type AgentSetupPetOption = { id: string; displayName: string; default: boolean };
 type ClaudeCodeStatus = { state: "detected" | "not_detected" | "configured" | "needs_setup" | "error"; label: string; details: string; claudeCommand?: string; version?: string; mcpListWorks: boolean; openPetsEntry: { present: boolean; verified: boolean; matchesExpected: boolean }; canConfigure: boolean; canReplace: boolean; canRemove: boolean };
 type ClaudeHookDoctorResult = { status: "installed" | "needs_setup" | "error" | "custom" | "conflict"; settingsPath: string; exists: boolean; valid: boolean; message: string; preview: Record<string, unknown>; asyncSupported: boolean; backupPath?: string };
-type ClaudeOpenPetsMemoryStatus = { state: "installed" | "needs_setup" | "error"; label: string; details: string; claudeMdPath: string; openPetsMemoryPath: string; canInstall: boolean };
+type ClaudeNekoDriftMemoryStatus = { state: "installed" | "needs_setup" | "error"; label: string; details: string; claudeMdPath: string; openPetsMemoryPath: string; canInstall: boolean };
 type OpenCodeSetupStatus = { state: "configured" | "needs_setup" | "not_detected" | "error"; label: string; details: string; configDir: string; canInstall: boolean; canRemove: boolean };
 type OpenCodeSetupPreview = { global: true; configDir: string; configPath: string; cleanupConfigPaths: string[]; mcpCommand: string[]; plugin: unknown[] | string; instructionPath: string; configPreview: Record<string, unknown> };
 type CursorSetupStatus = { state: "configured" | "needs_setup" | "not_detected" | "error" | "conflict" | "needs_update"; label: string; details: string; configPath: string; canInstall: boolean; canReplace: boolean; canRemove: boolean };
 type CursorSetupPreview = { global: true; configPath: string; mcpEntry: Record<string, unknown>; rulesPath: string; rulesContent: string; commandMode: "published" | "local" | "bundled" };
 type AgentSetupCommandPaths = { claude: string; node: string; opencode: string };
 type AgentSetupActionResult = { ok: boolean; action: AgentSetupAction; message: string; changed: boolean };
-type AgentSetupSnapshot = { selectedPetId?: string; commandMode: "published" | "local" | "bundled"; localDevAvailable: boolean; petOptions: AgentSetupPetOption[]; preview: { displayCommand: string; mcpJson: Record<string, unknown> }; status: ClaudeCodeStatus; hookStatus: ClaudeHookDoctorResult; memoryStatus: ClaudeOpenPetsMemoryStatus; opencodeStatus: OpenCodeSetupStatus; opencodePreview: OpenCodeSetupPreview; cursorStatus: CursorSetupStatus; cursorPreview: CursorSetupPreview; commandPaths: AgentSetupCommandPaths; busy: boolean; lastAction?: AgentSetupActionResult };
+type AgentSetupSnapshot = { selectedPetId?: string; commandMode: "published" | "local" | "bundled"; localDevAvailable: boolean; petOptions: AgentSetupPetOption[]; preview: { displayCommand: string; mcpJson: Record<string, unknown> }; status: ClaudeCodeStatus; hookStatus: ClaudeHookDoctorResult; memoryStatus: ClaudeNekoDriftMemoryStatus; opencodeStatus: OpenCodeSetupStatus; opencodePreview: OpenCodeSetupPreview; cursorStatus: CursorSetupStatus; cursorPreview: CursorSetupPreview; commandPaths: AgentSetupCommandPaths; busy: boolean; lastAction?: AgentSetupActionResult };
 type StatusTone = keyof typeof statusPillToneClass;
 
-const api = (window as unknown as { openPetsControlCenter: ControlCenterApi }).openPetsControlCenter;
+const api = (window as unknown as { nekoDriftControlCenter: ControlCenterApi }).nekoDriftControlCenter;
 
 
 // Inline SVG Icons for actions, pagination, and filters
@@ -758,7 +758,7 @@ function isAllowedCatalogPreview(value: string | undefined): value is string {
   try {
     const url = new URL(value);
     return url.protocol === "https:" && 
-      url.hostname === "openpets.dev" && 
+      url.hostname === "nekodrift.app" && 
       url.port === "" && 
       url.username === "" && 
       url.password === "" && 
@@ -770,15 +770,15 @@ function isAllowedCatalogPreview(value: string | undefined): value is string {
 }
 
 function isAllowedCodexPreview(value: string | undefined): value is string {
-  return typeof value === "string" && /^openpets-codex:\/\/spritesheet\/[a-zA-Z0-9%][a-zA-Z0-9%_-]{0,128}$/u.test(value);
+  return typeof value === "string" && /^nekodrift-codex:\/\/spritesheet\/[a-zA-Z0-9%][a-zA-Z0-9%_-]{0,128}$/u.test(value);
 }
 
 function isAllowedInstalledPetPreview(value: string | undefined): value is string {
-  return typeof value === "string" && /^openpets-installed:\/\/spritesheet\/[a-zA-Z0-9%][a-zA-Z0-9%_-]{0,128}$/u.test(value);
+  return typeof value === "string" && /^nekodrift-installed:\/\/spritesheet\/[a-zA-Z0-9%][a-zA-Z0-9%_-]{0,128}$/u.test(value);
 }
 
 function isAllowedDefaultPetPreview(value: string | undefined): value is string {
-  return typeof value === "string" && /^openpets-pet-preview:\/\/spritesheet\/default\?v=[a-z0-9_-]+-\d+-\d+$/u.test(value);
+  return typeof value === "string" && /^nekodrift-pet-preview:\/\/spritesheet\/default\?v=[a-z0-9_-]+-\d+-\d+$/u.test(value);
 }
 
 function isAllowedDataUrl(value: string | undefined): value is string {
@@ -790,7 +790,7 @@ function safePetImage(value: string | undefined): string | undefined {
 }
 
 function installedPetSpritesheetUrl(petId: string): string {
-  return `openpets-installed://spritesheet/${encodeURIComponent(petId)}`;
+  return `nekodrift-installed://spritesheet/${encodeURIComponent(petId)}`;
 }
 
 function imageDebug(value: string | undefined): string {
@@ -882,7 +882,7 @@ function SettingsView() {
   const [reactionSettings, setReactionSettings] = useState<ReactionAnimationSettings | null>(null);
   const [launchAtLogin, setLaunchAtLogin] = useState<LaunchAtLoginState | null>(null);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
-  const [activeTab, setActiveTab] = useState<"general" | "reactions">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "personal" | "reactions">("general");
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -957,6 +957,10 @@ function SettingsView() {
           <SettingsIcon />
           <span>General</span>
         </button>
+        <button className={`settings-nav-item ${activeTab === "personal" ? "active" : ""}`} onClick={() => setActiveTab("personal")}>
+          <HeartIcon />
+          <span>Personal</span>
+        </button>
         <button className={`settings-nav-item ${activeTab === "reactions" ? "active" : ""}`} onClick={() => setActiveTab("reactions")}>
           <PetsIcon />
           <span>Reaction Mapping</span>
@@ -972,14 +976,14 @@ function SettingsView() {
             <div className="settings-group">
               <ToggleRow
                 title="Show pet on launch"
-                description="Keep OpenPets in the tray but hide the pet until requested."
+                description="Keep NekoDrift in the tray but hide the pet until requested."
                 checked={settings?.preferences.openDefaultPetOnLaunch ?? false}
                 disabled={!settings || !!busy}
                 onChange={(checked) => patchPreferences({ openDefaultPetOnLaunch: checked }, "Startup preference saved.")}
               />
               <ToggleRow
                 title="Launch at login"
-                description={launchAtLogin?.supported ? "Start OpenPets automatically when your computer starts." : "Not supported on this platform."}
+                description={launchAtLogin?.supported ? "Start NekoDrift automatically when your computer starts." : "Not supported on this platform."}
                 checked={launchAtLogin?.enabled ?? false}
                 disabled={!launchAtLogin?.supported || !!busy}
                 onChange={(checked) => void run("Saving", async () => { setLaunchAtLogin(await api.setLaunchAtLogin(checked)); setMessage("Login startup preference saved."); })}
@@ -1014,6 +1018,60 @@ function SettingsView() {
                   {busy === "Checking" ? "Checking…" : "Check for Updates"}
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "personal" && (
+          <div className="settings-section">
+            <p className="eyebrow">Personalisation</p>
+            <h2 className="settings-section-title">Your Details</h2>
+
+            <div className="settings-group">
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <strong>Your name</strong>
+                  <small>Your pet will call you by name during reminders and greetings.</small>
+                </div>
+                <input
+                  className="settings-input"
+                  type="text"
+                  maxLength={64}
+                  placeholder="e.g. Sumit"
+                  value={settings?.preferences.userName ?? ""}
+                  disabled={!settings || !!busy}
+                  onChange={(e) => patchPreferences({ userName: e.target.value || undefined }, "Name saved.")}
+                />
+              </div>
+            </div>
+
+            <p className="eyebrow" style={{ marginTop: "24px" }}>Pinned Note</p>
+            <h2 className="settings-section-title">Fixed Message</h2>
+            <p className="text-sm text-slatecopy -mt-2 mb-3">Pin an important note above your pet so it stays in sight all day.</p>
+
+            <div className="settings-group">
+              <ToggleRow
+                title="Show pinned note"
+                description="Display a permanent sticky note above your pet."
+                checked={settings?.preferences.fixedMessageEnabled ?? false}
+                disabled={!settings || !!busy}
+                onChange={(checked) => patchPreferences({ fixedMessageEnabled: checked }, "Pinned note updated.")}
+              />
+              {settings?.preferences.fixedMessageEnabled && (
+                <div className="settings-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
+                  <strong>Note text</strong>
+                  <textarea
+                    className="settings-textarea"
+                    maxLength={200}
+                    rows={3}
+                    placeholder="Your important note…"
+                    value={settings?.preferences.fixedMessage ?? ""}
+                    disabled={!settings || !!busy}
+                    onChange={(e) => patchPreferences({ fixedMessage: e.target.value || undefined }, "Note saved.")}
+                  />
+                  <small style={{ color: "var(--color-slatecopy)" }}>{(settings?.preferences.fixedMessage ?? "").length}/200</small>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1214,7 +1272,7 @@ function ConfigFieldEditor({ pluginId, fieldKey, field, value, onChange }: { plu
     const items = Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => item !== null && typeof item === "object" && !Array.isArray(item)) : [];
     const maxed = typeof field.maxItems === "number" && items.length >= field.maxItems;
 
-    const isReminders = (pluginId === "openpets.break-buddy" || fieldKey === "reminders") && ["reminders", "breaks"].includes(fieldKey);
+    const isReminders = (pluginId === "nekodrift.break-buddy" || fieldKey === "reminders") && ["reminders", "breaks"].includes(fieldKey);
     const addLabel = isReminders ? "Add reminder" : "Add item";
 
     return <div className="plugin-config-row">
@@ -1451,10 +1509,10 @@ function IntegrationsView() {
   const integrationDialogTitleId = selectedId ? `integration-detail-title-${selectedId}` : undefined;
 
   const integrations = [
-    { id: "claude", name: "Claude Code", icon: "claude", status: snapshot.status.label, tone: claudeStatusTone(snapshot.status.state), description: "Connect Claude Code to your OpenPets companion." },
-    { id: "opencode", name: "OpenCode", icon: "opencode", status: snapshot.opencodeStatus.label, tone: opencodeStatusTone(snapshot.opencodeStatus.state), description: "Connect OpenCode globally to your OpenPets companion." },
-    { id: "cursor", name: "Cursor", icon: "cursor", status: snapshot.cursorStatus.label, tone: cursorStatusTone(snapshot.cursorStatus.state), description: "Connect Cursor to your OpenPets companion via global MCP config." },
-    { id: "pi", name: "Pi", icon: "pi", status: "Manual", tone: "blue" satisfies StatusTone, description: "Connect Pi coding-agent activity through the OpenPets Pi extension package." },
+    { id: "claude", name: "Claude Code", icon: "claude", status: snapshot.status.label, tone: claudeStatusTone(snapshot.status.state), description: "Connect Claude Code to your NekoDrift companion." },
+    { id: "opencode", name: "OpenCode", icon: "opencode", status: snapshot.opencodeStatus.label, tone: opencodeStatusTone(snapshot.opencodeStatus.state), description: "Connect OpenCode globally to your NekoDrift companion." },
+    { id: "cursor", name: "Cursor", icon: "cursor", status: snapshot.cursorStatus.label, tone: cursorStatusTone(snapshot.cursorStatus.state), description: "Connect Cursor to your NekoDrift companion via global MCP config." },
+    { id: "pi", name: "Pi", icon: "pi", status: "Manual", tone: "blue" satisfies StatusTone, description: "Connect Pi coding-agent activity through the NekoDrift Pi extension package." },
   ] as const;
 
   const soon = [
@@ -1540,7 +1598,7 @@ function IntegrationsView() {
                     <option value="bundled">{commandModeLabels.bundled}</option>
                     <option value="local" disabled={!snapshot.localDevAvailable}>{commandModeLabels.local}{snapshot.localDevAvailable ? "" : " unavailable"}</option>
                   </select>
-                  <p className="text-xs text-slatecopy mt-2">Use the published package for normal setup, bundled for the desktop app build, or local while developing OpenPets.</p>
+                  <p className="text-xs text-slatecopy mt-2">Use the published package for normal setup, bundled for the desktop app build, or local while developing NekoDrift.</p>
                 </section>
               )}
 
@@ -1738,31 +1796,31 @@ function IntegrationsView() {
                 <section className="plugin-section">
                   <div className="plugin-section-title"><small>Manual Setup</small><strong>Pi Extension</strong></div>
                   <p className="text-sm text-slatecopy leading-relaxed">
-                    Install the OpenPets Pi extension from Pi, then use the slash commands inside a Pi session.
+                    Install the NekoDrift Pi extension from Pi, then use the slash commands inside a Pi session.
                   </p>
                   <div className="mt-3 p-4 rounded-2xl bg-navy/5 border border-navy/5 flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-slatecopy uppercase tracking-wider">Global install</span>
-                      <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">pi install npm:@open-pets/pi</code>
+                      <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">pi install npm:@neko-drift/pi</code>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-slatecopy uppercase tracking-wider">Project install</span>
-                      <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">pi install -l npm:@open-pets/pi</code>
+                      <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">pi install -l npm:@neko-drift/pi</code>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-slatecopy uppercase tracking-wider">Remove</span>
-                      <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">pi remove npm:@open-pets/pi</code>
+                      <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">pi remove npm:@neko-drift/pi</code>
                     </div>
                   </div>
                   <div className="mt-3 p-4 rounded-2xl bg-blue-50/50 border border-blue-100/60 flex flex-col gap-2">
                     <span className="text-[10px] font-bold text-slatecopy uppercase tracking-wider">Slash commands</span>
-                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/openpets status</code>
-                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/openpets test</code>
-                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/openpets react &lt;reaction&gt;</code>
-                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/openpets say &lt;message&gt;</code>
+                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/nekodrift status</code>
+                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/nekodrift test</code>
+                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/nekodrift react &lt;reaction&gt;</code>
+                    <code className="bg-white px-2 py-1 rounded border border-blue-100 text-brand text-xs">/nekodrift say &lt;message&gt;</code>
                   </div>
                   <p className="text-xs text-slatecopy mt-2">
-                    Use global install for all Pi workspaces, or project install when you only want OpenPets in the current project.
+                    Use global install for all Pi workspaces, or project install when you only want NekoDrift in the current project.
                   </p>
                 </section>
               )}
@@ -2237,7 +2295,7 @@ function App() {
           <p className="hero-desc">{currentMeta.description}</p>
         </div>
         <div className="hero-logo-container">
-          <img src={openPetsLogoUrl} className="hero-brand-logo" alt="OpenPets" />
+          <img src={nekoDriftLogoUrl} className="hero-brand-logo" alt="NekoDrift" />
         </div>
       </header>
 

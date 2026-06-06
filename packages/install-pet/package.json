@@ -4,7 +4,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/install-pet"
   },
   "type": "module",
@@ -32,7 +32,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@open-pets/client": "workspace:*",
+    "@neko-drift/client": "workspace:*",
     "yauzl": "3.3.0"
   },
   "devDependencies": {

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Turn the first onboarding screen into a polished OpenPets greeting inspired by `lfs/greeting.png`, without copying the screenshot literally.
+Turn the first onboarding screen into a polished NekoDrift greeting inspired by `lfs/greeting.png`, without copying the screenshot literally.
 
 This phase should create a native onboarding welcome experience that feels premium, playful, and consistent with the Phase 13A Pet Manager polish direction.
 
@@ -20,7 +20,7 @@ This phase should create a native onboarding welcome experience that feels premi
 
 On first launch, the onboarding welcome screen should feel like a real product greeting:
 
-- clear OpenPets identity,
+- clear NekoDrift identity,
 - friendly “AI coding companion” positioning,
 - playful pet/mascot atmosphere,
 - strong primary Next action,
@@ -36,7 +36,7 @@ On first launch, the onboarding welcome screen should feel like a real product g
   - `apps/desktop/assets/tray-icon.png`
   - `lfs/greeting.png` as reference only, not packaged directly unless explicitly approved.
 - The implemented greeting may use extracted local WebP assets copied from `web/public` into `apps/desktop/assets/`:
-  - `apps/desktop/assets/onboarding-logo.webp` from `web/public/openpets.webp`
+  - `apps/desktop/assets/onboarding-logo.webp` from `web/public/nekodrift.webp`
   - `apps/desktop/assets/onboarding-pets.webp` from `web/public/petland.webp`
 - `lfs/greeting.png` must not appear in runtime code, packaged assets, CSS URLs, or CSP assumptions.
 - Packaged image assets must be embedded as data URLs generated from local packaged files; onboarding CSP must remain `img-src data:` with no remote or `file:` image sources.
@@ -49,8 +49,8 @@ On first launch, the onboarding welcome screen should feel like a real product g
 - Greeting fits in the increased 900×760 default task window without clipping the primary action, and remains usable at the 720×520 minimum window size.
 - Keyboard/tab access still reaches Next and later Finish controls.
 - Progress dots/steps still communicate the current step accessibly.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 - If any runtime asset is added/referenced, `pnpm package:desktop:dir` passes or packaged asset loading is otherwise verified.
 - If shared task-window styles are touched, Pet Manager, Settings, and Agent Setup are manually checked for obvious visual regressions.
 - Designer review is completed before manual verification.
@@ -60,7 +60,7 @@ On first launch, the onboarding welcome screen should feel like a real product g
 
 - `apps/desktop/src/windows.ts`
   - Update onboarding welcome markup and onboarding-specific scoped styles.
-  - Keep styles under `body[data-openpets-view="onboarding"]` where possible.
+  - Keep styles under `body[data-nekodrift-view="onboarding"]` where possible.
 - `apps/desktop/preload.cjs`
   - Keep existing step navigation; adjust only if new welcome markup needs small class/state handling.
 - `apps/desktop/assets/`
@@ -73,7 +73,7 @@ On first launch, the onboarding welcome screen should feel like a real product g
 1. Use `lfs/greeting.png` as art direction, not implementation:
    - light airy background,
    - pixel/game feel,
-   - strong OpenPets brand block,
+   - strong NekoDrift brand block,
    - mascot/pet visual area,
    - progress dots and primary Next button.
    - The file must remain reference-only and should not be copied into `apps/desktop/assets` or loaded by the app.
@@ -84,7 +84,7 @@ On first launch, the onboarding welcome screen should feel like a real product g
    - Generate data URLs from packaged local asset files in the main process before creating the onboarding data URL, avoiding fragile `data:` document → `file:` image loading.
 3. Copy direction, not copy text:
    - Proposed headline direction: “Your AI coding companion” or similar.
-   - Proposed body direction: “OpenPets lives in your tray and gives your coding agents a friendly desktop companion.”
+   - Proposed body direction: “NekoDrift lives in your tray and gives your coding agents a friendly desktop companion.”
    - Keep copy short and human.
 4. Preserve onboarding flow:
    - Step indicators still reflect current step.
@@ -115,8 +115,8 @@ On first launch, the onboarding welcome screen should feel like a real product g
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 If shared task-window styles are changed unexpectedly, also run:
@@ -136,7 +136,7 @@ pnpm package:desktop:dir
 Manual verification is provided after implementation. It should include:
 
 1. Run `pnpm dev:desktop`.
-2. Reset onboarding state if needed by deleting the logged OpenPets app data state file/directory.
+2. Reset onboarding state if needed by deleting the logged NekoDrift app data state file/directory.
 3. Confirm the first onboarding screen looks like a polished greeting inspired by `lfs/greeting.png`, not a literal screenshot paste.
 4. Confirm copy feels good and not awkward.
 5. Confirm the primary action is visible and not clipped at the default task-window size.

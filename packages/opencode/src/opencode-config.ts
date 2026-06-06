@@ -119,8 +119,8 @@ export function planOpenCodeConfigWrite(rootPath: string, targetPath: string, co
   return {
     rootPath: root,
     targetPath,
-    backupPath: existsSync(targetPath) ? uniquePath(`${targetPath}.openpets-backup-${stamp}.json`) : undefined,
-    tempPath: uniquePath(join(parent, `.openpets-${stamp}.tmp`)),
+    backupPath: existsSync(targetPath) ? uniquePath(`${targetPath}.nekodrift-backup-${stamp}.json`) : undefined,
+    tempPath: uniquePath(join(parent, `.nekodrift-${stamp}.tmp`)),
     content,
   };
 }

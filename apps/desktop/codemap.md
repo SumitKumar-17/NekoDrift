@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-OpenPets desktop companion application. Tray-first Electron app providing animated desktop pets that react to coding agent events. Manages pet installations, the React/Tailwind Control Center, plugin automation/runtime, agent integrations (Claude Code, OpenCode, Cursor, Pi guidance), and local IPC for CLI communication.
+NekoDrift desktop companion application. Tray-first Electron app providing animated desktop pets that react to coding agent events. Manages pet installations, the React/Tailwind Control Center, plugin automation/runtime, agent integrations (Claude Code, OpenCode, Cursor, Pi guidance), and local IPC for CLI communication.
 
 ## Design
 
@@ -41,21 +41,21 @@ OpenPets desktop companion application. Tray-first Electron app providing animat
 
 ## Integration Points
 
-- **Workspace Packages**: `@open-pets/agent-events`, `@open-pets/claude`, `@open-pets/cli`, `@open-pets/cursor`, `@open-pets/mcp`, `@open-pets/opencode`
+- **Workspace Packages**: `@neko-drift/agent-events`, `@neko-drift/claude`, `@neko-drift/cli`, `@neko-drift/cursor`, `@neko-drift/mcp`, `@neko-drift/opencode`
 - **External Services**: 
-  - `https://openpets.dev/pets/catalog.v2.json` (pet catalog V2)
-  - `https://openpets.dev/pets/catalog.v3.json` (pet catalog V3 with pagination)
-  - `https://openpets.dev/plugins/catalog.v1.json` (plugin catalog V1)
-  - `https://zip.openpets.dev/pets/{id}.zip` (pet downloads)
-  - `https://zip.openpets.dev/plugins/{id}.zip` (plugin downloads)
+  - `https://nekodrift.app/pets/catalog.v2.json` (pet catalog V2)
+  - `https://nekodrift.app/pets/catalog.v3.json` (pet catalog V3 with pagination)
+  - `https://nekodrift.app/plugins/catalog.v1.json` (plugin catalog V1)
+  - `https://zip.nekodrift.app/pets/{id}.zip` (pet downloads)
+  - `https://zip.nekodrift.app/plugins/{id}.zip` (plugin downloads)
   - GitHub API (release checks)
 - **System Integration**:
   - Claude Code: `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, `claude mcp` commands
   - OpenCode: `~/.opencode/config.json`
-  - Cursor: `~/.cursor/mcp.json`, `.cursor/rules/openpets.mdc`
+  - Cursor: `~/.cursor/mcp.json`, `.cursor/rules/nekodrift.mdc`
   - Codex: `~/.codex/pets/` (local pet development)
   - IPC: Discovery file at platform-specific path, Unix socket/Windows named pipe/TCP
-  - Logs: `userData/logs/openpets.log`
+  - Logs: `userData/logs/nekodrift.log`
 - **Build**: `electron-builder` with ASAR, cross-platform (macOS/Windows/Linux)
 
 ## Key Files
@@ -71,7 +71,7 @@ OpenPets desktop companion application. Tray-first Electron app providing animat
 - `app-state.ts`: Persistent state management (JSON file)
 - `agent-setup.ts`: Claude/OpenCode/Cursor integration logic
 - `plugin-service.ts`: Plugin orchestration for snapshots, enable/config/reload, command execution, catalog install/update/uninstall, local loading, permission approval, JavaScript host wiring, and runtime reloads
-- `plugin-manifest.ts`: `openpets.plugin.json` v1/v2 schema/types/validator for declarative timer plugins and JavaScript SDK plugins, config fields, permissions, commands/status/network, and actions
+- `plugin-manifest.ts`: `nekodrift.plugin.json` v1/v2 schema/types/validator for declarative timer plugins and JavaScript SDK plugins, config fields, permissions, commands/status/network, and actions
 - `plugin-runtime.ts`: Runtime that compiles enabled declarative timers and starts JavaScript plugin hosts for approved pet/schedule/storage/command/status/network actions
 - `plugin-state.ts`: Atomic JSON state store for installed plugins, enabled flag, approved permissions, config, broken state, and update metadata
 - `plugin-config.ts`: Plugin default/effective config validation and config reference resolution

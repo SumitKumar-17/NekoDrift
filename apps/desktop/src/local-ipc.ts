@@ -2,17 +2,17 @@ import { randomBytes } from "node:crypto";
 import net from "node:net";
 
 import { applyAgentPetReaction, applyAgentPetSay, clearAgentPetLeaseState, showAgentPet } from "./agent-pet-controller.js";
-import { getAppStateSnapshot, recordOpenPetsActivity } from "./app-state.js";
+import { getAppStateSnapshot, recordNekoDriftActivity } from "./app-state.js";
 import { builtInPet } from "./built-in-pet.js";
 import { applyExternalPetReaction, applyExternalPetSay, getDefaultPetPaused, isDefaultPetVisible } from "./default-pet-controller.js";
 import { createStaleLeaseStatus, LeaseManager } from "./lease-manager.js";
 import { debug, error as logError, info } from "./logger.js";
-import { cleanupUnixSocket, getDiscoveryFilePath, getIpcEndpointConfig, parseIpcEndpoint, protectUnixSocket, removeDiscoveryFile, writeDiscoveryFile, type IpcEndpoint, type IpcEndpointConfig, type OpenPetsDiscoveryFile } from "./local-ipc-paths.js";
-import { errorResponse, IpcProtocolError, isRecord, maxIpcMessageBytes, okResponse, parseIpcRequest, validateInstallPetId, validateOptionalLeaseId, validateReaction, validateRequestedPetId, validateSayMessage, type OpenPetsIpcRequest } from "./local-ipc-protocol.js";
+import { cleanupUnixSocket, getDiscoveryFilePath, getIpcEndpointConfig, parseIpcEndpoint, protectUnixSocket, removeDiscoveryFile, writeDiscoveryFile, type IpcEndpoint, type IpcEndpointConfig, type NekoDriftDiscoveryFile } from "./local-ipc-paths.js";
+import { errorResponse, IpcProtocolError, isRecord, maxIpcMessageBytes, okResponse, parseIpcRequest, validateInstallPetId, validateOptionalLeaseId, validateReaction, validateRequestedPetId, validateSayMessage, type NekoDriftIpcRequest } from "./local-ipc-protocol.js";
 import { installPet } from "./pet-installation.js";
 
 let ipcServer: net.Server | null = null;
-let ipcDiscovery: OpenPetsDiscoveryFile | null = null;
+let ipcDiscovery: NekoDriftDiscoveryFile | null = null;
 let leaseCleanupTimer: NodeJS.Timeout | null = null;
 const leaseManager = new LeaseManager({
   resolveTarget: resolveLeaseTarget,
@@ -38,7 +38,7 @@ export async function startLocalIpcServer(): Promise<void> {
   const server = net.createServer((socket) => handleSocket(socket, token, endpointConfig));
   server.on("error", (error) => {
     logError("ipc", "server error", error);
-    console.error("OpenPets local IPC server error.", error);
+    console.error("NekoDrift local IPC server error.", error);
   });
 
   await new Promise<void>((resolve, reject) => {
@@ -56,7 +56,7 @@ export async function startLocalIpcServer(): Promise<void> {
   leaseCleanupTimer = setInterval(() => leaseManager.cleanupExpired(), 5_000);
   leaseCleanupTimer.unref?.();
   info("ipc", "server started", { endpointKind: endpointConfig.bindEndpoint.kind, bindEndpoint: formatEndpoint(endpointConfig.bindEndpoint), advertisedEndpoint: listeningEndpoint, discoveryPath: getDiscoveryFilePath() });
-  console.log(`OpenPets local IPC listening at ${listeningEndpoint}.`);
+  console.log(`NekoDrift local IPC listening at ${listeningEndpoint}.`);
 }
 
 export function stopLocalIpcServer(): void {
@@ -116,7 +116,7 @@ function handleSocket(socket: net.Socket, token: string, endpointConfig: IpcEndp
   socket.on("error", (error) => {
     if (isBenignSocketCloseError(error)) return;
     logError("ipc", "client socket error", error);
-    console.error("OpenPets local IPC client socket error.", error);
+    console.error("NekoDrift local IPC client socket error.", error);
   });
 }
 
@@ -216,11 +216,11 @@ async function handleRawRequest(raw: string, token: string) {
   }
 }
 
-async function handleRequest(request: OpenPetsIpcRequest): Promise<unknown> {
+async function handleRequest(request: NekoDriftIpcRequest): Promise<unknown> {
   if (request.method === "hello") {
     return {
       ok: true,
-      protocol: "openpets-ipc",
+      protocol: "nekodrift-ipc",
       protocolVersion: 1,
       appVersion: ipcDiscovery?.appVersion ?? "0.0.0",
     };
@@ -311,11 +311,11 @@ async function handleRequest(request: OpenPetsIpcRequest): Promise<unknown> {
     if (lease?.targetKind === "explicit") {
       if (getDefaultPetPaused()) return { ok: true, reaction, shown: false, reason: "paused", leaseId: lease.leaseId };
       const applied = applyAgentPetReaction(lease.actualTargetPetId, reaction);
-      safeRecordOpenPetsActivity({ kind: "react", reaction, petId });
+      safeRecordNekoDriftActivity({ kind: "react", reaction, petId });
       return { ok: true, reaction, shown: applied.shown, reason: applied.reason, leaseId: lease.leaseId };
     }
     const applied = applyExternalPetReaction(reaction);
-    safeRecordOpenPetsActivity({ kind: "react", reaction, petId });
+    safeRecordNekoDriftActivity({ kind: "react", reaction, petId });
     return { ok: true, reaction, shown: applied.shown, reason: applied.reason };
   }
 
@@ -328,17 +328,17 @@ async function handleRequest(request: OpenPetsIpcRequest): Promise<unknown> {
   if (lease?.targetKind === "explicit") {
     if (getDefaultPetPaused()) return { ok: true, shown: false, reason: "paused", reaction, leaseId: lease.leaseId };
     const applied = applyAgentPetSay(lease.actualTargetPetId, message, reaction);
-    safeRecordOpenPetsActivity({ kind: "say", reaction, petId });
+    safeRecordNekoDriftActivity({ kind: "say", reaction, petId });
     return { ok: true, shown: applied.shown, reason: applied.reason, reaction, leaseId: lease.leaseId };
   }
   const applied = applyExternalPetSay(message, reaction);
-  safeRecordOpenPetsActivity({ kind: "say", reaction, petId });
+  safeRecordNekoDriftActivity({ kind: "say", reaction, petId });
   return { ok: true, shown: applied.shown, reason: applied.reason, reaction };
 }
 
-function safeRecordOpenPetsActivity(activity: Parameters<typeof recordOpenPetsActivity>[0]): void {
+function safeRecordNekoDriftActivity(activity: Parameters<typeof recordNekoDriftActivity>[0]): void {
   try {
-    recordOpenPetsActivity(activity);
+    recordNekoDriftActivity(activity);
   } catch (error) {
     debug("ipc", "activity record failed", { error: error instanceof Error ? error.message : String(error), kind: activity.kind, reaction: activity.reaction, petId: activity.petId });
   }

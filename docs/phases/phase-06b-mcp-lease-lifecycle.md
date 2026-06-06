@@ -7,7 +7,7 @@ Complete the core MCP runtime behavior that Phase 06A intentionally deferred: MC
 This phase turns the Phase 06A thin tool path into the real agent-neutral lifecycle described in `task.txt`:
 
 ```text
-@open-pets/mcp --pet snoopy starts
+@neko-drift/mcp --pet snoopy starts
   → desktop app receives lease.acquire
   → snoopy window opens as temporary agent pet
   → tools target snoopy through lease id
@@ -21,7 +21,7 @@ This phase turns the Phase 06A thin tool path into the real agent-neutral lifecy
 - Claude Code detection/configuration UI.
 - Claude enhanced hooks.
 - Agent Setup window implementation.
-- Auto-launching installed OpenPets desktop app from MCP.
+- Auto-launching installed NekoDrift desktop app from MCP.
 - Production packaging/release validation.
 - Pet install/remove/default tools exposed to agents.
 - Complex agent/session/workspace routing beyond one target pet per MCP process.
@@ -32,12 +32,12 @@ This phase turns the Phase 06A thin tool path into the real agent-neutral lifecy
 
 After this phase:
 
-- Running `@open-pets/mcp` without `--pet` acquires a lease for the desktop default pet and tools affect the default pet.
-- Running `@open-pets/mcp --pet <installed-non-default-id>` opens that installed pet as a temporary agent pet and tools affect that pet.
+- Running `@neko-drift/mcp` without `--pet` acquires a lease for the desktop default pet and tools affect the default pet.
+- Running `@neko-drift/mcp --pet <installed-non-default-id>` opens that installed pet as a temporary agent pet and tools affect that pet.
 - Quitting the MCP process releases the lease.
 - A temporary explicit non-default pet closes after the last active lease using it ends.
 - If MCP crashes, desktop TTL cleanup expires the orphaned lease and closes the temporary pet.
-- If `--pet` is missing or invalid/uninstalled, desktop falls back to the default pet and `openpets_status` reports the fallback clearly.
+- If `--pet` is missing or invalid/uninstalled, desktop falls back to the default pet and `nekodrift_status` reports the fallback clearly.
 
 ## Acceptance criteria
 
@@ -47,15 +47,15 @@ After this phase:
   - `lease.release`
   - lease-scoped `pet.react`
   - lease-scoped `pet.say`
-- `@open-pets/client` exposes typed helpers for acquiring, heartbeating, releasing, status, say, and react with optional lease id.
-- `@open-pets/mcp` acquires a lease during startup after MCP server initialization, not on first tool call.
-- `@open-pets/mcp --pet <id>` sends requested pet id to `lease.acquire`.
-- `@open-pets/mcp` accepts a bounded raw `--pet` string and lets desktop validate/fallback; only values that exceed length/control-character limits are fatal CLI errors.
+- `@neko-drift/client` exposes typed helpers for acquiring, heartbeating, releasing, status, say, and react with optional lease id.
+- `@neko-drift/mcp` acquires a lease during startup after MCP server initialization, not on first tool call.
+- `@neko-drift/mcp --pet <id>` sends requested pet id to `lease.acquire`.
+- `@neko-drift/mcp` accepts a bounded raw `--pet` string and lets desktop validate/fallback; only values that exceed length/control-character limits are fatal CLI errors.
 - Raw `--pet` CLI bound: UTF-8 byte length must be 1-128 bytes and must not contain control characters, NUL, path separators, or whitespace-only content. Values that pass this bound but are not safe pet ids are sent to desktop and become `invalid_pet_id` fallback.
 - If `--pet` is omitted, lease acquisition targets the current desktop default pet.
 - If explicit `--pet` is installed and not broken, desktop opens/shows that pet as a temporary explicit agent pet.
 - If explicit `--pet` is missing, not installed, invalid, or broken, desktop falls back to built-in/current default pet and records fallback reason.
-- `openpets_status` reports:
+- `nekodrift_status` reports:
   - `configuredPetId`
   - `leaseId`
   - `actualTargetPetId`
@@ -63,9 +63,9 @@ After this phase:
   - `usingDefaultPet`
   - `fallbackReason` when applicable
   - `routingImplemented: true`
-- `openpets_say` and `openpets_react` target the acquired lease's actual pet.
-- If lease acquisition fails because OpenPets is unavailable, MCP remains alive in degraded mode and `openpets_status` reports unavailable clearly.
-- In degraded mode, `openpets_say` and `openpets_react` return MCP tool errors without crashing the server.
+- `nekodrift_say` and `nekodrift_react` target the acquired lease's actual pet.
+- If lease acquisition fails because NekoDrift is unavailable, MCP remains alive in degraded mode and `nekodrift_status` reports unavailable clearly.
+- In degraded mode, `nekodrift_say` and `nekodrift_react` return MCP tool errors without crashing the server.
 - MCP sends heartbeat while alive for an acquired lease.
 - MCP releases its lease on graceful shutdown paths where practical:
   - `SIGINT`
@@ -80,7 +80,7 @@ After this phase:
 - Temporary explicit pet windows use local installed `spritesheet.webp` data URLs only; no remote images.
 - Temporary explicit pet windows are draggable and basic-positioned without needing final multi-monitor polish.
 - Operation is local-only; no TCP/HTTP.
-- Public MCP tool set remains exactly `openpets_status`, `openpets_say`, `openpets_react`.
+- Public MCP tool set remains exactly `nekodrift_status`, `nekodrift_say`, `nekodrift_react`.
 - No public MCP tool can install/remove/default pets, edit settings, access filesystem, run shell commands, or expose generic IPC.
 - Automated checks cover lease state transitions, fallback behavior, TTL cleanup logic, and MCP status mapping.
 
@@ -274,8 +274,8 @@ MCP startup flow:
 
 Tool behavior:
 
-- `openpets_status` reports lease/degraded state.
-- `openpets_say`/`openpets_react` require an active lease to target explicit/default pet; if no lease, return `isError: true` with clear unavailable guidance.
+- `nekodrift_status` reports lease/degraded state.
+- `nekodrift_say`/`nekodrift_react` require an active lease to target explicit/default pet; if no lease, return `isError: true` with clear unavailable guidance.
 
 Shutdown:
 
@@ -291,7 +291,7 @@ Do not write diagnostics to stdout.
 
 ### Auto-launch
 
-Auto-launch of installed OpenPets desktop app remains deferred. It is important product behavior, but packaging/app discovery is not mature enough yet. Phase 06B focuses on lease lifecycle when the app is already running.
+Auto-launch of installed NekoDrift desktop app remains deferred. It is important product behavior, but packaging/app discovery is not mature enough yet. Phase 06B focuses on lease lifecycle when the app is already running.
 
 ## Risks and tradeoffs
 
@@ -316,7 +316,7 @@ Mitigation:
 Mitigation:
 
 - Desktop owns requested→actual resolution.
-- `openpets_status` reports requested/configured and actual target.
+- `nekodrift_status` reports requested/configured and actual target.
 - Missing/broken explicit pets fall back to default with reason.
 - `targetKind` separates persistent default-controller routing from explicit temporary pet-window routing.
 
@@ -344,9 +344,9 @@ Automated checks:
 
 ```bash
 pnpm check
-pnpm --filter @open-pets/desktop check
-pnpm --filter @open-pets/client check
-pnpm --filter @open-pets/mcp check
+pnpm --filter @neko-drift/desktop check
+pnpm --filter @neko-drift/client check
+pnpm --filter @neko-drift/mcp check
 ```
 
 Phase 06B should add checks for:
@@ -374,7 +374,7 @@ Phase 06B should add checks for:
 1. Start desktop:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. Ensure at least one extra pet is installed from Pet Manager, for example `snoopy`.
@@ -385,9 +385,9 @@ Phase 06B should add checks for:
    node packages/mcp/dist/index.js
    ```
 
-4. Call `openpets_status`; confirm it reports the current default pet as actual target and `routingImplemented: true`.
+4. Call `nekodrift_status`; confirm it reports the current default pet as actual target and `routingImplemented: true`.
 
-5. Call `openpets_react` / `openpets_say`; confirm the default pet reacts/says.
+5. Call `nekodrift_react` / `nekodrift_say`; confirm the default pet reacts/says.
 
 6. Run MCP with explicit installed pet:
 
@@ -397,7 +397,7 @@ Phase 06B should add checks for:
 
 7. Confirm Snoopy opens as a separate temporary pet window and status reports actual target `snoopy`.
 
-8. Call `openpets_react` / `openpets_say`; confirm Snoopy reacts/says, not the default pet.
+8. Call `nekodrift_react` / `nekodrift_say`; confirm Snoopy reacts/says, not the default pet.
 
 9. Stop the MCP process; confirm Snoopy closes after release/cleanup while the default pet remains.
 
@@ -427,7 +427,7 @@ Oracle reviewed the initial Phase 06B plan and approved the overall architecture
 
 ## Oracle feedback disposition
 
-- Fixed: `@open-pets/mcp` should accept bounded raw `--pet` strings and let desktop validate/fallback, so invalid/uninstalled requested pets can follow product fallback behavior.
+- Fixed: `@neko-drift/mcp` should accept bounded raw `--pet` strings and let desktop validate/fallback, so invalid/uninstalled requested pets can follow product fallback behavior.
 - Fixed: Added `targetKind: "default" | "explicit"` to distinguish persistent default-controller leases from explicit temporary pet-window leases.
 - Fixed: Defined IPC/result contracts for acquire, heartbeat, release, and lease-scoped status.
 - Fixed: Defined unknown heartbeat, idempotent release, and expired lease status behavior.

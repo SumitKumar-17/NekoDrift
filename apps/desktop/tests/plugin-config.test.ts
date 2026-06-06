@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import { getEffectivePluginConfig, getPluginDefaultConfig, resolvePluginNumericConfig, resolvePluginStringConfig, validatePluginConfigReplacement } from "../src/plugin-config.js";
-import type { OpenPetsPluginManifest } from "../src/plugin-manifest.js";
+import type { NekoDriftPluginManifest } from "../src/plugin-manifest.js";
 
 const base = manifest();
 
@@ -52,7 +52,7 @@ function assertInvalidReplacement(config: unknown, code: string): void {
   assert.ok(result.errors.some((error) => error.code === code), JSON.stringify(result.errors));
 }
 
-function manifest(patch: Partial<OpenPetsPluginManifest> = {}): OpenPetsPluginManifest {
+function manifest(patch: Partial<NekoDriftPluginManifest> = {}): NekoDriftPluginManifest {
   return {
     manifestVersion: 1,
     id: "plug",

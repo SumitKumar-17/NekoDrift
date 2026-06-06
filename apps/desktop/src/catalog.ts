@@ -5,8 +5,8 @@ import { app } from "electron";
 
 import { validateCatalogV2, validateCatalogV3Index, validateCatalogV3Page, validateCatalogV3SearchIndex, validateCatalogV3SearchPage, type CatalogPetV2, type CatalogV2, type CatalogV3Index, type CatalogV3SearchPet } from "./catalog-validation.js";
 
-export const catalogUrl = "https://openpets.dev/pets/catalog.v2.json";
-export const catalogV3Url = "https://openpets.dev/pets/catalog.v3.json";
+export const catalogUrl = "https://nekodrift.app/pets/catalog.v2.json";
+export const catalogV3Url = "https://nekodrift.app/pets/catalog.v3.json";
 const fixtureRelativePath = "catalog.v2.fixture.json";
 const maxCatalogBytes = 1_000_000;
 const maxCatalogV3PageBytes = 256_000;

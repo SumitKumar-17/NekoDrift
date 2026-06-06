@@ -1,4 +1,4 @@
-export const openPetsIpcProtocol = "openpets-ipc";
+export const openPetsIpcProtocol = "nekodrift-ipc";
 export const openPetsIpcVersion = 1;
 export const maxIpcMessageBytes = 16 * 1024;
 export const connectTimeoutMs = 2_000;
@@ -18,24 +18,24 @@ export const allowedReactions = [
   "celebrating",
 ] as const;
 
-export type OpenPetsReaction = typeof allowedReactions[number];
-export type OpenPetsIpcMethod = "hello" | "status" | "pets.list" | "pets.install" | "lease.acquire" | "lease.heartbeat" | "lease.release" | "pet.react" | "pet.say";
+export type NekoDriftReaction = typeof allowedReactions[number];
+export type NekoDriftIpcMethod = "hello" | "status" | "pets.list" | "pets.install" | "lease.acquire" | "lease.heartbeat" | "lease.release" | "pet.react" | "pet.say";
 
-export interface OpenPetsIpcRequest {
+export interface NekoDriftIpcRequest {
   readonly id: string;
   readonly version: 1;
   readonly token: string;
-  readonly method: OpenPetsIpcMethod;
+  readonly method: NekoDriftIpcMethod;
   readonly params?: unknown;
 }
 
-export interface OpenPetsIpcOkResponse<T = unknown> {
+export interface NekoDriftIpcOkResponse<T = unknown> {
   readonly id: string | null;
   readonly ok: true;
   readonly result: T;
 }
 
-export interface OpenPetsIpcErrorResponse {
+export interface NekoDriftIpcErrorResponse {
   readonly id: string | null;
   readonly ok: false;
   readonly error: {
@@ -44,11 +44,11 @@ export interface OpenPetsIpcErrorResponse {
   };
 }
 
-export type OpenPetsIpcResponse<T = unknown> = OpenPetsIpcOkResponse<T> | OpenPetsIpcErrorResponse;
+export type NekoDriftIpcResponse<T = unknown> = NekoDriftIpcOkResponse<T> | NekoDriftIpcErrorResponse;
 
-export function parseIpcResponse<T = unknown>(value: unknown): OpenPetsIpcResponse<T> {
-  if (!isRecord(value)) throw new OpenPetsClientError("invalid_response", "IPC response must be an object.");
-  if (typeof value.id !== "string" && value.id !== null) throw new OpenPetsClientError("invalid_response", "IPC response id is invalid.");
+export function parseIpcResponse<T = unknown>(value: unknown): NekoDriftIpcResponse<T> {
+  if (!isRecord(value)) throw new NekoDriftClientError("invalid_response", "IPC response must be an object.");
+  if (typeof value.id !== "string" && value.id !== null) throw new NekoDriftClientError("invalid_response", "IPC response id is invalid.");
 
   if (value.ok === true) {
     return { id: value.id, ok: true, result: value.result as T };
@@ -58,17 +58,17 @@ export function parseIpcResponse<T = unknown>(value: unknown): OpenPetsIpcRespon
     return { id: value.id, ok: false, error: { code: value.error.code, message: value.error.message } };
   }
 
-  throw new OpenPetsClientError("invalid_response", "IPC response shape is invalid.");
+  throw new NekoDriftClientError("invalid_response", "IPC response shape is invalid.");
 }
 
-export function validateReaction(value: string): OpenPetsReaction {
-  if (!allowedReactions.includes(value as OpenPetsReaction)) {
-    throw new OpenPetsClientError("invalid_reaction", "Invalid OpenPets reaction.");
+export function validateReaction(value: string): NekoDriftReaction {
+  if (!allowedReactions.includes(value as NekoDriftReaction)) {
+    throw new NekoDriftClientError("invalid_reaction", "Invalid NekoDrift reaction.");
   }
-  return value as OpenPetsReaction;
+  return value as NekoDriftReaction;
 }
 
-export class OpenPetsClientError extends Error {
+export class NekoDriftClientError extends Error {
   constructor(readonly code: string, message: string) {
     super(message);
   }

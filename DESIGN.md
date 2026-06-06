@@ -1,12 +1,12 @@
-# OpenPets Control Center: Design System & Engineering Manual
+# NekoDrift Control Center: Design System & Engineering Manual
 
-This document outlines the visual direction, component patterns, and front-end engineering guidelines for the OpenPets Control Center. It serves as a practical implementation guide for migrating existing views (Settings, Plugins, Integrations, Onboarding) and building new pages using a cohesive, high-fidelity tactile design system.
+This document outlines the visual direction, component patterns, and front-end engineering guidelines for the NekoDrift Control Center. It serves as a practical implementation guide for migrating existing views (Settings, Plugins, Integrations, Onboarding) and building new pages using a cohesive, high-fidelity tactile design system.
 
 ---
 
 ## 1. Visual Direction & Heritage
 
-The OpenPets Control Center blends the nostalgic, playful charm of late-90s/early-2000s desktop pet managers with a modern, glassmorphic utility interface. 
+The NekoDrift Control Center blends the nostalgic, playful charm of late-90s/early-2000s desktop pet managers with a modern, glassmorphic utility interface. 
 
 - **The Core Tension**: Playful nostalgia meets crisp, modern desktop productivity.
 - **Atmospheric Depth**: Instead of flat, sterile surfaces, interfaces leverage rich color gradients, subtle mesh backdrops, structured panels, and tactile control elements.
@@ -43,7 +43,7 @@ Surfaces are layered to establish clear spatial hierarchy and keep the interface
 The desktop shell is designed to be self-contained, fitting exactly within the viewport height without scrolling the entire window.
 
 - **Page Shell**: Max-width of `1160px` centered, utilizing a full-height flexbox column (`h-screen p-6`).
-- **Hero Header**: A balanced layout placing title text and description on the left (`.hero-content`) and the wider brand artwork (`openpets.webp`) on the right (`.hero-logo-container`). Keep artwork large enough to feel intentional, use `object-contain`, and avoid rounded wrappers or distortion.
+- **Hero Header**: A balanced layout placing title text and description on the left (`.hero-content`) and the wider brand artwork (`nekodrift.webp`) on the right (`.hero-logo-container`). Keep artwork large enough to feel intentional, use `object-contain`, and avoid rounded wrappers or distortion.
 - **Layout Split**: A clean grid split, typically:
   - **Left Gallery/List Panel**: `1.25fr` — for browsing, searching, and filtering.
   - **Right Detail/Action Panel**: `0.75fr` — for contextual inspection and heavy operations.
@@ -78,7 +78,7 @@ All colors are mapped to functional roles to ensure consistency across themes.
 | **Success / Ready** | `#059669` / `#34d399` | `emerald` | Active indicators, successfully installed badges |
 | **Warning / Import** | `#d97706` / `#fbbf24` | `amber` | Codex source indicators, imports, attention states |
 | **Featured** | `#7e22ce` / `#a855f7` | `purple` | Featured catalog filters and badges |
-| **Originals** | `#ca8a04` / `#facc15` | `yellow` | Original OpenPets catalog filters and badges |
+| **Originals** | `#ca8a04` / `#facc15` | `yellow` | Original NekoDrift catalog filters and badges |
 | **Danger / Remove** | `#dc2626` / `#ff6b6b` | `red` | Destructive actions, broken states, error messages |
 
 ---
@@ -133,7 +133,7 @@ Buttons are the core interactive elements. They reject flat modern trends in fav
 ### Pet Cards & Badges
 - Card grids need inner padding so selected rings and focus states are not clipped by the scroll container.
 - Use badges to expose catalog identity, not just install state:
-  - `Original` for original/OpenPets pets
+  - `Original` for original/NekoDrift pets
   - `Featured` for featured non-original catalog pets
   - `Western` / `Asian` for standard category pets
   - `Default`, `Installed`, and `Codex` for local state/source

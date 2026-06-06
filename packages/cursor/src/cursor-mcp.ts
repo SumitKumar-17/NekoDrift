@@ -1,7 +1,7 @@
 import { isAbsolute, join } from "node:path";
 
-export const cursorMcpServerName = "openpets";
-export const openPetsMcpPackageName = "@open-pets/mcp";
+export const cursorMcpServerName = "nekodrift";
+export const openPetsMcpPackageName = "@neko-drift/mcp";
 export type CursorCommandMode = "published" | "local" | "bundled";
 
 export interface CursorMcpEntry {
@@ -12,7 +12,7 @@ export interface CursorMcpEntry {
 
 export interface CursorMcpConfig {
   readonly mcpServers?: {
-    readonly openpets?: CursorMcpEntry | unknown;
+    readonly nekodrift?: CursorMcpEntry | unknown;
     readonly [key: string]: unknown;
   };
   readonly [key: string]: unknown;
@@ -25,10 +25,10 @@ export interface CursorMcpPreviewOptions {
   readonly mcpEntryPath?: string;
 }
 
-export function validateOpenPetsPetId(value: string): string {
+export function validateNekoDriftPetId(value: string): string {
   const trimmed = value.trim();
-  if (trimmed !== value || trimmed.length < 1) throw new Error("Invalid OpenPets pet id.");
-  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(trimmed)) throw new Error("Invalid OpenPets pet id.");
+  if (trimmed !== value || trimmed.length < 1) throw new Error("Invalid NekoDrift pet id.");
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(trimmed)) throw new Error("Invalid NekoDrift pet id.");
   return trimmed;
 }
 
@@ -37,7 +37,7 @@ export function isValidPetId(value: string): boolean {
 }
 
 export function buildCursorMcpEntry(options: CursorMcpPreviewOptions): CursorMcpEntry {
-  const petArgs = options.petId === undefined ? [] : ["--pet", validateOpenPetsPetId(options.petId)];
+  const petArgs = options.petId === undefined ? [] : ["--pet", validateNekoDriftPetId(options.petId)];
   const mode = options.commandMode ?? "published";
   if (mode === "local" || mode === "bundled") {
     if (!options.mcpEntryPath || !isAbsolute(options.mcpEntryPath)) {
@@ -45,13 +45,13 @@ export function buildCursorMcpEntry(options: CursorMcpPreviewOptions): CursorMcp
     }
     return { type: "stdio", command: "node", args: [options.mcpEntryPath, ...petArgs] };
   }
-  validateOpenPetsPackageVersion(options.mcpVersion);
+  validateNekoDriftPackageVersion(options.mcpVersion);
   return { type: "stdio", command: "npx", args: ["-y", `${openPetsMcpPackageName}@${options.mcpVersion}`, ...petArgs] };
 }
 
-export function validateOpenPetsPackageVersion(value: string): string {
+export function validateNekoDriftPackageVersion(value: string): string {
   if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?$/.test(value)) {
-    throw new Error("Invalid OpenPets package version.");
+    throw new Error("Invalid NekoDrift package version.");
   }
   return value;
 }

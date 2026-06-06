@@ -57,27 +57,27 @@ assert.deepEqual(offlineExplicitPet, { id: "fixer", displayName: "fixer" });
 assert.equal(listPetsCalled, false);
 
 const mcpArgs = createClaudeMcpAddJsonArgs({ type: "stdio", command: pinned.command, args: pinned.args, env: {} });
-assert.deepEqual(mcpArgs.slice(0, 3), ["mcp", "add-json", "openpets"]);
+assert.deepEqual(mcpArgs.slice(0, 3), ["mcp", "add-json", "nekodrift"]);
 assert.equal(mcpArgs.at(-2), "--scope");
 assert.equal(mcpArgs.at(-1), "local");
 const mcpJson = JSON.parse(mcpArgs[3] ?? "{}") as { readonly command?: string; readonly args?: readonly string[] };
 assert.equal(mcpJson.command, "npx");
 assert.deepEqual(mcpJson.args, ["-y", `${cliPackageName}@1.2.3`, "mcp", "--pet", "fixer"]);
 
-const dir = mkdtempSync(join(tmpdir(), "openpets-cli-"));
+const dir = mkdtempSync(join(tmpdir(), "nekodrift-cli-"));
 try {
   const project = join(dir, "project");
   const settingsDir = join(project, ".claude");
   mkdirSync(project);
   writeFileSync(join(dir, "placeholder"), "x", "utf8");
   assert.throws(() => assertSafeProjectHookPath(join(dir, "missing")));
-  installProjectLocalHooks(project, "npx -y @open-pets/cli@1.2.3 hook --openpets-managed --project-local --pet fixer");
+  installProjectLocalHooks(project, "npx -y @neko-drift/cli@1.2.3 hook --nekodrift-managed --project-local --pet fixer");
   const settingsPath = join(settingsDir, "settings.local.json");
   const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as { readonly hooks?: Record<string, Array<{ readonly hooks: Array<{ readonly command: string }> }>> };
   assert.ok(settings.hooks?.UserPromptSubmit?.[0]?.hooks[0]?.command.includes("--project-local --pet fixer"));
 
-  writeFileSync(settingsPath, JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: "command", command: "echo keep" }] }, { hooks: [{ type: "command", command: "npx -y @open-pets/cli@old hook --openpets-managed" }] }] } }), "utf8");
-  installProjectLocalHooks(project, "npx -y @open-pets/cli@1.2.3 hook --openpets-managed --project-local --pet fixer");
+  writeFileSync(settingsPath, JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: "command", command: "echo keep" }] }, { hooks: [{ type: "command", command: "npx -y @neko-drift/cli@old hook --nekodrift-managed" }] }] } }), "utf8");
+  installProjectLocalHooks(project, "npx -y @neko-drift/cli@1.2.3 hook --nekodrift-managed --project-local --pet fixer");
   const updated = JSON.parse(readFileSync(settingsPath, "utf8")) as { readonly hooks?: Record<string, Array<{ readonly hooks: Array<{ readonly command: string; readonly timeout?: number }> }>> };
   const stopCommands = updated.hooks?.Stop?.flatMap((entry) => entry.hooks.map((hook) => hook.command)) ?? [];
   assert.ok(stopCommands.includes("echo keep"));
@@ -93,7 +93,7 @@ try {
   const malformedHooksProject = join(dir, "malformed-hooks-project");
   mkdirSync(join(malformedHooksProject, ".claude"), { recursive: true });
   writeFileSync(join(malformedHooksProject, ".claude", "settings.local.json"), JSON.stringify({ hooks: { Stop: { bad: true } } }), "utf8");
-  assert.throws(() => installProjectLocalHooks(malformedHooksProject, "npx -y @open-pets/cli@1.2.3 hook --openpets-managed --project-local --pet fixer"));
+  assert.throws(() => installProjectLocalHooks(malformedHooksProject, "npx -y @neko-drift/cli@1.2.3 hook --nekodrift-managed --project-local --pet fixer"));
 
   const symlinkProject = join(dir, "symlink-project");
   const outside = join(dir, "outside-claude");
@@ -111,22 +111,22 @@ try {
   const oldPath = process.env.PATH;
   process.env.PATH = `${binDir}:${oldPath ?? ""}`;
   try {
-    runClaudeMcpAddJson(project, { type: "stdio", command: "npx", args: ["-y", "@open-pets/cli@1.2.3", "mcp", "--pet", "fixer"], env: {} }, true);
+    runClaudeMcpAddJson(project, { type: "stdio", command: "npx", args: ["-y", "@neko-drift/cli@1.2.3", "mcp", "--pet", "fixer"], env: {} }, true);
   } finally {
     process.env.PATH = oldPath;
   }
   const claudeLog = JSON.parse(readFileSync(logPath, "utf8")) as Array<{ readonly cwd: string; readonly argv: readonly string[] }>;
   assert.equal(claudeLog.at(-1)?.cwd, realpathSync(project));
-  assert.deepEqual(claudeLog.at(-2)?.argv, ["mcp", "remove", "openpets", "--scope", "local"]);
-  assert.deepEqual(claudeLog.at(-1)?.argv.slice(0, 3), ["mcp", "add-json", "openpets"]);
+  assert.deepEqual(claudeLog.at(-2)?.argv, ["mcp", "remove", "nekodrift", "--scope", "local"]);
+  assert.deepEqual(claudeLog.at(-1)?.argv.slice(0, 3), ["mcp", "add-json", "nekodrift"]);
   const loggedMcpJson = JSON.parse(claudeLog.at(-1)?.argv[3] ?? "{}") as { readonly command?: string; readonly args?: readonly string[]; readonly env?: Record<string, unknown> };
   assert.equal(loggedMcpJson.command, "npx");
-  assert.deepEqual(loggedMcpJson.args, ["-y", "@open-pets/cli@1.2.3", "mcp", "--pet", "fixer"]);
+  assert.deepEqual(loggedMcpJson.args, ["-y", "@neko-drift/cli@1.2.3", "mcp", "--pet", "fixer"]);
   assert.deepEqual(loggedMcpJson.env, {});
   assert.equal(claudeLog.at(-1)?.argv.at(-2), "--scope");
   assert.equal(claudeLog.at(-1)?.argv.at(-1), "local");
 
-  const cliBinLink = join(binDir, "openpets");
+  const cliBinLink = join(binDir, "nekodrift");
   symlinkSync(new URL("./index.js", import.meta.url).pathname, cliBinLink);
   const symlinkedHelp = spawnSync(process.execPath, [cliBinLink, "--help"], { encoding: "utf8" });
   assert.equal(symlinkedHelp.status, 0);
@@ -136,15 +136,15 @@ try {
   mkdirSync(opencodeProject);
   await configureProject({ agent: "opencode", petId: "fixer", cwd: opencodeProject, yes: true, force: false, localDev: false });
   const opencodeConfigPath = join(opencodeProject, ".opencode", "opencode.jsonc");
-  const opencodeInstructionPath = join(opencodeProject, ".opencode", "openpets.md");
+  const opencodeInstructionPath = join(opencodeProject, ".opencode", "nekodrift.md");
   const opencodeConfig = JSON.parse(readFileSync(opencodeConfigPath, "utf8")) as { readonly mcp?: Record<string, { readonly command?: readonly string[] }>; readonly instructions?: readonly string[]; readonly plugin?: readonly unknown[] };
-  assert.deepEqual(opencodeConfig.mcp?.openpets?.command, ["npx", "-y", `@open-pets/cli@${packageVersion}`, "mcp", "--pet", "fixer"]);
-  assert.deepEqual(opencodeConfig.instructions, [".opencode/openpets.md"]);
-  assert.deepEqual(opencodeConfig.plugin, [[`@open-pets/opencode@${packageVersion}`, { pet: "fixer" }]]);
+  assert.deepEqual(opencodeConfig.mcp?.nekodrift?.command, ["npx", "-y", `@neko-drift/cli@${packageVersion}`, "mcp", "--pet", "fixer"]);
+  assert.deepEqual(opencodeConfig.instructions, [".opencode/nekodrift.md"]);
+  assert.deepEqual(opencodeConfig.plugin, [[`@neko-drift/opencode@${packageVersion}`, { pet: "fixer" }]]);
   assert.match(readFileSync(opencodeInstructionPath, "utf8"), /OPENPETS:START/);
   await configureProject({ agent: "opencode", petId: "fixer", cwd: opencodeProject, yes: true, force: false, localDev: false });
   const opencodeConfigAgain = readFileSync(opencodeConfigPath, "utf8");
-  assert.equal((opencodeConfigAgain.match(/@open-pets\/opencode/g) ?? []).length, 1);
+  assert.equal((opencodeConfigAgain.match(/@neko-drift\/opencode/g) ?? []).length, 1);
 
   const existingTopLevel = join(dir, "opencode-existing-top");
   mkdirSync(existingTopLevel);
@@ -153,32 +153,32 @@ try {
   const existingConfig = JSON.parse(readFileSync(join(existingTopLevel, "opencode.json"), "utf8")) as { readonly theme?: string; readonly mcp?: Record<string, { readonly command?: readonly string[] }>; readonly plugin?: readonly unknown[]; readonly instructions?: readonly string[] };
   assert.equal(existingConfig.theme, "x");
   assert.deepEqual(existingConfig.mcp?.other?.command, ["other"]);
-  assert.equal(existingConfig.mcp?.openpets?.command?.[0], "node");
+  assert.equal(existingConfig.mcp?.nekodrift?.command?.[0], "node");
   assert.ok(existingConfig.instructions?.includes("README.md"));
-  assert.ok(existingConfig.instructions?.includes(".opencode/openpets.md"));
+  assert.ok(existingConfig.instructions?.includes(".opencode/nekodrift.md"));
   assert.ok(existingConfig.plugin?.includes("other-plugin"));
 
   const lowerOwnerProject = join(dir, "opencode-lower-owner");
   mkdirSync(join(lowerOwnerProject, ".opencode"), { recursive: true });
   writeFileSync(join(lowerOwnerProject, "opencode.json"), JSON.stringify({ theme: "top" }, null, 2), "utf8");
-  writeFileSync(join(lowerOwnerProject, ".opencode", "opencode.jsonc"), JSON.stringify({ mcp: { openpets: { type: "local", command: ["npx", "-y", "@open-pets/cli@0.0.1", "mcp", "--pet", "helper"], enabled: true } } }, null, 2), "utf8");
+  writeFileSync(join(lowerOwnerProject, ".opencode", "opencode.jsonc"), JSON.stringify({ mcp: { nekodrift: { type: "local", command: ["npx", "-y", "@neko-drift/cli@0.0.1", "mcp", "--pet", "helper"], enabled: true } } }, null, 2), "utf8");
   await configureProject({ agent: "opencode", petId: "fixer", cwd: lowerOwnerProject, yes: true, force: false, localDev: false });
   const lowerTop = readFileSync(join(lowerOwnerProject, "opencode.json"), "utf8");
   const lowerOwned = JSON.parse(readFileSync(join(lowerOwnerProject, ".opencode", "opencode.jsonc"), "utf8")) as { readonly mcp?: Record<string, { readonly command?: readonly string[] }> };
-  assert.equal(lowerTop.includes("@open-pets/cli"), false);
-  assert.deepEqual(lowerOwned.mcp?.openpets?.command, ["npx", "-y", `@open-pets/cli@${packageVersion}`, "mcp", "--pet", "fixer"]);
+  assert.equal(lowerTop.includes("@neko-drift/cli"), false);
+  assert.deepEqual(lowerOwned.mcp?.nekodrift?.command, ["npx", "-y", `@neko-drift/cli@${packageVersion}`, "mcp", "--pet", "fixer"]);
 
   const customProject = join(dir, "opencode-custom");
   mkdirSync(customProject);
-  writeFileSync(join(customProject, "opencode.json"), JSON.stringify({ mcp: { openpets: { type: "local", command: ["my-openpets-wrapper"] } } }), "utf8");
+  writeFileSync(join(customProject, "opencode.json"), JSON.stringify({ mcp: { nekodrift: { type: "local", command: ["my-nekodrift-wrapper"] } } }), "utf8");
   await assert.rejects(() => configureProject({ agent: "opencode", petId: "fixer", cwd: customProject, yes: true, force: false, localDev: false }));
-  assert.equal(readFileSync(join(customProject, "opencode.json"), "utf8").includes("@open-pets/cli"), false);
+  assert.equal(readFileSync(join(customProject, "opencode.json"), "utf8").includes("@neko-drift/cli"), false);
 
   const instructionProject = join(dir, "opencode-instruction");
   mkdirSync(join(instructionProject, ".opencode"), { recursive: true });
-  writeFileSync(join(instructionProject, ".opencode", "openpets.md"), "User text\n", "utf8");
+  writeFileSync(join(instructionProject, ".opencode", "nekodrift.md"), "User text\n", "utf8");
   await configureProject({ agent: "opencode", petId: "fixer", cwd: instructionProject, yes: true, force: false, localDev: false });
-  const instructionText = readFileSync(join(instructionProject, ".opencode", "openpets.md"), "utf8");
+  const instructionText = readFileSync(join(instructionProject, ".opencode", "nekodrift.md"), "utf8");
   assert.match(instructionText, /User text/);
   assert.match(instructionText, /OPENPETS:START/);
 
@@ -187,7 +187,7 @@ try {
   mkdirSync(symlinkOpenCodeProject);
   mkdirSync(outsideOpenCode);
   writeFileSync(join(outsideOpenCode, "opencode.jsonc"), "{}\n", "utf8");
-  writeFileSync(join(outsideOpenCode, "openpets.md"), "outside\n", "utf8");
+  writeFileSync(join(outsideOpenCode, "nekodrift.md"), "outside\n", "utf8");
   symlinkSync(outsideOpenCode, join(symlinkOpenCodeProject, ".opencode"));
   await assert.rejects(() => configureProject({ agent: "opencode", petId: "fixer", cwd: symlinkOpenCodeProject, yes: true, force: false, localDev: false }));
 
@@ -196,9 +196,9 @@ try {
   await configureProject({ agent: "cursor", petId: "fixer", cwd: cursorProject, yes: true, force: false, localDev: false });
   const cursorConfigPath = join(cursorProject, ".cursor", "mcp.json");
   const cursorConfig = JSON.parse(readFileSync(cursorConfigPath, "utf8")) as { readonly mcpServers?: Record<string, { readonly command?: string; readonly args?: readonly string[] }> };
-  assert.equal(cursorConfig.mcpServers?.openpets?.command, "npx");
-  assert.deepEqual(cursorConfig.mcpServers?.openpets?.args, ["-y", `@open-pets/mcp@${packageVersion}`, "--pet", "fixer"]);
-  assert.equal(readFileSync(cursorConfigPath, "utf8").includes("@open-pets/cli"), false);
+  assert.equal(cursorConfig.mcpServers?.nekodrift?.command, "npx");
+  assert.deepEqual(cursorConfig.mcpServers?.nekodrift?.args, ["-y", `@neko-drift/mcp@${packageVersion}`, "--pet", "fixer"]);
+  assert.equal(readFileSync(cursorConfigPath, "utf8").includes("@neko-drift/cli"), false);
 
   const cursorExistingProject = join(dir, "cursor-existing");
   mkdirSync(join(cursorExistingProject, ".cursor"), { recursive: true });
@@ -216,24 +216,24 @@ try {
   assert.deepEqual(cursorExistingConfig.mcpServers?.other?.args, ["--token=hidden"]);
   assert.deepEqual(cursorExistingConfig.mcpServers?.other?.env, { SECRET: "hidden" });
   assert.equal(cursorExistingConfig.topLevel, "keep");
-  assert.deepEqual(cursorExistingConfig.mcpServers?.openpets?.args, ["-y", `@open-pets/mcp@${packageVersion}`, "--pet", "helper"]);
+  assert.deepEqual(cursorExistingConfig.mcpServers?.nekodrift?.args, ["-y", `@neko-drift/mcp@${packageVersion}`, "--pet", "helper"]);
 
   const cursorConflictProject = join(dir, "cursor-conflict");
   mkdirSync(join(cursorConflictProject, ".cursor"), { recursive: true });
-  writeFileSync(join(cursorConflictProject, ".cursor", "mcp.json"), JSON.stringify({ mcpServers: { openpets: { type: "stdio", command: "custom", args: [] }, other: { type: "stdio", command: "other", args: [] } } }, null, 2), "utf8");
+  writeFileSync(join(cursorConflictProject, ".cursor", "mcp.json"), JSON.stringify({ mcpServers: { nekodrift: { type: "stdio", command: "custom", args: [] }, other: { type: "stdio", command: "other", args: [] } } }, null, 2), "utf8");
   await assert.rejects(() => configureProject({ agent: "cursor", petId: "fixer", cwd: cursorConflictProject, yes: true, force: false, localDev: false }));
   await configureProject({ agent: "cursor", petId: "fixer", cwd: cursorConflictProject, yes: true, force: true, localDev: false });
   const cursorReplaced = JSON.parse(readFileSync(join(cursorConflictProject, ".cursor", "mcp.json"), "utf8")) as { readonly mcpServers?: Record<string, { readonly command?: string; readonly args?: readonly string[] }> };
   assert.equal(cursorReplaced.mcpServers?.other?.command, "other");
-  assert.deepEqual(cursorReplaced.mcpServers?.openpets?.args, ["-y", `@open-pets/mcp@${packageVersion}`, "--pet", "fixer"]);
+  assert.deepEqual(cursorReplaced.mcpServers?.nekodrift?.args, ["-y", `@neko-drift/mcp@${packageVersion}`, "--pet", "fixer"]);
 
   const cursorRulesOnlyProject = join(dir, "cursor-rules-only");
   mkdirSync(cursorRulesOnlyProject);
   await configureProject({ agent: "cursor", cwd: cursorRulesOnlyProject, yes: true, force: false, localDev: false, cursorRulesMode: "only" });
-  const cursorRulesPath = join(cursorRulesOnlyProject, ".cursor", "rules", "openpets.mdc");
+  const cursorRulesPath = join(cursorRulesOnlyProject, ".cursor", "rules", "nekodrift.mdc");
   const cursorRulesContent = readFileSync(cursorRulesPath, "utf8");
   assert.match(cursorRulesContent, /OPENPETS:CURSOR_RULES:START/);
-  assert.match(cursorRulesContent, /openpets_say/);
+  assert.match(cursorRulesContent, /nekodrift_say/);
   assert.doesNotMatch(cursorRulesContent, /alwaysApply:\s*true/);
   assert.equal(existsSync(join(cursorRulesOnlyProject, ".cursor", "mcp.json")), false);
 
@@ -243,10 +243,10 @@ try {
 
   const cursorWithRulesConflictProject = join(dir, "cursor-with-rules-conflict");
   mkdirSync(join(cursorWithRulesConflictProject, ".cursor", "rules"), { recursive: true });
-  writeFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "openpets.mdc"), "User rule SECRET=hidden\n", "utf8");
+  writeFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "nekodrift.mdc"), "User rule SECRET=hidden\n", "utf8");
   await assert.rejects(() => configureProject({ agent: "cursor", petId: "fixer", cwd: cursorWithRulesConflictProject, yes: true, force: false, localDev: false, cursorRulesMode: "with" }));
   assert.equal(existsSync(join(cursorWithRulesConflictProject, ".cursor", "mcp.json")), false);
-  assert.equal(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "openpets.mdc"), "utf8"), "User rule SECRET=hidden\n");
+  assert.equal(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "nekodrift.mdc"), "utf8"), "User rule SECRET=hidden\n");
 
   let cursorWithRulesOutput = "";
   process.stdout.write = ((chunk: string | Uint8Array): boolean => { cursorWithRulesOutput += String(chunk); return true; }) as typeof process.stdout.write;
@@ -258,18 +258,18 @@ try {
   assert.match(cursorWithRulesOutput, /Rules backup:/);
   assert.equal(cursorWithRulesOutput.includes("hidden"), false);
   const cursorWithRulesConfig = JSON.parse(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "mcp.json"), "utf8")) as { readonly mcpServers?: Record<string, { readonly args?: readonly string[] }> };
-  assert.deepEqual(cursorWithRulesConfig.mcpServers?.openpets?.args, ["-y", `@open-pets/mcp@${packageVersion}`, "--pet", "fixer"]);
-  assert.match(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "openpets.mdc"), "utf8"), /OPENPETS:CURSOR_RULES:START/);
-  const cursorRulesBackups = readdirSync(join(cursorWithRulesConflictProject, ".cursor", "rules")).filter((name) => name.includes("openpets-backup"));
+  assert.deepEqual(cursorWithRulesConfig.mcpServers?.nekodrift?.args, ["-y", `@neko-drift/mcp@${packageVersion}`, "--pet", "fixer"]);
+  assert.match(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "nekodrift.mdc"), "utf8"), /OPENPETS:CURSOR_RULES:START/);
+  const cursorRulesBackups = readdirSync(join(cursorWithRulesConflictProject, ".cursor", "rules")).filter((name) => name.includes("nekodrift-backup"));
   assert.equal(cursorRulesBackups.length, 1);
   assert.equal(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", cursorRulesBackups[0]!), "utf8"), "User rule SECRET=hidden\n");
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
 
-const invalidHook = spawnSync(process.execPath, [new URL("./index.js", import.meta.url).pathname, "hook", "--openpets-managed", "--pet", "bad/pet"], { input: JSON.stringify({ hook_event_name: "Notification" }), encoding: "utf8" });
+const invalidHook = spawnSync(process.execPath, [new URL("./index.js", import.meta.url).pathname, "hook", "--nekodrift-managed", "--pet", "bad/pet"], { input: JSON.stringify({ hook_event_name: "Notification" }), encoding: "utf8" });
 assert.equal(invalidHook.status, 1);
-const missingPetHook = spawnSync(process.execPath, [new URL("./index.js", import.meta.url).pathname, "hook", "--openpets-managed", "--pet"], { input: JSON.stringify({ hook_event_name: "Notification" }), encoding: "utf8" });
+const missingPetHook = spawnSync(process.execPath, [new URL("./index.js", import.meta.url).pathname, "hook", "--nekodrift-managed", "--pet"], { input: JSON.stringify({ hook_event_name: "Notification" }), encoding: "utf8" });
 assert.equal(missingPetHook.status, 1);
 
 for (const args of [["--help"], ["-h"], ["status", "--help"], ["pets", "--help"], ["react", "--help"], ["say", "--help"], ["install", "--help"], ["configure", "--help"], ["configure", "-h"], ["mcp", "--help"], ["hook", "--help"]]) {

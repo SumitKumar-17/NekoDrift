@@ -7,12 +7,12 @@ import { pipeline } from "node:stream/promises";
 import { Transform } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-import { createOpenPetsClient, OpenPetsClientError } from "@open-pets/client";
+import { createNekoDriftClient, NekoDriftClientError } from "@neko-drift/client";
 import yauzl from "yauzl";
 import type { Entry, ZipFile } from "yauzl";
 
-const catalogUrl = "https://openpets.dev/pets/catalog.v2.json";
-const zipHost = "zip.openpets.dev";
+const catalogUrl = "https://nekodrift.app/pets/catalog.v2.json";
+const zipHost = "zip.nekodrift.app";
 const maxCatalogBytes = 1_000_000;
 const maxZipDownloadBytes = 50 * 1024 * 1024;
 const maxExtractedTotalBytes = 200 * 1024 * 1024;
@@ -68,7 +68,7 @@ interface InstalledPetState {
   readonly brokenReason?: string;
 }
 
-interface OpenPetsState {
+interface NekoDriftState {
   readonly version: 1;
   readonly preferences: {
     readonly defaultPetId: string;
@@ -107,16 +107,16 @@ export function parseArgs(args: readonly string[]): { readonly petId: string; re
   return { petId: validatePetId(args[0] ?? ""), help: false };
 }
 
-export function getOpenPetsUserDataPath(platform = process.platform, env: NodeJS.ProcessEnv = process.env): string {
-  if (env.OPENPETS_USER_DATA) return env.OPENPETS_USER_DATA;
-  if (platform === "darwin") return join(homedir(), "Library", "Application Support", "OpenPets");
-  if (platform === "win32") return join(env.APPDATA || join(homedir(), "AppData", "Roaming"), "OpenPets");
-  return join(env.XDG_CONFIG_HOME || join(homedir(), ".config"), "OpenPets");
+export function getNekoDriftUserDataPath(platform = process.platform, env: NodeJS.ProcessEnv = process.env): string {
+  if (env.NEKODRIFT_USER_DATA) return env.NEKODRIFT_USER_DATA;
+  if (platform === "darwin") return join(homedir(), "Library", "Application Support", "NekoDrift");
+  if (platform === "win32") return join(env.APPDATA || join(homedir(), "AppData", "Roaming"), "NekoDrift");
+  return join(env.XDG_CONFIG_HOME || join(homedir(), ".config"), "NekoDrift");
 }
 
 export function validatePetId(value: string): string {
   if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(value) || value === builtInPet.id) {
-    throw new Error(`Invalid OpenPets pet id: ${value}`);
+    throw new Error(`Invalid NekoDrift pet id: ${value}`);
   }
   return value;
 }
@@ -129,27 +129,27 @@ async function main(): Promise<void> {
   }
 
   const result = await installPet({ petId: parsed.petId });
-  process.stdout.write(`Installed OpenPets pet: ${result.displayName} (${result.petId})\n`);
+  process.stdout.write(`Installed NekoDrift pet: ${result.displayName} (${result.petId})\n`);
   if (result.via === "direct") {
-    process.stdout.write("Open or restart OpenPets to use the installed pet.\n");
+    process.stdout.write("Open or restart NekoDrift to use the installed pet.\n");
   }
 }
 
 async function tryInstallThroughRunningApp(petId: string): Promise<InstallPetResult | null> {
   try {
-    const result = await createOpenPetsClient({ responseTimeoutMs: 60_000 }).installPet(petId);
+    const result = await createNekoDriftClient({ responseTimeoutMs: 60_000 }).installPet(petId);
     return { petId: result.petId, displayName: result.displayName, via: "app" };
   } catch (error) {
-    if (error instanceof OpenPetsClientError && appUnavailableErrorCodes.has(error.code)) return null;
-    if (error instanceof OpenPetsClientError && appTooOldErrorCodes.has(error.code)) {
-      throw new Error("Your running OpenPets app is too old for CLI pet installs. Quit OpenPets and retry, or update OpenPets.");
+    if (error instanceof NekoDriftClientError && appUnavailableErrorCodes.has(error.code)) return null;
+    if (error instanceof NekoDriftClientError && appTooOldErrorCodes.has(error.code)) {
+      throw new Error("Your running NekoDrift app is too old for CLI pet installs. Quit NekoDrift and retry, or update NekoDrift.");
     }
     throw error;
   }
 }
 
 async function installPetDirectly(petId: string): Promise<InstallPetResult> {
-  const userData = getOpenPetsUserDataPath();
+  const userData = getNekoDriftUserDataPath();
   await mkdir(userData, { recursive: true, mode: 0o700 });
   const releaseLock = await acquireDirectInstallLock(userData);
   try {
@@ -198,10 +198,10 @@ async function acquireDirectInstallLock(userData: string): Promise<() => Promise
         await rm(lockPath, { recursive: true, force: true });
         continue;
       }
-      throw new Error("Another OpenPets pet install or startup is already in progress.");
+      throw new Error("Another NekoDrift pet install or startup is already in progress.");
     }
   }
-  throw new Error("Could not acquire OpenPets install lock.");
+  throw new Error("Could not acquire NekoDrift install lock.");
 }
 
 async function isStaleInstallLock(lockPath: string): Promise<boolean> {
@@ -232,7 +232,7 @@ function isProcessAlive(pid: number): boolean {
 async function getCatalogPet(petId: string): Promise<CatalogPet> {
   const catalog = await fetchCatalog();
   const pet = catalog.find((candidate) => candidate.id === petId);
-  if (!pet) throw new Error(`Pet is not available in the OpenPets catalog: ${petId}`);
+  if (!pet) throw new Error(`Pet is not available in the NekoDrift catalog: ${petId}`);
   return pet;
 }
 
@@ -250,7 +250,7 @@ async function fetchCatalog(): Promise<readonly CatalogPet[]> {
 }
 
 export function validateCatalog(value: unknown): readonly CatalogPet[] {
-  if (!isRecord(value) || value.version !== 2 || !Array.isArray(value.pets)) throw new Error("OpenPets catalog is invalid.");
+  if (!isRecord(value) || value.version !== 2 || !Array.isArray(value.pets)) throw new Error("NekoDrift catalog is invalid.");
   const ids = new Set<string>();
   return value.pets.map((pet) => validateCatalogPet(pet, ids));
 }
@@ -273,7 +273,7 @@ function validateCatalogUrl(value: unknown, field: "preview" | "zip"): string {
   const raw = readString(value, field, 2048);
   const url = new URL(raw);
   if (url.protocol !== "https:" || url.username || url.password || url.port) throw new Error(`${field} URL is invalid.`);
-  if (field === "preview" && (url.hostname !== "openpets.dev" || !url.pathname.startsWith("/pets/"))) throw new Error("Preview URL host/path is not allowed.");
+  if (field === "preview" && (url.hostname !== "nekodrift.app" || !url.pathname.startsWith("/pets/"))) throw new Error("Preview URL host/path is not allowed.");
   if (field === "zip" && (url.hostname !== zipHost || !url.pathname.startsWith("/pets/"))) throw new Error("Zip URL host/path is not allowed.");
   return url.toString();
 }
@@ -424,16 +424,16 @@ async function validateExtractedPet(tempDir: string): Promise<void> {
   if (spritesheet.size > maxIndividualFileBytes) throw new Error("spritesheet.webp is too large.");
 }
 
-async function readCurrentState(userData: string): Promise<OpenPetsState> {
-  const statePath = join(userData, "openpets-state.json");
+async function readCurrentState(userData: string): Promise<NekoDriftState> {
+  const statePath = join(userData, "nekodrift-state.json");
   return normalizeState(existsSync(statePath) ? JSON.parse(await readFile(statePath, "utf8")) as unknown : undefined, userData);
 }
 
 async function writeInstalledPetState(userData: string, catalogPet: CatalogPet): Promise<void> {
-  const statePath = join(userData, "openpets-state.json");
+  const statePath = join(userData, "nekodrift-state.json");
   const current = await readCurrentState(userData);
   if (current.pets.installed.some((pet) => pet.id === catalogPet.id)) throw new Error(`Pet is already installed: ${catalogPet.id}`);
-  const next: OpenPetsState = {
+  const next: NekoDriftState = {
     ...current,
     pets: {
       installed: [
@@ -456,7 +456,7 @@ async function writeInstalledPetState(userData: string, catalogPet: CatalogPet):
   await rename(tempPath, statePath);
 }
 
-function normalizeState(value: unknown, userData: string): OpenPetsState {
+function normalizeState(value: unknown, userData: string): NekoDriftState {
   const record = isRecord(value) ? value : {};
   const preferences = isRecord(record.preferences) ? record.preferences : {};
   const petsRecord = isRecord(record.pets) ? record.pets : {};
@@ -530,7 +530,7 @@ function getInstalledPetDir(petsRoot: string, petId: string): string {
 function assertInsideRoot(root: string, target: string): void {
   const resolvedRoot = resolve(root);
   const resolvedTarget = resolve(target);
-  if (resolvedTarget !== resolvedRoot && !resolvedTarget.startsWith(`${resolvedRoot}${sep}`)) throw new Error("Resolved path escapes OpenPets directory.");
+  if (resolvedTarget !== resolvedRoot && !resolvedTarget.startsWith(`${resolvedRoot}${sep}`)) throw new Error("Resolved path escapes NekoDrift directory.");
 }
 
 function assertOutputPathInside(root: string, target: string): void {
@@ -551,7 +551,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function printUsage(): void {
-  process.stdout.write("Usage:\n  install-pet <pet-id>\n\nInstalls a pet from the OpenPets gallery into your local OpenPets app data.\nExample:\n  npx -y install-pet review-owl\n");
+  process.stdout.write("Usage:\n  install-pet <pet-id>\n\nInstalls a pet from the NekoDrift gallery into your local NekoDrift app data.\nExample:\n  npx -y install-pet review-owl\n");
 }
 
 if (isMainModule()) {

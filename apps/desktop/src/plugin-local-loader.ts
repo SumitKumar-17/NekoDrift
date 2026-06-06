@@ -3,10 +3,10 @@ import type { FileHandle } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import { defaultMaxPluginManifestBytes, isUnderPath, readSafePluginManifest } from "./plugin-manifest-reader.js";
-import { OPENPETS_PLUGIN_MANIFEST_FILENAME, validatePluginManifest, type OpenPetsPluginManifest } from "./plugin-manifest.js";
+import { NEKODRIFT_PLUGIN_MANIFEST_FILENAME, validatePluginManifest, type NekoDriftPluginManifest } from "./plugin-manifest.js";
 
-export type LocalPluginLoadResult = { readonly manifest: OpenPetsPluginManifest; readonly installPath: string; readonly manifestPath: string };
-export type LocalPluginSourceManifest = { readonly manifest: OpenPetsPluginManifest; readonly manifestText: string; readonly entryText?: string };
+export type LocalPluginLoadResult = { readonly manifest: NekoDriftPluginManifest; readonly installPath: string; readonly manifestPath: string };
+export type LocalPluginSourceManifest = { readonly manifest: NekoDriftPluginManifest; readonly manifestText: string; readonly entryText?: string };
 const maxPluginEntryBytes = 1024 * 1024;
 
 export async function loadLocalPluginSnapshot(options: { readonly sourceFolder: string; readonly userDataPath: string; readonly maxManifestBytes?: number }): Promise<LocalPluginLoadResult> {
@@ -20,12 +20,12 @@ export async function readLocalPluginSourceManifest(options: { readonly sourceFo
   if (!sourceStat.isDirectory() || sourceStat.isSymbolicLink()) throw new Error("Selected plugin folder is invalid.");
   const realSourceFolder = await fs.realpath(options.sourceFolder);
 
-  const sourceManifestPath = join(realSourceFolder, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const sourceManifestPath = join(realSourceFolder, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   const manifestStat = await fs.lstat(sourceManifestPath);
   if (!manifestStat.isFile() || manifestStat.isSymbolicLink()) throw new Error("Selected plugin manifest is invalid.");
   if (manifestStat.size > maxBytes) throw new Error("Plugin manifest is too large.");
   const realSourceManifestPath = await fs.realpath(sourceManifestPath);
-  if (dirname(realSourceManifestPath) !== realSourceFolder || basename(realSourceManifestPath) !== OPENPETS_PLUGIN_MANIFEST_FILENAME) throw new Error("Selected plugin manifest is invalid.");
+  if (dirname(realSourceManifestPath) !== realSourceFolder || basename(realSourceManifestPath) !== NEKODRIFT_PLUGIN_MANIFEST_FILENAME) throw new Error("Selected plugin manifest is invalid.");
 
   let handle: FileHandle | undefined;
   try {
@@ -54,15 +54,15 @@ export async function readLocalPluginSourceManifest(options: { readonly sourceFo
   }
 }
 
-export async function publishLocalPluginSnapshot(options: { readonly manifest: OpenPetsPluginManifest; readonly manifestText: string; readonly entryText?: string; readonly userDataPath: string; readonly maxManifestBytes?: number }): Promise<LocalPluginLoadResult> {
+export async function publishLocalPluginSnapshot(options: { readonly manifest: NekoDriftPluginManifest; readonly manifestText: string; readonly entryText?: string; readonly userDataPath: string; readonly maxManifestBytes?: number }): Promise<LocalPluginLoadResult> {
   const maxBytes = options.maxManifestBytes ?? defaultMaxPluginManifestBytes;
   const devRoot = join(options.userDataPath, "plugins-dev");
   await fs.mkdir(devRoot, { recursive: true });
   await assertRealDirectory(devRoot, "Plugin development directory is invalid.");
   const installPath = join(devRoot, options.manifest.id);
-  const manifestPath = join(installPath, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const manifestPath = join(installPath, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   const tempPath = join(devRoot, `.tmp-${options.manifest.id}-${process.pid}-${Date.now()}`);
-  const tempManifestPath = join(tempPath, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const tempManifestPath = join(tempPath, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   await fs.rm(tempPath, { recursive: true, force: true });
   await fs.mkdir(tempPath, { recursive: true });
   try {

@@ -3,7 +3,7 @@ import { Menu, Tray, type MenuItemConstructorOptions } from "electron";
 import { getAppStateSnapshot } from "./app-state.js";
 import { createTrayIcon } from "./assets.js";
 import { hideDefaultPet, isDefaultPetVisible, setDefaultPetPaused, showDefaultPet } from "./default-pet-controller.js";
-import { quitOpenPets } from "./lifecycle.js";
+import { quitNekoDrift } from "./lifecycle.js";
 import { info, openLogsFolder } from "./logger.js";
 import { shellState, togglePaused } from "./state.js";
 import { getUpdateStatus, openUpdateReleasePage } from "./update-checker.js";
@@ -17,10 +17,10 @@ export function createAppTray(): Tray {
   }
 
   tray = new Tray(createTrayIcon());
-  tray.setToolTip("OpenPets");
+  tray.setToolTip("NekoDrift");
   refreshTrayMenu();
   info("tray", "created");
-  console.log("OpenPets tray created.");
+  console.log("NekoDrift tray created.");
 
   return tray;
 }
@@ -36,7 +36,7 @@ export function refreshTrayMenu(): void {
 
   const menu = Menu.buildFromTemplate([
     {
-      label: "OpenPets",
+      label: "NekoDrift",
       enabled: false,
     },
     ...createUpdateMenuItems(),
@@ -63,7 +63,7 @@ export function refreshTrayMenu(): void {
         const paused = togglePaused();
         setDefaultPetPaused(paused);
         info("tray", "pause toggled", { paused });
-        console.log(paused ? "OpenPets paused." : "OpenPets resumed.");
+        console.log(paused ? "NekoDrift paused." : "NekoDrift resumed.");
         refreshTrayMenu();
       },
     },
@@ -94,8 +94,8 @@ export function refreshTrayMenu(): void {
     },
     { type: "separator" },
     {
-      label: "Quit OpenPets",
-      click: () => quitOpenPets(),
+      label: "Quit NekoDrift",
+      click: () => quitNekoDrift(),
     },
   ]);
 

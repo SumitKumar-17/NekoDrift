@@ -26,10 +26,10 @@ const dismissBubble = (event) => {
   const stillInteractive = Boolean(newTarget && newTarget.closest(".pet-hitbox, .pet-shell, .bubble")) || dragging;
   reportInteractiveHit(stillInteractive, "bubble-dismiss", true);
 
-  ipcRenderer.send("openpets:bubble-dismissed", dismissToken);
+  ipcRenderer.send("nekodrift:bubble-dismissed", dismissToken);
 };
 
-ipcRenderer.on("openpets:pet-motion", (_event, state) => {
+ipcRenderer.on("nekodrift:pet-motion", (_event, state) => {
   if (!allowedMotionStates.has(state)) {
     return;
   }
@@ -45,7 +45,7 @@ ipcRenderer.on("openpets:pet-motion", (_event, state) => {
   }
 });
 
-ipcRenderer.on("openpets:pet-reaction-state", (_event, state) => {
+ipcRenderer.on("nekodrift:pet-reaction-state", (_event, state) => {
   if (!allowedReactionStates.has(state)) {
     return;
   }
@@ -61,7 +61,7 @@ ipcRenderer.on("openpets:pet-reaction-state", (_event, state) => {
   }
 });
 
-ipcRenderer.on("openpets:pet-content-state", (_event, state) => {
+ipcRenderer.on("nekodrift:pet-content-state", (_event, state) => {
   if (!state || typeof state.bodyHtml !== "string" || state.bodyHtml.length > 64 * 1024 || !allowedReactionStates.has(state.reactionState)) {
     return;
   }
@@ -86,7 +86,7 @@ const getInteractiveTarget = (event) => {
 const reportInteractiveHit = (interactive, source, force = false) => {
   if (!force && lastInteractiveHit === interactive) return;
   lastInteractiveHit = interactive;
-  ipcRenderer.send("openpets:pet-hit-test", interactive, source);
+  ipcRenderer.send("nekodrift:pet-hit-test", interactive, source);
 };
 
 const setInteractiveHit = (interactive, source = "mouse") => {
@@ -98,7 +98,7 @@ const updateInteractiveHit = (event) => {
   setInteractiveHit(Boolean(getInteractiveTarget(event)) || dragging);
 };
 
-ipcRenderer.on("openpets:pet-probe-hit-test", (_event, point) => {
+ipcRenderer.on("nekodrift:pet-probe-hit-test", (_event, point) => {
   if (!point || typeof point.clientX !== "number" || typeof point.clientY !== "number" || !Number.isFinite(point.clientX) || !Number.isFinite(point.clientY)) return;
   const clientX = point.clientX;
   const clientY = point.clientY;
@@ -114,7 +114,7 @@ const installMouseInterop = () => {
 
   document.addEventListener("mousemove", (event) => {
     updateInteractiveHit(event);
-    if (dragging) ipcRenderer.send("openpets:pet-drag-move", { screenX: event.screenX, screenY: event.screenY });
+    if (dragging) ipcRenderer.send("nekodrift:pet-drag-move", { screenX: event.screenX, screenY: event.screenY });
   }, { passive: true });
 
   document.addEventListener("mousedown", (event) => {
@@ -124,13 +124,13 @@ const installMouseInterop = () => {
     event.preventDefault();
     dragging = true;
     setInteractiveHit(true);
-    ipcRenderer.send("openpets:pet-drag-start", { screenX: event.screenX, screenY: event.screenY });
+    ipcRenderer.send("nekodrift:pet-drag-start", { screenX: event.screenX, screenY: event.screenY });
   });
 
   document.addEventListener("mouseup", () => {
     if (!dragging) return;
     dragging = false;
-    ipcRenderer.send("openpets:pet-drag-end");
+    ipcRenderer.send("nekodrift:pet-drag-end");
   });
 
   document.addEventListener("mouseleave", () => {
@@ -138,7 +138,7 @@ const installMouseInterop = () => {
   }, { passive: true });
 
   setInteractiveHit(false, "ready");
-  ipcRenderer.send("openpets:pet-ready");
+  ipcRenderer.send("nekodrift:pet-ready");
 };
 
 if (document.readyState === "loading") {

@@ -30,7 +30,7 @@ If catalog fetch fails, Pet Manager still works for installed/built-in pets and 
 Oracle found that the target URL is currently not available:
 
 ```text
-https://openpets.dev/pets/catalog.v2.json
+https://nekodrift.app/pets/catalog.v2.json
 ```
 
 Phase 04A must therefore include making a real v2 catalog artifact available in the repository/deploy path, or explicitly add a temporary development fallback while the production endpoint is being deployed.
@@ -98,8 +98,8 @@ Validation rules:
 - `displayName`, `description`, `preview`, and `zip` are strings.
 - `preview` and `zip` are `https:` URLs.
 - Allowed hostnames are explicit and documented. Initial expected hosts:
-  - `openpets.dev`
-  - `zip.openpets.dev`
+  - `nekodrift.app`
+  - `zip.nekodrift.app`
 - Maximum pets: 1000.
 - Maximum `id` length: 64.
 - Maximum `displayName` length: 120.
@@ -108,16 +108,16 @@ Validation rules:
 - `generatedAt` must parse as a valid date.
 - URL credentials are rejected.
 - URLs with non-default ports are rejected.
-- Catalog URL is exactly `https://openpets.dev/pets/catalog.v2.json`.
-- `preview` URLs must use host `openpets.dev` and path under `/pets/`.
-- `zip` URLs must use host `zip.openpets.dev` and path under `/pets/`, even though zips are not downloaded in Phase 04A.
+- Catalog URL is exactly `https://nekodrift.app/pets/catalog.v2.json`.
+- `preview` URLs must use host `nekodrift.app` and path under `/pets/`.
+- `zip` URLs must use host `zip.nekodrift.app` and path under `/pets/`, even though zips are not downloaded in Phase 04A.
 
 Mapping from current web metadata to v2:
 
 - v2 `id` = existing `installId`.
 - v2 `displayName` = existing `displayName`.
 - v2 `description` = existing `description` if present, otherwise `""`.
-- v2 `preview` = absolute `https://openpets.dev` URL from existing `spritesheetPath`.
+- v2 `preview` = absolute `https://nekodrift.app` URL from existing `spritesheetPath`.
 - v2 `zip` = absolute zip URL from existing `zipPath`.
 
 `builtin` is reserved and rejected as a catalog pet id.
@@ -162,14 +162,14 @@ Add a small catalog service in the desktop app or `packages/pet-format`:
 - Add and track the v2 fixture at `apps/desktop/catalog.v2.fixture.json` during implementation.
 - On fetch failure, load the tracked v2 fixture as a development fallback.
 - Defer cache file behavior to a later phase unless implementation discovers it is trivial and safe.
-- Do not store catalog cache in `openpets-state.json` in Phase 04A.
+- Do not store catalog cache in `nekodrift-state.json` in Phase 04A.
 - Return UI state that clearly distinguishes live catalog, fixture fallback, cached catalog, and error.
 
 Do not cache unvalidated catalog data.
 
 Phase 04A catalog source precedence:
 
-1. Remote live catalog from `https://openpets.dev/pets/catalog.v2.json`.
+1. Remote live catalog from `https://nekodrift.app/pets/catalog.v2.json`.
 2. If remote fetch/validation fails, validated tracked fixture at `apps/desktop/catalog.v2.fixture.json`.
 3. If fixture validation also fails, show catalog error while keeping installed/built-in pets usable.
 
@@ -248,7 +248,7 @@ At minimum, the check should validate:
 1. Run:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. Open `Manage Pets...`.
@@ -279,7 +279,7 @@ Summary of required Oracle feedback:
 - Add validation bounds and exact host/protocol rules.
 - Ensure catalog fetch is main-process-only with timeout/byte limits/redirect/final URL validation.
 - Decide preview policy; recommended text-only/defer previews.
-- Use a separate validated catalog cache file, not `openpets-state.json`.
+- Use a separate validated catalog cache file, not `nekodrift-state.json`.
 - Make catalog validation checks mandatory under `pnpm check`.
 - Do not rely on ignored untracked `web/` files.
 
@@ -327,7 +327,7 @@ After the user approved updating and redeploying `web/`, the implementation was 
 
 - `web/scripts/sync-pets.js` now writes `catalog.v2.json`.
 - `web/public/pets/catalog.v2.json` was generated from current web pet metadata.
-- `https://openpets.dev/pets/catalog.v2.json` was deployed and verified to return `200 application/json` with `version: 2`.
+- `https://nekodrift.app/pets/catalog.v2.json` was deployed and verified to return `200 application/json` with `version: 2`.
 
 Oracle re-reviewed the web update and approved Phase 04A for manual verification.
 

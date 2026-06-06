@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { OPENPETS_PLUGIN_MANIFEST_FILENAME, type OpenPetsDeclarativePluginManifest, type OpenPetsJavascriptPluginManifest } from "../src/plugin-manifest.js";
+import { NEKODRIFT_PLUGIN_MANIFEST_FILENAME, type NekoDriftDeclarativePluginManifest, type NekoDriftJavascriptPluginManifest } from "../src/plugin-manifest.js";
 import { type PluginPetApi } from "../src/plugin-pet-api.js";
 import { PluginRuntime, type PluginRuntimeScheduler, type PluginTimerHandle } from "../src/plugin-runtime.js";
 import type { PluginJsHost, PluginJsHostInstance, PluginJsHostStartOptions } from "../src/plugin-js-host.js";
@@ -111,7 +111,7 @@ await scenario("javascript http fetch allows approved github host", async ({ sto
   globalThis.fetch = (async () => new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json", etag: "abc" } })) as typeof fetch;
   try {
     await runtime(store, new FakeScheduler(), new FakePetApi(), undefined, jsHost).start();
-    const result = await jsHost.starts[0].sdk?.http.fetch("https://api.github.com/repos/open-pets/openpets/releases");
+    const result = await jsHost.starts[0].sdk?.http.fetch("https://api.github.com/repos/neko-drift/nekodrift/releases");
     assert.equal(result?.status, 200);
     assert.deepEqual(result?.json, { ok: true });
     assert.equal(result?.headers.etag, "abc");
@@ -282,7 +282,7 @@ await scenario("path outside install/root and oversized rejected", async ({ root
   assert.match(store.getRecord("plug")?.brokenReason ?? "", /outside allowed/);
   const install = join(root, "oversized");
   mkdirSync(install, { recursive: true });
-  const path = join(install, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const path = join(install, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   writeFileSync(path, JSON.stringify(manifest()) + " ".repeat(200), "utf8");
   store.upsertRecord(record({ id: "oversized", installPath: install, manifestPath: path }));
   await new PluginRuntime({ stateStore: store, petApi: new FakePetApi(), scheduler: new FakeScheduler(), allowedPluginRoots: [root], maxManifestBytes: 100 }).start();
@@ -302,7 +302,7 @@ await scenario("manifest outside install rejected", async ({ root, store }) => {
 await scenario("root-level evil manifest filename rejected", async ({ root, store }) => {
   const install = join(root, "evil-name");
   mkdirSync(install, { recursive: true });
-  const manifestPath = join(install, `evil-${OPENPETS_PLUGIN_MANIFEST_FILENAME}`);
+  const manifestPath = join(install, `evil-${NEKODRIFT_PLUGIN_MANIFEST_FILENAME}`);
   writeFileSync(manifestPath, JSON.stringify(manifest()), "utf8");
   store.upsertRecord(record({ installPath: install, manifestPath }));
   await runtime(store, new FakeScheduler()).start();
@@ -419,7 +419,7 @@ function addPlugin(store: PluginStateStore, patch: Partial<PluginStateRecord> = 
   const id = patch.id ?? "plug";
   const installPath = patch.installPath ?? join(root, id);
   const manifestPath = patch.manifestPath ?? writeManifest(installPath, data);
-  if (isJsManifest(data)) writeFileSync(join(installPath, data.entry), "OpenPetsPlugin.register();", "utf8");
+  if (isJsManifest(data)) writeFileSync(join(installPath, data.entry), "NekoDriftPlugin.register();", "utf8");
   const rec = record({ ...patch, id, installPath, manifestPath });
   store.upsertRecord(rec);
   return rec;
@@ -429,23 +429,23 @@ function record(patch: Partial<PluginStateRecord> = {}): PluginStateRecord {
   return { id: patch.id ?? "plug", version: patch.version ?? "1.0.0", manifestPath: patch.manifestPath ?? "", installPath: patch.installPath ?? "", source: patch.source ?? "local", manifestVersion: patch.manifestVersion, runtime: patch.runtime, sdkVersion: patch.sdkVersion, enabled: patch.enabled ?? true, approvedPermissions: patch.approvedPermissions ?? ["timer", "pet:speak", "pet:reaction"], approvedNetworkHosts: patch.approvedNetworkHosts, config: patch.config ?? {}, brokenReason: patch.brokenReason, catalogDisabled: patch.catalogDisabled };
 }
 
-function manifest(patch: Partial<OpenPetsDeclarativePluginManifest> & { everyMinutes?: OpenPetsDeclarativePluginManifest["triggers"][number]["everyMinutes"]; actions?: OpenPetsDeclarativePluginManifest["triggers"][number]["actions"] } = {}): OpenPetsDeclarativePluginManifest {
+function manifest(patch: Partial<NekoDriftDeclarativePluginManifest> & { everyMinutes?: NekoDriftDeclarativePluginManifest["triggers"][number]["everyMinutes"]; actions?: NekoDriftDeclarativePluginManifest["triggers"][number]["actions"] } = {}): NekoDriftDeclarativePluginManifest {
   return { manifestVersion: 1, id: patch.id ?? "plug", name: "Plug", version: patch.version ?? "1.0.0", runtime: "declarative", permissions: patch.permissions ?? ["timer", "pet:speak"], configSchema: patch.configSchema, triggers: [{ on: "timer", everyMinutes: patch.everyMinutes ?? 5, actions: patch.actions ?? [{ type: "pet.speak", message: "Stretch" }] }] };
 }
 
-function jsManifest(patch: Partial<OpenPetsJavascriptPluginManifest> = {}): OpenPetsJavascriptPluginManifest {
+function jsManifest(patch: Partial<NekoDriftJavascriptPluginManifest> = {}): NekoDriftJavascriptPluginManifest {
   return { manifestVersion: 2, id: patch.id ?? "plug", name: "Plug", version: patch.version ?? "1.0.0", runtime: "javascript", sdkVersion: patch.sdkVersion ?? "1.0.0", entry: patch.entry ?? "index.js", permissions: patch.permissions ?? [], network: patch.network };
 }
 
-function isJsManifest(data: unknown): data is OpenPetsJavascriptPluginManifest {
+function isJsManifest(data: unknown): data is NekoDriftJavascriptPluginManifest {
   return typeof data === "object" && data !== null && "runtime" in data && data.runtime === "javascript" && "entry" in data && typeof data.entry === "string";
 }
 
 function writeManifest(dir: string, data: unknown): string {
   mkdirSync(dir, { recursive: true });
-  const path = join(dir, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+  const path = join(dir, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
   writeFileSync(path, JSON.stringify(data), "utf8");
   return path;
 }
 
-function tempDir(): string { return mkdtempSync(join(tmpdir(), "openpets-plugin-runtime-")); }
+function tempDir(): string { return mkdtempSync(join(tmpdir(), "nekodrift-plugin-runtime-")); }

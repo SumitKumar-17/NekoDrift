@@ -1,6 +1,6 @@
 import { openPetsPluginManifestFilename, validatePluginManifest } from "../src/plugin-manifest.js";
 
-assertEqual(openPetsPluginManifestFilename, "openpets.plugin.json");
+assertEqual(openPetsPluginManifestFilename, "nekodrift.plugin.json");
 
 const validManifest = {
   manifestVersion: 1,

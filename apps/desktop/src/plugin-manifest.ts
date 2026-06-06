@@ -1,7 +1,7 @@
 import { allowedReactions } from "./local-ipc-protocol.js";
 
-export const OPENPETS_PLUGIN_MANIFEST_FILENAME = "openpets.plugin.json";
-export const openPetsPluginManifestFilename = OPENPETS_PLUGIN_MANIFEST_FILENAME;
+export const NEKODRIFT_PLUGIN_MANIFEST_FILENAME = "nekodrift.plugin.json";
+export const openPetsPluginManifestFilename = NEKODRIFT_PLUGIN_MANIFEST_FILENAME;
 
 export type PluginRuntime = "declarative";
 export type KnownPluginRuntime = PluginRuntime | "javascript";
@@ -29,7 +29,7 @@ export type PluginAction = { type: "pet.speak"; message: string | PluginStringCo
 export type PluginTimerEveryMinutes = number | { config: string };
 export type PluginTrigger = { on: "timer"; everyMinutes: PluginTimerEveryMinutes; actions: PluginAction[] };
 
-export type OpenPetsDeclarativePluginManifest = {
+export type NekoDriftDeclarativePluginManifest = {
   manifestVersion: 1;
   id: string;
   name: string;
@@ -42,7 +42,7 @@ export type OpenPetsDeclarativePluginManifest = {
   triggers: PluginTrigger[];
 };
 
-export type OpenPetsJavascriptPluginManifest = {
+export type NekoDriftJavascriptPluginManifest = {
   manifestVersion: 2;
   id: string;
   name: string;
@@ -57,7 +57,7 @@ export type OpenPetsJavascriptPluginManifest = {
   configSchema?: Record<string, PluginConfigField>;
 };
 
-export type OpenPetsPluginManifest = OpenPetsDeclarativePluginManifest | OpenPetsJavascriptPluginManifest;
+export type NekoDriftPluginManifest = NekoDriftDeclarativePluginManifest | NekoDriftJavascriptPluginManifest;
 
 export type PluginManifestValidationError = {
   path: string;
@@ -66,7 +66,7 @@ export type PluginManifestValidationError = {
 };
 
 export type PluginManifestValidationResult =
-  | { ok: true; manifest: OpenPetsPluginManifest; errors: [] }
+  | { ok: true; manifest: NekoDriftPluginManifest; errors: [] }
   | { ok: false; errors: PluginManifestValidationError[] };
 
 const topLevelFields = new Set(["manifestVersion", "id", "name", "description", "version", "runtime", "icon", "permissions", "configSchema", "triggers"]);
@@ -123,7 +123,7 @@ export function validatePluginManifest(input: unknown): PluginManifestValidation
   validateTriggers(input.triggers, permissions, configFields, errors);
 
   if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, manifest: input as OpenPetsPluginManifest, errors: [] };
+  return { ok: true, manifest: input as NekoDriftPluginManifest, errors: [] };
 }
 
 function validateJavascriptPluginManifest(input: Record<string, unknown>): PluginManifestValidationResult {
@@ -141,7 +141,7 @@ function validateJavascriptPluginManifest(input: Record<string, unknown>): Plugi
   validateConfigSchema(input.configSchema, errors);
   validateNetwork(input.network, errors);
   if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, manifest: input as OpenPetsPluginManifest, errors: [] };
+  return { ok: true, manifest: input as NekoDriftPluginManifest, errors: [] };
 }
 
 function validateJavascriptPermissions(value: unknown, errors: PluginManifestValidationError[]): Set<string> {
@@ -319,11 +319,11 @@ function validateReactionSelectReference(schema: Record<string, unknown>, fieldN
   if (!isRecord(field) || field.type !== "select") return;
   const reactions = new Set<string>(allowedReactions);
   if (!Object.prototype.hasOwnProperty.call(field, "default") || typeof field.default !== "string" || !reactions.has(field.default)) {
-    addError(errors, `${path}.config`, "invalid_reaction_config_reference", "Reaction select config must have a valid OpenPets reaction default.");
+    addError(errors, `${path}.config`, "invalid_reaction_config_reference", "Reaction select config must have a valid NekoDrift reaction default.");
   }
   if (Array.isArray(field.options)) {
     for (const option of field.options) {
-      if (isRecord(option) && typeof option.value === "string" && !reactions.has(option.value)) addError(errors, `${path}.config`, "invalid_reaction_config_reference", "Reaction select options must be valid OpenPets reactions.");
+      if (isRecord(option) && typeof option.value === "string" && !reactions.has(option.value)) addError(errors, `${path}.config`, "invalid_reaction_config_reference", "Reaction select options must be valid NekoDrift reactions.");
     }
   }
 }

@@ -3,9 +3,9 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { randomUUID } from "node:crypto";
 
 import { parseOpenCodeConfig, readOpenCodeConfigFile, updateOpenCodeConfigText, type OpenCodeConfigPaths, type PlannedWrite } from "./opencode-config.js";
-import { buildOpenCodeInstructionPath, buildOpenCodeMcpEntry, buildOpenCodePluginPreview, validateOpenPetsPetArg, type OpenCodeCommandMode } from "./opencode-previews.js";
-import { classifyOpenCodeInstructionsStatus, classifyOpenCodeMcpStatus, classifyOpenCodePluginStatus, isManagedOpenPetsMcpEntry, isManagedOpenPetsPluginEntry, isOpenPetsLikePluginEntry } from "./opencode-status.js";
-import { createOpenPetsInstructionBlock } from "./opencode-project-setup.js";
+import { buildOpenCodeInstructionPath, buildOpenCodeMcpEntry, buildOpenCodePluginPreview, validateNekoDriftPetArg, type OpenCodeCommandMode } from "./opencode-previews.js";
+import { classifyOpenCodeInstructionsStatus, classifyOpenCodeMcpStatus, classifyOpenCodePluginStatus, isManagedNekoDriftMcpEntry, isManagedNekoDriftPluginEntry, isNekoDriftLikePluginEntry } from "./opencode-status.js";
+import { createNekoDriftInstructionBlock } from "./opencode-project-setup.js";
 
 export interface PrepareOpenCodeGlobalSetupOptions {
   readonly configDir: string;
@@ -48,7 +48,7 @@ export function getExplicitGlobalOpenCodeConfigPaths(configDir: string): OpenCod
 }
 
 export function prepareOpenCodeGlobalSetup(options: PrepareOpenCodeGlobalSetupOptions): PreparedOpenCodeGlobalSetup {
-  const petId = options.petId === undefined ? undefined : validateOpenPetsPetArg(options.petId);
+  const petId = options.petId === undefined ? undefined : validateNekoDriftPetArg(options.petId);
   const paths = getExplicitGlobalOpenCodeConfigPaths(options.configDir);
   const existingConfigs = readExistingGlobalConfigs(options.configDir, paths.candidates);
   const configs = existingConfigs.map((entry) => entry.config);
@@ -59,7 +59,7 @@ export function prepareOpenCodeGlobalSetup(options: PrepareOpenCodeGlobalSetupOp
   const instructionStatus = classifyOpenCodeInstructionsStatus(configs, "global", options.configDir, { [instructionPath]: instructionContent });
   const pluginStatus = classifyOpenCodePluginStatus(configs, petId, options.pluginVersion ?? options.cliVersion);
   for (const status of [mcpStatus, instructionStatus, pluginStatus]) {
-    if (status.status === "custom" || status.status === "conflict" || status.status === "error") throw new Error(`${status.message} Edit or remove the custom OpenPets OpenCode entry, then rerun setup.`);
+    if (status.status === "custom" || status.status === "conflict" || status.status === "error") throw new Error(`${status.message} Edit or remove the custom NekoDrift OpenCode entry, then rerun setup.`);
   }
   const selectedPath = selectWriteTarget(options.configDir, paths.candidates, existingConfigs, paths.defaultCreatePath);
   const selectedText = existsSync(selectedPath) ? readFileSync(selectedPath, "utf8") : "{}\n";
@@ -74,7 +74,7 @@ export function prepareOpenCodeGlobalSetup(options: PrepareOpenCodeGlobalSetupOp
   if (typeof nextText !== "string") throw new Error(nextText.message);
   const configWrite = planGlobalConfigWrite(options.configDir, selectedPath, nextText);
   const cleanupConfigWrites = planSetupCleanupWrites(options.configDir, selectedPath, existingConfigs);
-  const instructionWrite = planTextWrite(options.configDir, instructionPath, upsertOpenPetsBlock(instructionContent));
+  const instructionWrite = planTextWrite(options.configDir, instructionPath, upsertNekoDriftBlock(instructionContent));
   return { configDir: options.configDir, petId, configPath: selectedPath, instructionPath, configWrite, cleanupConfigWrites, instructionWrite };
 }
 
@@ -89,9 +89,9 @@ export function prepareOpenCodeGlobalRemove(configDir: string): { readonly confi
   const existingConfigs = readExistingGlobalConfigs(configDir, paths.candidates);
   const state = classifyGlobalState(configDir, existingConfigs);
   if (state.status === "custom" || state.status === "conflict" || state.status === "error") throw new Error(state.message);
-  const owners = existingConfigs.filter((entry) => hasManagedOpenPetsEntry(configDir, entry.config));
+  const owners = existingConfigs.filter((entry) => hasManagedNekoDriftEntry(configDir, entry.config));
   if (owners.length === 0) return { configWrites: [] };
-  if (owners.length > 1) throw new Error("OpenCode has OpenPets entries in multiple global config files. Remove duplicates manually.");
+  if (owners.length > 1) throw new Error("OpenCode has NekoDrift entries in multiple global config files. Remove duplicates manually.");
   const owner = owners[0];
   if (!owner) return { configWrites: [] };
   const text = readFileSync(owner.path, "utf8");
@@ -105,7 +105,7 @@ export function prepareOpenCodeGlobalRemove(configDir: string): { readonly confi
   const configWrite = planGlobalConfigWrite(configDir, owner.path, nextText);
   const instructionPath = buildOpenCodeInstructionPath("global", configDir);
   const instructionContent = existsSync(instructionPath) ? readSafeInstructionFile(instructionPath) : "";
-  const instructionWrite = hasManagedInstructionBlock(instructionContent) ? planTextWrite(configDir, instructionPath, removeOpenPetsBlock(instructionContent)) : undefined;
+  const instructionWrite = hasManagedInstructionBlock(instructionContent) ? planTextWrite(configDir, instructionPath, removeNekoDriftBlock(instructionContent)) : undefined;
   return { configWrites: [configWrite], instructionWrite };
 }
 
@@ -135,26 +135,26 @@ function readExistingGlobalConfigs(configDir: string, candidates: readonly strin
 
 function buildNextGlobalConfig(config: Record<string, unknown>, petId: string | undefined, options: PrepareOpenCodeGlobalSetupOptions): { readonly mcp: Record<string, unknown>; readonly instructions: readonly string[]; readonly plugin: readonly unknown[] } {
   const mcp = isRecord(config.mcp) ? { ...config.mcp } : {};
-  mcp.openpets = buildOpenCodeMcpEntry({ cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
+  mcp.nekodrift = buildOpenCodeMcpEntry({ cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
   const instructionPath = buildOpenCodeInstructionPath("global", options.configDir);
   const instructions = [...new Set([...(Array.isArray(config.instructions) ? config.instructions.filter((entry): entry is string => typeof entry === "string") : []), instructionPath])];
-  const plugin = [...(Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedOpenPetsPluginEntry(entry)) : []), buildOpenCodePluginPreview(petId, options.pluginVersion ?? options.cliVersion)];
+  const plugin = [...(Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedNekoDriftPluginEntry(entry)) : []), buildOpenCodePluginPreview(petId, options.pluginVersion ?? options.cliVersion)];
   return { mcp, instructions, plugin };
 }
 
 function removeManagedConfig(configDir: string, config: Record<string, unknown>): { readonly mcp?: Record<string, unknown>; readonly instructions?: readonly string[]; readonly plugin?: readonly unknown[] } {
   const mcp = isRecord(config.mcp) ? { ...config.mcp } : {};
-  if (isManagedOpenPetsMcpEntry(mcp.openpets)) delete mcp.openpets;
+  if (isManagedNekoDriftMcpEntry(mcp.nekodrift)) delete mcp.nekodrift;
   const instructionPath = buildOpenCodeInstructionPath("global", configDir);
   const instructions = Array.isArray(config.instructions) ? config.instructions.filter((entry) => typeof entry === "string" && entry !== instructionPath) : [];
-  const plugin = Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedOpenPetsPluginEntry(entry)) : [];
+  const plugin = Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedNekoDriftPluginEntry(entry)) : [];
   return { mcp: Object.keys(mcp).length > 0 ? mcp : undefined, instructions: instructions.length > 0 ? instructions : undefined, plugin: plugin.length > 0 ? plugin : undefined };
 }
 
 function selectWriteTarget(configDir: string, candidates: readonly string[], existing: readonly { readonly path: string; readonly config: Record<string, unknown> }[], fallback: string): string {
-  const owners = existing.filter((entry) => hasManagedOpenPetsEntry(configDir, entry.config)).map((entry) => entry.path);
+  const owners = existing.filter((entry) => hasManagedNekoDriftEntry(configDir, entry.config)).map((entry) => entry.path);
   const uniqueOwners = [...new Set(owners)];
-  if (uniqueOwners.length > 1) throw new Error("OpenCode has OpenPets entries in multiple global config files. Remove duplicates manually.");
+  if (uniqueOwners.length > 1) throw new Error("OpenCode has NekoDrift entries in multiple global config files. Remove duplicates manually.");
   const arrayOwner = selectArrayFieldOwner(configDir, candidates, existing);
   if (arrayOwner) return arrayOwner;
   if (uniqueOwners.length === 1) return uniqueOwners[0] ?? fallback;
@@ -165,7 +165,7 @@ function selectWriteTarget(configDir: string, candidates: readonly string[], exi
 
 function planSetupCleanupWrites(configDir: string, selectedPath: string, existing: readonly { readonly path: string; readonly config: Record<string, unknown> }[]): readonly PlannedWrite[] {
   return existing.flatMap((entry) => {
-    if (entry.path === selectedPath || !hasManagedOpenPetsEntry(configDir, entry.config)) return [];
+    if (entry.path === selectedPath || !hasManagedNekoDriftEntry(configDir, entry.config)) return [];
     const source = readFileSync(entry.path, "utf8");
     const next = removeManagedConfig(configDir, entry.config);
     const nextText = updateOpenCodeConfigText(source, [
@@ -179,11 +179,11 @@ function planSetupCleanupWrites(configDir: string, selectedPath: string, existin
 }
 
 function selectArrayFieldOwner(configDir: string, candidates: readonly string[], existing: readonly { readonly path: string; readonly config: Record<string, unknown> }[]): string | undefined {
-  const pluginOwner = findEffectiveArrayOwner(candidates, existing, "plugin", (entry) => !isManagedOpenPetsPluginEntry(entry), isManagedOpenPetsPluginEntry);
+  const pluginOwner = findEffectiveArrayOwner(candidates, existing, "plugin", (entry) => !isManagedNekoDriftPluginEntry(entry), isManagedNekoDriftPluginEntry);
   const instructionPath = buildOpenCodeInstructionPath("global", configDir);
   const instructionOwner = findEffectiveArrayOwner(candidates, existing, "instructions", (entry) => typeof entry === "string" && entry !== instructionPath, (entry) => entry === instructionPath);
   const owners = [...new Set([pluginOwner, instructionOwner].filter((value): value is string => typeof value === "string"))];
-  if (owners.length > 1) throw new Error("OpenCode global plugin and instruction arrays live in different config files. Consolidate them before installing OpenPets.");
+  if (owners.length > 1) throw new Error("OpenCode global plugin and instruction arrays live in different config files. Consolidate them before installing NekoDrift.");
   return owners[0];
 }
 
@@ -199,32 +199,32 @@ function findEffectiveArrayOwner(candidates: readonly string[], existing: readon
     if (entry.values.some(isUserEntry)) return entry.path;
     const lowerUserOwner = entries.slice(index + 1).find((item) => item.values.some(isUserEntry))?.path;
     if (entry.values.some(isManagedEntry)) return lowerUserOwner ?? entry.path;
-    if (lowerUserOwner) throw new Error(`OpenCode global ${field} array in a higher-precedence config shadows user ${field} entries in a lower-precedence config. Consolidate them before installing OpenPets.`);
+    if (lowerUserOwner) throw new Error(`OpenCode global ${field} array in a higher-precedence config shadows user ${field} entries in a lower-precedence config. Consolidate them before installing NekoDrift.`);
     return entry.path;
   }
   return undefined;
 }
 
-function hasManagedOpenPetsEntry(configDir: string, config: Record<string, unknown>): boolean {
-  if (isRecord(config.mcp) && isManagedOpenPetsMcpEntry(config.mcp.openpets)) return true;
+function hasManagedNekoDriftEntry(configDir: string, config: Record<string, unknown>): boolean {
+  if (isRecord(config.mcp) && isManagedNekoDriftMcpEntry(config.mcp.nekodrift)) return true;
   if (Array.isArray(config.instructions) && config.instructions.some((entry) => entry === buildOpenCodeInstructionPath("global", configDir))) return true;
-  if (Array.isArray(config.plugin) && config.plugin.some(isManagedOpenPetsPluginEntry)) return true;
+  if (Array.isArray(config.plugin) && config.plugin.some(isManagedNekoDriftPluginEntry)) return true;
   return false;
 }
 
-function hasCustomOpenPetsEntry(configDir: string, config: Record<string, unknown>): boolean {
-  if (isRecord(config.mcp) && config.mcp.openpets !== undefined && !isManagedOpenPetsMcpEntry(config.mcp.openpets)) return true;
-  if (Array.isArray(config.instructions) && config.instructions.some((entry) => typeof entry === "string" && /openpets\.md$/i.test(entry) && entry !== buildOpenCodeInstructionPath("global", configDir))) return true;
-  if (Array.isArray(config.plugin) && config.plugin.some((entry) => isOpenPetsLikePluginEntry(entry) && !isManagedOpenPetsPluginEntry(entry))) return true;
+function hasCustomNekoDriftEntry(configDir: string, config: Record<string, unknown>): boolean {
+  if (isRecord(config.mcp) && config.mcp.nekodrift !== undefined && !isManagedNekoDriftMcpEntry(config.mcp.nekodrift)) return true;
+  if (Array.isArray(config.instructions) && config.instructions.some((entry) => typeof entry === "string" && /nekodrift\.md$/i.test(entry) && entry !== buildOpenCodeInstructionPath("global", configDir))) return true;
+  if (Array.isArray(config.plugin) && config.plugin.some((entry) => isNekoDriftLikePluginEntry(entry) && !isManagedNekoDriftPluginEntry(entry))) return true;
   return false;
 }
 
 function classifyGlobalState(configDir: string, existing: readonly { readonly path: string; readonly config: Record<string, unknown> }[]): OpenCodeGlobalState {
-  if (existing.some((entry) => hasCustomOpenPetsEntry(configDir, entry.config))) return { status: "custom", message: "OpenCode has custom OpenPets-like global entries. Edit or remove them manually." };
-  const owners = existing.filter((entry) => hasManagedOpenPetsEntry(configDir, entry.config));
-  if (owners.length > 1) return { status: "conflict", message: "OpenCode has OpenPets entries in multiple global config files. Remove duplicates manually." };
-  if (owners.length === 1) return { status: "installed", message: "OpenCode global OpenPets setup is installed." };
-  return { status: "not_installed", message: "OpenCode global OpenPets setup is not installed." };
+  if (existing.some((entry) => hasCustomNekoDriftEntry(configDir, entry.config))) return { status: "custom", message: "OpenCode has custom NekoDrift-like global entries. Edit or remove them manually." };
+  const owners = existing.filter((entry) => hasManagedNekoDriftEntry(configDir, entry.config));
+  if (owners.length > 1) return { status: "conflict", message: "OpenCode has NekoDrift entries in multiple global config files. Remove duplicates manually." };
+  if (owners.length === 1) return { status: "installed", message: "OpenCode global NekoDrift setup is installed." };
+  return { status: "not_installed", message: "OpenCode global NekoDrift setup is not installed." };
 }
 
 function planTextWrite(root: string, targetPath: string, content: string): GlobalPlannedTextWrite {
@@ -235,7 +235,7 @@ function planTextWrite(root: string, targetPath: string, content: string): Globa
     if (stat.size > maxInstructionBytes) throw new Error("OpenCode instruction file is too large.");
   }
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
-  return { targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.openpets-backup-${stamp}.md` : undefined, tempPath: join(dirname(targetPath), `.openpets-${stamp}.tmp`), content };
+  return { targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.nekodrift-backup-${stamp}.md` : undefined, tempPath: join(dirname(targetPath), `.nekodrift-${stamp}.tmp`), content };
 }
 
 function executeTextWrite(plan: GlobalPlannedTextWrite): void {
@@ -267,7 +267,7 @@ function planGlobalConfigWrite(rootPath: string, targetPath: string, content: st
   const parsed = parseOpenCodeConfig(content);
   if (!parsed.ok) throw new Error(parsed.message);
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
-  return { rootPath, targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.openpets-backup-${stamp}.json` : undefined, tempPath: join(dirname(targetPath), `.openpets-${stamp}.tmp`), content };
+  return { rootPath, targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.nekodrift-backup-${stamp}.json` : undefined, tempPath: join(dirname(targetPath), `.nekodrift-${stamp}.tmp`), content };
 }
 
 function executeGlobalConfigWrite(plan: PlannedWrite): void {
@@ -299,13 +299,13 @@ function readSafeInstructionFile(path: string): string {
   return readFileSync(path, "utf8");
 }
 
-function upsertOpenPetsBlock(source: string): string {
+function upsertNekoDriftBlock(source: string): string {
   const withoutBlock = source.replace(new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
-  const block = createOpenPetsInstructionBlock();
+  const block = createNekoDriftInstructionBlock();
   return withoutBlock ? `${withoutBlock}\n\n${block}` : block;
 }
 
-function removeOpenPetsBlock(source: string): string {
+function removeNekoDriftBlock(source: string): string {
   return source.replace(new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, (match) => (match.includes("\n") ? "\n" : ""));
 }
 

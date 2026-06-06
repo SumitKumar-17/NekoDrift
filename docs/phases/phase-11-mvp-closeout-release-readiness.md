@@ -2,7 +2,7 @@
 
 ## Goal
 
-Turn the current packaged OpenPets MVP into a clear, repeatable release-readiness checkpoint.
+Turn the current packaged NekoDrift MVP into a clear, repeatable release-readiness checkpoint.
 
 This phase should consolidate the validation work from Phase 10A-10E into one broader MVP closeout pass: document exactly what is ready, what remains unverified, how to manually validate the package, and fix any small readiness gaps found while doing that review.
 
@@ -84,10 +84,10 @@ If small readiness bugs are found during this pass, they are fixed in this phase
 
 ## Security/privacy notes
 
-- Automated tests and package checks must keep using temp fixtures and must not modify real Claude settings or real user OpenPets state.
+- Automated tests and package checks must keep using temp fixtures and must not modify real Claude settings or real user NekoDrift state.
 - MVP docs should warn users before they use Agent Setup actions that mutate Claude settings.
 - Speech/privacy rules from earlier phases remain unchanged: short safe pet messages only, no code/logs/secrets/URLs/path-like content.
-- Cleanup guidance should distinguish OpenPets app data from Claude configuration so users do not assume deleting the app removes agent integrations.
+- Cleanup guidance should distinguish NekoDrift app data from Claude configuration so users do not assume deleting the app removes agent integrations.
 
 ## Test/check plan
 
@@ -113,10 +113,10 @@ The revised checklist must explicitly cover:
 4. Onboarding presence/completion or documented reset path.
 5. Pet Manager installed/catalog state rendering.
 6. Settings preference toggle and restart persistence.
-7. Local IPC smoke with `pnpm --filter @open-pets/client smoke:status` while the packaged app is running.
-8. Agent Setup preview showing bundled `node .../app.asar.unpacked/...` commands, not unpublished `npx -y @open-pets/*` commands.
+7. Local IPC smoke with `pnpm --filter @neko-drift/client smoke:status` while the packaged app is running.
+8. Agent Setup preview showing bundled `node .../app.asar.unpacked/...` commands, not unpublished `npx -y @neko-drift/*` commands.
 9. Claude configure/install as an optional mutating step only, with backups and remove/uninstall cleanup called out.
-10. Quitting OpenPets from the tray.
+10. Quitting NekoDrift from the tray.
 
 ## MVP scope statement
 
@@ -129,7 +129,7 @@ The readiness guide must clearly document these prerequisites and limitations:
 - The package is unsigned and not notarized.
 - Windows/Linux package behavior, installers, auto-update, and public distribution are unverified/deferred.
 - Claude settings may contain absolute paths into the packaged app and should be replaced/removed after moving or deleting the app.
-- OpenPets app data cleanup and Claude config cleanup are separate.
+- NekoDrift app data cleanup and Claude config cleanup are separate.
 
 ## Oracle plan review
 
@@ -150,7 +150,7 @@ Nice-to-have feedback:
 
 - Add a concise readiness status table.
 - Include artifact identity details such as output path, app version, date/commit/manual tester fields.
-- Add cleanup/data-loss notes distinguishing OpenPets app data from Claude config.
+- Add cleanup/data-loss notes distinguishing NekoDrift app data from Claude config.
 
 Verdict: not implementation-ready until command-order, checklist, and scope-boundary issues are fixed.
 
@@ -169,7 +169,7 @@ Accepted for implementation:
 
 - Add readiness status table.
 - Add artifact identity fields where useful.
-- Add cleanup/data-loss notes distinguishing OpenPets app data from Claude config.
+- Add cleanup/data-loss notes distinguishing NekoDrift app data from Claude config.
 
 ## Oracle implementation review
 

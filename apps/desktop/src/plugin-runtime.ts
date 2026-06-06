@@ -1,11 +1,11 @@
 import { promises as fs } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 
-import { validateReaction, validateSayMessage, type OpenPetsReaction } from "./local-ipc-protocol.js";
+import { validateReaction, validateSayMessage, type NekoDriftReaction } from "./local-ipc-protocol.js";
 import { resolvePluginNumericConfig, resolvePluginStringConfig } from "./plugin-config.js";
 import type { PluginJsHost, PluginJsHostInstance } from "./plugin-js-host.js";
 import { defaultMaxPluginManifestBytes, readSafePluginManifest } from "./plugin-manifest-reader.js";
-import { type OpenPetsJavascriptPluginManifest, type OpenPetsPluginManifest, type PluginAction } from "./plugin-manifest.js";
+import { type NekoDriftJavascriptPluginManifest, type NekoDriftPluginManifest, type PluginAction } from "./plugin-manifest.js";
 import type { PluginPetApi } from "./plugin-pet-api.js";
 import { PluginSdkBridge, type PluginLogLevel, type PluginRuntimePublicState, type PluginStorageStore } from "./plugin-sdk-bridge.js";
 import type { PluginStateRecord, PluginStateStore } from "./plugin-state.js";
@@ -33,7 +33,7 @@ export type PluginRuntimeOptions = {
 };
 
 type CompiledTimer = { readonly intervalMs: number; readonly actions: readonly CompiledAction[] };
-type CompiledAction = { readonly type: "pet.speak"; readonly message: string } | { readonly type: "pet.react"; readonly reaction: OpenPetsReaction };
+type CompiledAction = { readonly type: "pet.speak"; readonly message: string } | { readonly type: "pet.react"; readonly reaction: NekoDriftReaction };
 type PluginRuntimeSlot = { generation: number; active: boolean; timers: PluginTimerHandle[]; jsHost?: PluginJsHostInstance };
 
 export class PluginRuntime {
@@ -117,7 +117,7 @@ export class PluginRuntime {
     return current?.enabled === true && current.catalogDisabled !== true && current.version === record.version && current.manifestPath === record.manifestPath && current.installPath === record.installPath;
   }
 
-  #compileDeclarativePlugin(record: PluginStateRecord, manifest: OpenPetsPluginManifest): CompiledTimer[] {
+  #compileDeclarativePlugin(record: PluginStateRecord, manifest: NekoDriftPluginManifest): CompiledTimer[] {
     if (manifest.runtime !== "declarative") throw new Error("Plugin runtime is not declarative.");
     const approved = new Set(record.approvedPermissions);
     for (const permission of manifest.permissions) if (!approved.has(permission)) throw new Error(`Plugin permission is not approved: ${permission}`);
@@ -129,7 +129,7 @@ export class PluginRuntime {
     });
   }
 
-  async #startJavascriptPlugin(record: PluginStateRecord, manifest: OpenPetsJavascriptPluginManifest, slot: PluginRuntimeSlot, generation: number): Promise<void> {
+  async #startJavascriptPlugin(record: PluginStateRecord, manifest: NekoDriftJavascriptPluginManifest, slot: PluginRuntimeSlot, generation: number): Promise<void> {
     if (!this.#jsHost) throw new Error("JavaScript plugin host is unavailable.");
     const approved = new Set(record.approvedPermissions);
     for (const permission of manifest.permissions) if (!approved.has(permission)) throw new Error(`Plugin permission is not approved: ${permission}`);
@@ -197,7 +197,7 @@ export class PluginRuntime {
   }
 }
 
-function compileAction(record: PluginStateRecord, manifest: OpenPetsPluginManifest, action: PluginAction, approved: Set<string>): CompiledAction {
+function compileAction(record: PluginStateRecord, manifest: NekoDriftPluginManifest, action: PluginAction, approved: Set<string>): CompiledAction {
   if (action.type === "pet.speak") {
     if (!approved.has("pet:speak")) throw new Error("Plugin speak permission is not approved.");
     const message = typeof action.message === "string" ? action.message : resolvePluginStringConfig(manifest, record.config, action.message.config, "text");
@@ -208,7 +208,7 @@ function compileAction(record: PluginStateRecord, manifest: OpenPetsPluginManife
   return { type: "pet.react", reaction: validateReaction(reaction) };
 }
 
-function resolveTimerInterval(record: PluginStateRecord, manifest: OpenPetsPluginManifest, value: number | { config: string }, triggerIndex: number): number {
+function resolveTimerInterval(record: PluginStateRecord, manifest: NekoDriftPluginManifest, value: number | { config: string }, triggerIndex: number): number {
   const interval = typeof value === "number" ? value : resolvePluginNumericConfig(manifest, record.config, value.config, { min: 5 });
   if (!Number.isInteger(interval) || interval < 5) throw new Error(`Plugin timer interval for trigger ${triggerIndex} must be an integer of at least 5 minutes.`);
   return interval;

@@ -11,7 +11,7 @@ This spec turns `docs/cursor-integration.md` into an implementation-ready Phase 
 
 ## Goals
 
-1. Let users configure Cursor to use OpenPets MCP tools.
+1. Let users configure Cursor to use NekoDrift MCP tools.
 2. Preserve all unrelated Cursor config safely.
 3. Provide clear status, preview, install, replace, remove, and doctor flows.
 4. Avoid leaking unrelated Cursor secrets in previews, logs, or errors.
@@ -81,7 +81,7 @@ Required desktop UX:
 - replace configuration for conflicts.
 - remove integration.
 - refresh status.
-- copy OpenPets-only config preview.
+- copy NekoDrift-only config preview.
 - warning that Cursor may need restart/reload.
 - warning that published `npx` mode may need npm/network/cache availability.
 
@@ -92,8 +92,8 @@ Cursor status text must be **configuration status**, not “Cursor app installed
 If CLI work is included in Phase 1, support:
 
 ```bash
-openpets configure --agent cursor --pet PET_ID
-openpets configure --agent cursor --cwd /path/to/project --pet PET_ID
+nekodrift configure --agent cursor --pet PET_ID
+nekodrift configure --agent cursor --cwd /path/to/project --pet PET_ID
 ```
 
 CLI scope must match existing `configure` patterns:
@@ -108,9 +108,9 @@ Global CLI setup must require an explicit future flag such as `--global`. If glo
 Update:
 
 - root workspace build/check coverage through existing `packages/*` workspace matching;
-- `packages/cli/package.json` dependency on `@open-pets/cursor` if CLI consumes it;
-- `apps/desktop/package.json` dependency on `@open-pets/cursor` if desktop consumes it;
-- `scripts/release-npm.mjs` publish order if `@open-pets/cursor` is public;
+- `packages/cli/package.json` dependency on `@neko-drift/cursor` if CLI consumes it;
+- `apps/desktop/package.json` dependency on `@neko-drift/cursor` if desktop consumes it;
+- `scripts/release-npm.mjs` publish order if `@neko-drift/cursor` is public;
 - `apps/desktop/src/check-packaging-contract.ts` if bundled desktop runtime needs cursor helpers packaged.
 
 ## Validation spike before writes ship
@@ -122,12 +122,12 @@ Required validation:
 1. Confirm Cursor accepts strict JSON in `~/.cursor/mcp.json` and `.cursor/mcp.json`. **Validated from docs:** Cursor documents MCP config as JSON.
 2. Confirm whether Cursor accepts JSONC. **Validated from docs:** no JSONC evidence for MCP config; implementation must assume strict JSON.
 3. Confirm whether Cursor requires restart/reload after MCP config changes. **Validated from docs:** manual install guidance says save file and restart Cursor.
-4. Confirm global/project precedence when both define `mcpServers.openpets`. **Validated from docs:** global and project configs are merged; project scope takes priority.
-5. Confirm duplicate `openpets` server behavior across scopes. **Partially validated:** project priority is documented; UI duplicate behavior has community reports and needs real smoke confirmation.
+4. Confirm global/project precedence when both define `mcpServers.nekodrift`. **Validated from docs:** global and project configs are merged; project scope takes priority.
+5. Confirm duplicate `nekodrift` server behavior across scopes. **Partially validated:** project priority is documented; UI duplicate behavior has community reports and needs real smoke confirmation.
 6. Confirm documented fields for stdio config: `type`, `command`, `args`, and optional supported fields such as `env` or `envFile` if needed. **Validated from docs:** use `type`, `command`, `args`, optional `env`, optional `envFile`; do not use `cwd` in MCP file entries unless later verified.
 7. Confirm unknown fields are not needed. **Validated from docs:** unknown fields are not documented; do not write them in Phase 1.
-8. Confirm whether command mode should prefer direct `@open-pets/mcp@VERSION` or `@open-pets/cli@VERSION mcp`. **Decision:** prefer direct pinned `@open-pets/mcp@VERSION` for Phase 1.
-9. Smoke test a real Cursor MCP connection on at least one machine before marking active in docs. **Passed 2026-05-14:** global `~/.cursor/mcp.json` using direct pinned `@open-pets/mcp@2.0.6` showed connected in Cursor with 3 OpenPets tools enabled.
+8. Confirm whether command mode should prefer direct `@neko-drift/mcp@VERSION` or `@neko-drift/cli@VERSION mcp`. **Decision:** prefer direct pinned `@neko-drift/mcp@VERSION` for Phase 1.
+9. Smoke test a real Cursor MCP connection on at least one machine before marking active in docs. **Passed 2026-05-14:** global `~/.cursor/mcp.json` using direct pinned `@neko-drift/mcp@2.0.6` showed connected in Cursor with 3 NekoDrift tools enabled.
 
 Do not code final entry builders beyond temporary validation helpers until the command strategy is chosen and recorded in the validation log.
 
@@ -143,7 +143,7 @@ Two acceptable strategies:
 {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "@open-pets/mcp@2.0.6", "--pet", "PET_ID"]
+  "args": ["-y", "@neko-drift/mcp@2.0.6", "--pet", "PET_ID"]
 }
 ```
 
@@ -156,7 +156,7 @@ Pros:
 Cons:
 
 - durable config points at `npx` and may need npm/network/cache;
-- published version must be updated when OpenPets upgrades.
+- published version must be updated when NekoDrift upgrades.
 
 ### Option B: CLI wrapper
 
@@ -164,7 +164,7 @@ Cons:
 {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "@open-pets/cli@2.0.6", "mcp", "--pet", "PET_ID"]
+  "args": ["-y", "@neko-drift/cli@2.0.6", "mcp", "--pet", "PET_ID"]
 }
 ```
 
@@ -178,7 +178,7 @@ Cons:
 - extra package layer;
 - ensure CLI MCP wrapper is stable and quiet for stdio use.
 
-Phase 1 command decision: use direct pinned `@open-pets/mcp@VERSION` in durable configs. Do not ship unpinned `@open-pets/mcp` in durable config unless release policy explicitly accepts floating latest.
+Phase 1 command decision: use direct pinned `@neko-drift/mcp@VERSION` in durable configs. Do not ship unpinned `@neko-drift/mcp` in durable config unless release policy explicitly accepts floating latest.
 
 ## Config model
 
@@ -192,16 +192,16 @@ Expected top-level shape:
 ```json
 {
   "mcpServers": {
-    "openpets": {
+    "nekodrift": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@open-pets/mcp@VERSION", "--pet", "PET_ID"]
+      "args": ["-y", "@neko-drift/mcp@VERSION", "--pet", "PET_ID"]
     }
   }
 }
 ```
 
-OpenPets must write only documented fields in Phase 1. No `openpets` metadata object, comments, or custom marker fields.
+NekoDrift must write only documented fields in Phase 1. No `nekodrift` metadata object, comments, or custom marker fields.
 
 ## Status classification
 
@@ -209,10 +209,10 @@ Define statuses with enough detail for desktop, CLI, and tests.
 
 Suggested status union:
 
-- `missing`: config file or `mcpServers.openpets` does not exist.
-- `installed`: managed-looking OpenPets entry matches expected command mode and selected pet.
-- `needs-update`: OpenPets entry exists but package version, command, args, or pet id differs from expected managed output.
-- `conflict`: `mcpServers.openpets` exists but does not look like an OpenPets-managed entry.
+- `missing`: config file or `mcpServers.nekodrift` does not exist.
+- `installed`: managed-looking NekoDrift entry matches expected command mode and selected pet.
+- `needs-update`: NekoDrift entry exists but package version, command, args, or pet id differs from expected managed output.
+- `conflict`: `mcpServers.nekodrift` exists but does not look like an NekoDrift-managed entry.
 - `invalid`: config exists but is too large, not regular, symlinked, unsafe, or parse-invalid.
 - `error`: unexpected I/O or classification failure.
 
@@ -220,10 +220,10 @@ Suggested status union:
 
 | Status | canInstall | canReplace | canRemove | Write behavior |
 | --- | --- | --- | --- | --- |
-| `missing` | yes | no | no | Install may create config and add `mcpServers.openpets`. |
-| `installed` | no | no | yes | Remove may delete only `mcpServers.openpets`; install is no-op. |
-| `needs-update` | yes | yes | yes | Install/update may replace the recognized OpenPets entry with expected output; remove may delete only the recognized OpenPets entry. |
-| `conflict` | no | yes | no | Replace may overwrite `mcpServers.openpets` only after explicit user confirmation; remove is disallowed because ownership is unknown. |
+| `missing` | yes | no | no | Install may create config and add `mcpServers.nekodrift`. |
+| `installed` | no | no | yes | Remove may delete only `mcpServers.nekodrift`; install is no-op. |
+| `needs-update` | yes | yes | yes | Install/update may replace the recognized NekoDrift entry with expected output; remove may delete only the recognized NekoDrift entry. |
+| `conflict` | no | yes | no | Replace may overwrite `mcpServers.nekodrift` only after explicit user confirmation; remove is disallowed because ownership is unknown. |
 | `invalid` | no | no | no | No writes. User must fix config/path manually. |
 | `error` | no | no | no | No writes. User must retry or inspect diagnostics. |
 
@@ -242,20 +242,20 @@ Classification should return:
 - whether install is available;
 - whether replace is available;
 - whether remove is available;
-- OpenPets-only preview entry;
+- NekoDrift-only preview entry;
 - redacted details only.
 
 ## Managed entry detection
 
 Since Phase 1 writes no custom marker, managed-looking detection is structural:
 
-- server key is exactly `openpets`;
+- server key is exactly `nekodrift`;
 - `type` is `stdio`;
-- command/args match one of the accepted OpenPets command strategies;
-- args include a pinned OpenPets package or a bundled/local OpenPets MCP entry;
+- command/args match one of the accepted NekoDrift command strategies;
+- args include a pinned NekoDrift package or a bundled/local NekoDrift MCP entry;
 - optional `--pet PET_ID` is recognized and validated.
 
-Unknown `openpets` entries should be `conflict`, not overwritten without explicit replace.
+Unknown `nekodrift` entries should be `conflict`, not overwritten without explicit replace.
 
 ## Schema validation
 
@@ -263,14 +263,14 @@ Before classification or writing:
 
 - top-level config must be an object;
 - `mcpServers`, if present, must be an object;
-- `mcpServers.openpets`, if present, must be an object;
-- for an OpenPets-managed entry, `type` must be `stdio`;
-- for an OpenPets-managed entry, `command` must be a string;
-- for an OpenPets-managed entry, `args` must be an array of strings;
-- malformed non-OpenPets `mcpServers.openpets` should classify as `conflict` if the surrounding config is otherwise safe;
+- `mcpServers.nekodrift`, if present, must be an object;
+- for an NekoDrift-managed entry, `type` must be `stdio`;
+- for an NekoDrift-managed entry, `command` must be a string;
+- for an NekoDrift-managed entry, `args` must be an array of strings;
+- malformed non-NekoDrift `mcpServers.nekodrift` should classify as `conflict` if the surrounding config is otherwise safe;
 - malformed top-level config or malformed `mcpServers` should classify as `invalid`;
 - no writes are allowed for `invalid` or `error`;
-- no writes are allowed for `conflict` except explicit replace of only `mcpServers.openpets` after user confirmation.
+- no writes are allowed for `conflict` except explicit replace of only `mcpServers.nekodrift` after user confirmation.
 
 ## Read safety
 
@@ -283,7 +283,7 @@ Implement config reads defensively:
 - Enforce max file size before reading. Suggested maximum: 256 KiB.
 - Parse strict JSON unless JSONC support is validated.
 - Treat empty/missing config as `{ "mcpServers": {} }` for preview only.
-- Existing empty config files are `missing` and installable if the file path is otherwise safe; install should replace the empty file with a valid object containing `mcpServers.openpets`.
+- Existing empty config files are `missing` and installable if the file path is otherwise safe; install should replace the empty file with a valid object containing `mcpServers.nekodrift`.
 - Do not write after parse or safety errors.
 
 ## Write safety
@@ -298,12 +298,12 @@ Implement config writes defensively:
 - Use private/safe permissions where supported.
 - If creating `.cursor`, create it only after validating nearest existing parent.
 - Do not follow symlinks.
-- Remove only `mcpServers.openpets` on uninstall.
+- Remove only `mcpServers.nekodrift` on uninstall.
 - If removing leaves `mcpServers` empty, keep or remove `mcpServers` consistently and document behavior.
 
 ## Preview and diagnostics safety
 
-Default preview must show only the OpenPets entry that would be written.
+Default preview must show only the NekoDrift entry that would be written.
 
 Do not display the full merged Cursor config unless all unrelated sensitive fields are redacted.
 
@@ -344,7 +344,7 @@ Sections:
 2. Pet routing selector.
 3. Command mode and warnings.
 4. Install/replace/remove actions.
-5. OpenPets-only MCP preview.
+5. NekoDrift-only MCP preview.
 6. Restart/reload note.
 
 ### Warnings
@@ -353,22 +353,22 @@ Include:
 
 - “Cursor may need to be restarted or reloaded after MCP config changes.”
 - “Published mode uses `npx` and may require npm/network/cache access.”
-- “OpenPets only edits its own `mcpServers.openpets` entry.”
+- “NekoDrift only edits its own `mcpServers.nekodrift` entry.”
 
 ## CLI UX details
 
 If included:
 
 ```bash
-openpets configure --agent cursor --pet PET_ID
-openpets configure --agent cursor --cwd /path/to/project --pet PET_ID
+nekodrift configure --agent cursor --pet PET_ID
+nekodrift configure --agent cursor --cwd /path/to/project --pet PET_ID
 ```
 
 CLI should print:
 
 - target config path;
 - status before write;
-- OpenPets-only preview;
+- NekoDrift-only preview;
 - backup path if written;
 - restart/reload note;
 - command to remove or repair.
@@ -386,24 +386,24 @@ If CLI support is included in Phase 1, it must not make no-`--cwd` mean global o
 - missing config classification;
 - empty config classification;
 - existing unrelated MCP servers preserved;
-- installed status for expected OpenPets entry;
+- installed status for expected NekoDrift entry;
 - needs-update status for old package version;
 - needs-update status for different pet id;
-- conflict status for non-OpenPets `mcpServers.openpets`;
+- conflict status for non-NekoDrift `mcpServers.nekodrift`;
 - invalid status for parse error;
 - invalid status for oversized file;
 - symlink rejection;
 - non-regular file rejection if feasible in temp tests;
 - backup creation;
 - atomic write result;
-- uninstall removes only OpenPets entry;
+- uninstall removes only NekoDrift entry;
 - preview redacts or excludes unrelated secrets.
 - non-object top-level config;
 - non-object `mcpServers`;
-- malformed `mcpServers.openpets`;
+- malformed `mcpServers.nekodrift`;
 - no write on `invalid`;
 - no write on `conflict` unless explicit replace;
-- explicit replace overwrites only `mcpServers.openpets` and preserves unrelated servers/top-level fields;
+- explicit replace overwrites only `mcpServers.nekodrift` and preserves unrelated servers/top-level fields;
 - recursive and case-insensitive redaction.
 
 ### Desktop contract tests
@@ -413,7 +413,7 @@ Update `apps/desktop/src/check-packaging-contract.ts` to assert:
 - Cursor card is active, not `Soon`.
 - Cursor detail pane exists.
 - Cursor actions are bound in preload.
-- `@open-pets/cursor` runtime is packaged if desktop imports it.
+- `@neko-drift/cursor` runtime is packaged if desktop imports it.
 - Cursor icon remains bundled.
 
 ### CLI tests
@@ -457,6 +457,6 @@ Record answers here before implementation ships:
 | Duplicate server behavior? | Project priority documented; UI duplicate reports exist | 2026-05-14 | Avoid writing both scopes for same user path; desktop uses global only in Phase 1. |
 | Documented stdio fields? | `type`, `command`, `args`, optional `env`, optional `envFile` | 2026-05-14 | `cwd` is not documented for MCP file entries. |
 | Unknown fields? | Avoid in Phase 1 | 2026-05-14 | No official tolerance guarantee. |
-| Command strategy chosen? | Direct `@open-pets/mcp@VERSION` | 2026-05-14 | Smaller process surface and aligns with existing MCP package. |
+| Command strategy chosen? | Direct `@neko-drift/mcp@VERSION` | 2026-05-14 | Smaller process surface and aligns with existing MCP package. |
 | WSL/remote/devcontainer behavior? | Caveat required | 2026-05-14 | No clear official MCP execution-location guarantee; document local command environment requirements. |
-| Real Cursor MCP smoke result? | Passed | 2026-05-14 | Global `~/.cursor/mcp.json` using direct pinned `@open-pets/mcp@2.0.6` showed connected in Cursor with 3 OpenPets tools enabled. |
+| Real Cursor MCP smoke result? | Passed | 2026-05-14 | Global `~/.cursor/mcp.json` using direct pinned `@neko-drift/mcp@2.0.6` showed connected in Cursor with 3 NekoDrift tools enabled. |

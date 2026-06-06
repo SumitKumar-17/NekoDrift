@@ -1,17 +1,17 @@
 {
-  "name": "@open-pets/claude",
+  "name": "@neko-drift/claude",
   "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/claude"
   },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "open-pets-claude": "dist/cli.js"
+    "neko-drift-claude": "dist/cli.js"
   },
   "files": [
     "dist"
@@ -36,7 +36,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@open-pets/agent-events": "workspace:*",
-    "@open-pets/client": "workspace:*"
+    "@neko-drift/agent-events": "workspace:*",
+    "@neko-drift/client": "workspace:*"
   }
 }

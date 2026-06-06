@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an improvement for OpenPets.
+description: Suggest an improvement for NekoDrift.
 title: "Feature: "
 labels: ["feature"]
 body:
@@ -13,7 +13,7 @@ body:
     attributes:
       label: What do you want?
       description: Describe the feature or change you would like to see.
-      placeholder: "I want OpenPets to..."
+      placeholder: "I want NekoDrift to..."
     validations:
       required: true
 

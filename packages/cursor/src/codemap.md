@@ -58,13 +58,13 @@ readCursorMcpConfig(path)
 classifyCursorMcpStatus(result, path, expected)
   → if !result.ok: map reason to status (invalid/error)
   → if !exists: return missing
-  → extract mcpServers.openpets
+  → extract mcpServers.nekodrift
   → if undefined: return missing
   → if not isRecord: return conflict (malformed)
   → build expected entry
   → if isSameMcpEntry: return installed
-  → if isManagedOpenPetsMcpEntry: return needs-update
-  → return conflict (non-OpenPets entry)
+  → if isManagedNekoDriftMcpEntry: return needs-update
+  → return conflict (non-NekoDrift entry)
 ```
 
 ### Write Plan Flow (cursor-status.ts)
@@ -121,7 +121,7 @@ redactStringValue(str)
 
 ### Rules Read Flow (cursor-rules.ts)
 ```
-readCursorOpenPetsRules(projectDir)
+readCursorNekoDriftRules(projectDir)
   → getCursorProjectRulesPath(projectDir)
   → assertSafeRulesPath(projectDir, rulesPath)
   → assertSafeExistingRulesFile(rulesPath, allowMissing=true)

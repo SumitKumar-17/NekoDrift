@@ -2,13 +2,13 @@ import type { CursorMcpEntry, CursorMcpPreviewOptions } from "./cursor-mcp.js";
 import { buildCursorMcpEntry } from "./cursor-mcp.js";
 
 export interface RedactedPreview {
-  readonly openpets?: CursorMcpEntry;
+  readonly nekodrift?: CursorMcpEntry;
   readonly redactedFields?: readonly string[];
 }
 
 export interface FullRedactedConfig {
   readonly mcpServers?: {
-    readonly openpets?: CursorMcpEntry | Record<string, unknown>;
+    readonly nekodrift?: CursorMcpEntry | Record<string, unknown>;
     readonly [key: string]: unknown;
   };
   readonly [key: string]: unknown;
@@ -33,8 +33,8 @@ const sensitivePatterns = [
   /auth=/i,
 ];
 
-export function buildOpenPetsOnlyPreview(options: CursorMcpPreviewOptions): RedactedPreview {
-  return { openpets: buildCursorMcpEntry(options) };
+export function buildNekoDriftOnlyPreview(options: CursorMcpPreviewOptions): RedactedPreview {
+  return { nekodrift: buildCursorMcpEntry(options) };
 }
 
 export function redactCursorConfig(config: Record<string, unknown>): FullRedactedConfig {

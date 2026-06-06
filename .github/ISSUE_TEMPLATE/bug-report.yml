@@ -8,14 +8,14 @@ body:
       value: |
         Thanks for reporting a bug. Keep it short — we only need enough to reproduce it.
 
-        If the desktop app starts, please consider attaching your OpenPets log. It is not required, but it is highly recommended because it often explains startup, tray, pet display, and integration issues.
+        If the desktop app starts, please consider attaching your NekoDrift log. It is not required, but it is highly recommended because it often explains startup, tray, pet display, and integration issues.
 
-        To find it: open OpenPets from the tray/menu bar, choose **Open Logs Folder**, then attach `openpets.log` to this issue. If OpenPets cannot start, check these folders manually:
-        - macOS: `~/Library/Application Support/OpenPets/logs/`
-        - Windows: `%APPDATA%\OpenPets\logs\`
-        - Linux: `~/.config/OpenPets/logs/`
+        To find it: open NekoDrift from the tray/menu bar, choose **Open Logs Folder**, then attach `nekodrift.log` to this issue. If NekoDrift cannot start, check these folders manually:
+        - macOS: `~/Library/Application Support/NekoDrift/logs/`
+        - Windows: `%APPDATA%\NekoDrift\logs\`
+        - Linux: `~/.config/NekoDrift/logs/`
 
-        If the problem happened before the latest restart, `openpets.previous.log` may also be useful.
+        If the problem happened before the latest restart, `nekodrift.previous.log` may also be useful.
 
   - type: textarea
     id: what-happened
@@ -30,7 +30,7 @@ body:
     id: logs
     attributes:
       label: Logs (optional, highly recommended)
-      description: Attach openpets.log if you can. If the app cannot start or you cannot find it, leave this blank.
-      placeholder: "Drag openpets.log here, or paste the most relevant lines."
+      description: Attach nekodrift.log if you can. If the app cannot start or you cannot find it, leave this blank.
+      placeholder: "Drag nekodrift.log here, or paste the most relevant lines."
     validations:
       required: false

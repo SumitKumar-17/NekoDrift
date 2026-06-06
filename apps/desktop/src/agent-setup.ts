@@ -4,13 +4,13 @@ import { dirname, isAbsolute, join } from "node:path";
 import { createRequire } from "node:module";
 
 import { app } from "electron";
-import { buildClaudeMcpGetCommand, buildClaudeMcpPreview, classifyClaudeMcpStatus, createOpenPetsHookSettingsPreview, doctorClaudeHooks, installClaudeHooks, mapAsarPathToUnpacked, uninstallClaudeHooks, type ClaudeCommandSpec, type ClaudeHookDoctorResult, type ClaudeMcpPreview, type OpenPetsCommandMode, type ParsedClaudeMcpEntry } from "@open-pets/claude";
-import { buildCursorRulesPreview, classifyCursorMcpStatus, executeCursorMcpWrite, getCursorGlobalMcpPath, planCursorMcpInstall, planCursorMcpRemove, planCursorMcpReplace, readCursorMcpConfig, type CursorMcpStatusResult } from "@open-pets/cursor";
-import { buildOpenPetsOnlyPreview, type RedactedPreview } from "@open-pets/cursor";
-import { doctorOpenCodeGlobalSetup, getGlobalOpenCodeConfigDir, parseOpenCodeConfig, prepareOpenCodeGlobalRemove, prepareOpenCodeGlobalSetup, writePreparedOpenCodeGlobalRemove, writePreparedOpenCodeGlobalSetup } from "@open-pets/opencode";
+import { buildClaudeMcpGetCommand, buildClaudeMcpPreview, classifyClaudeMcpStatus, createNekoDriftHookSettingsPreview, doctorClaudeHooks, installClaudeHooks, mapAsarPathToUnpacked, uninstallClaudeHooks, type ClaudeCommandSpec, type ClaudeHookDoctorResult, type ClaudeMcpPreview, type NekoDriftCommandMode, type ParsedClaudeMcpEntry } from "@neko-drift/claude";
+import { buildCursorRulesPreview, classifyCursorMcpStatus, executeCursorMcpWrite, getCursorGlobalMcpPath, planCursorMcpInstall, planCursorMcpRemove, planCursorMcpReplace, readCursorMcpConfig, type CursorMcpStatusResult } from "@neko-drift/cursor";
+import { buildNekoDriftOnlyPreview, type RedactedPreview } from "@neko-drift/cursor";
+import { doctorOpenCodeGlobalSetup, getGlobalOpenCodeConfigDir, parseOpenCodeConfig, prepareOpenCodeGlobalRemove, prepareOpenCodeGlobalSetup, writePreparedOpenCodeGlobalRemove, writePreparedOpenCodeGlobalSetup } from "@neko-drift/opencode";
 
-import { getAppStateSnapshot, updatePreferences, type InstalledPetState, type OpenPetsStateV1 } from "./app-state.js";
-import { doctorClaudeOpenPetsMemory, installClaudeOpenPetsMemory, uninstallClaudeOpenPetsMemory, type ClaudeOpenPetsMemoryStatus } from "./claude-memory.js";
+import { getAppStateSnapshot, updatePreferences, type InstalledPetState, type NekoDriftStateV1 } from "./app-state.js";
+import { doctorClaudeNekoDriftMemory, installClaudeNekoDriftMemory, uninstallClaudeNekoDriftMemory, type ClaudeNekoDriftMemoryStatus } from "./claude-memory.js";
 
 export type AgentSetupAction = "configure" | "replace" | "remove" | "install-memory" | "doctor-hooks" | "install-hooks" | "uninstall-hooks" | "opencode-install" | "opencode-remove" | "cursor-install" | "cursor-replace" | "cursor-remove";
 export type JournalAction = "configure" | "update" | "replace" | "remove";
@@ -36,13 +36,13 @@ export interface ClaudeCodeStatus {
 
 export interface AgentSetupSnapshot {
   readonly selectedPetId?: string;
-  readonly commandMode: OpenPetsCommandMode;
+  readonly commandMode: NekoDriftCommandMode;
   readonly localDevAvailable: boolean;
   readonly petOptions: readonly AgentSetupPetOption[];
   readonly preview: ClaudeMcpPreview;
   readonly status: ClaudeCodeStatus;
   readonly hookStatus: ClaudeHookDoctorResult;
-  readonly memoryStatus: ClaudeOpenPetsMemoryStatus;
+  readonly memoryStatus: ClaudeNekoDriftMemoryStatus;
   readonly opencodeStatus: OpenCodeSetupStatus;
   readonly opencodePreview: OpenCodeSetupPreview;
   readonly cursorStatus: CursorSetupStatus;
@@ -136,7 +136,7 @@ export async function getAgentSetupSnapshot(selectedPetId?: unknown, commandMode
   const status = preview.error ? createBundledResourceErrorStatus(preview.error) : await detectClaudeCodeStatus(petId, commandMode);
   const rawHookStatus = preview.error ? createHookErrorStatus(preview.error) : safeDoctorClaudeHooks(commandMode, petId);
   const hookStatus = { ...rawHookStatus, settingsPath: formatUserPath(rawHookStatus.settingsPath) ?? rawHookStatus.settingsPath, backupPath: formatUserPath(rawHookStatus.backupPath) };
-  const rawMemoryStatus = doctorClaudeOpenPetsMemory(app.getPath("home"));
+  const rawMemoryStatus = doctorClaudeNekoDriftMemory(app.getPath("home"));
   const memoryStatus = { ...rawMemoryStatus, claudeMdPath: formatUserPath(rawMemoryStatus.claudeMdPath) ?? rawMemoryStatus.claudeMdPath, openPetsMemoryPath: formatUserPath(rawMemoryStatus.openPetsMemoryPath) ?? rawMemoryStatus.openPetsMemoryPath };
   const opencode = await getOpenCodeSetup(commandMode, petId);
   const cursor = await getCursorSetup(commandMode, petId);
@@ -165,7 +165,7 @@ export function updateAgentSetupCommandPaths(patch: unknown): AgentSetupCommandP
   for (const key of Object.keys(patch)) {
     if (key !== "claude" && key !== "node" && key !== "opencode") throw new Error("Invalid command path setting.");
   }
-  const updates: Writable<Partial<OpenPetsStateV1["preferences"]>> = {};
+  const updates: Writable<Partial<NekoDriftStateV1["preferences"]>> = {};
   if ("claude" in patch) updates.claudeCommandPath = normalizeOptionalCommandPath(patch.claude, "Claude");
   if ("node" in patch) updates.nodeCommandPath = normalizeOptionalCommandPath(patch.node, "Node.js");
   if ("opencode" in patch) updates.opencodeCommandPath = normalizeOptionalCommandPath(patch.opencode, "OpenCode");
@@ -201,30 +201,30 @@ export function sanitizeAgentSetupOutput(value: string): string {
     .slice(0, 500);
 }
 
-function safeBuildClaudeMcpPreview(selectedPetId: string | undefined, commandMode: OpenPetsCommandMode): { readonly preview: ClaudeMcpPreview; readonly error?: string } {
+function safeBuildClaudeMcpPreview(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): { readonly preview: ClaudeMcpPreview; readonly error?: string } {
   try {
     return { preview: withPreferredClaudeCommand(buildClaudeMcpPreview(selectedPetId, commandMode, getPreferredNodeCommand())) };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Packaged OpenPets command resources are unavailable.";
+    const message = error instanceof Error ? error.message : "Packaged NekoDrift command resources are unavailable.";
     return { preview: createErrorPreview(commandMode, message), error: message };
   }
 }
 
-function safeDoctorClaudeHooks(commandMode: OpenPetsCommandMode, selectedPetId: string | undefined): ClaudeHookDoctorResult {
+function safeDoctorClaudeHooks(commandMode: NekoDriftCommandMode, selectedPetId: string | undefined): ClaudeHookDoctorResult {
   try {
     return doctorClaudeHooks(undefined, commandMode, selectedPetId, getPreferredNodeCommand());
   } catch (error) {
-    return createHookErrorStatus(error instanceof Error ? error.message : "Packaged OpenPets hook resources are unavailable.");
+    return createHookErrorStatus(error instanceof Error ? error.message : "Packaged NekoDrift hook resources are unavailable.");
   }
 }
 
-function createErrorPreview(commandMode: OpenPetsCommandMode, message: string): ClaudeMcpPreview {
+function createErrorPreview(commandMode: NekoDriftCommandMode, message: string): ClaudeMcpPreview {
   const claude = getPreferredClaudeCommand();
   return {
     commandMode,
     add: { command: claude, args: [] },
-    remove: { command: claude, args: ["mcp", "remove", "--scope", "user", "openpets"] },
-    mcpJson: { mcpServers: { openpets: { type: "stdio", command: "node", args: [] } } },
+    remove: { command: claude, args: ["mcp", "remove", "--scope", "user", "nekodrift"] },
+    mcpJson: { mcpServers: { nekodrift: { type: "stdio", command: "node", args: [] } } },
     displayCommand: message,
   };
 }
@@ -248,7 +248,7 @@ function createHookErrorStatus(message: string): ClaudeHookDoctorResult {
   return { status: "error", settingsPath: "~/.claude/settings.json", exists: false, valid: false, message, preview: {}, asyncSupported: false };
 }
 
-async function runAction(action: AgentSetupAction, selectedPetId: string | undefined, commandMode: OpenPetsCommandMode): Promise<AgentSetupActionResult> {
+async function runAction(action: AgentSetupAction, selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
   if (action === "opencode-install") return installOpenCodeGlobal(selectedPetId, commandMode);
   if (action === "opencode-remove") return removeOpenCodeGlobal();
   if (action === "cursor-install") return installCursorGlobal(selectedPetId, commandMode);
@@ -264,10 +264,10 @@ async function runAction(action: AgentSetupAction, selectedPetId: string | undef
     try {
       result = uninstallClaudeHooks(undefined, commandMode);
     } catch (error) {
-      return { ok: false, action, message: error instanceof Error ? error.message : "OpenPets hook uninstall failed.", changed: false };
+      return { ok: false, action, message: error instanceof Error ? error.message : "NekoDrift hook uninstall failed.", changed: false };
     }
-    const message = result.changed ? `Uninstalled OpenPets Claude hooks. Backup: ${formatUserPath(result.backupPath) ?? "not needed"}` : result.message;
-    writeActionJournal({ action: "remove", selectedPetId, command: ["open-pets-claude", "uninstall-hooks"], previousStatus: result.status, success: result.status !== "error", message });
+    const message = result.changed ? `Uninstalled NekoDrift Claude hooks. Backup: ${formatUserPath(result.backupPath) ?? "not needed"}` : result.message;
+    writeActionJournal({ action: "remove", selectedPetId, command: ["neko-drift-claude", "uninstall-hooks"], previousStatus: result.status, success: result.status !== "error", message });
     return { ok: result.status !== "error", action, message, changed: result.changed };
   }
   if (action === "install-memory") {
@@ -279,7 +279,7 @@ async function runAction(action: AgentSetupAction, selectedPetId: string | undef
   }
   if (commandMode === "bundled") {
     const node = await runCommand({ command: getPreferredNodeCommand(), args: ["--version"] });
-    if (!node.ok) return { ok: false, action, message: `Node.js is required for packaged OpenPets commands. Open Claude configuration, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, changed: false };
+    if (!node.ok) return { ok: false, action, message: `Node.js is required for packaged NekoDrift commands. Open Claude configuration, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, changed: false };
   }
   const previewResult = safeBuildClaudeMcpPreview(selectedPetId, commandMode);
   if (previewResult.error) return { ok: false, action, message: previewResult.error, changed: false };
@@ -289,9 +289,9 @@ async function runAction(action: AgentSetupAction, selectedPetId: string | undef
     try {
       result = installClaudeHooks(undefined, commandMode, selectedPetId, getPreferredNodeCommand());
     } catch (error) {
-      return { ok: false, action, message: error instanceof Error ? error.message : "OpenPets hook install failed.", changed: false };
+      return { ok: false, action, message: error instanceof Error ? error.message : "NekoDrift hook install failed.", changed: false };
     }
-    const message = result.changed ? `Installed OpenPets Claude hooks. Backup: ${formatUserPath(result.backupPath) ?? "not needed"}` : result.message;
+    const message = result.changed ? `Installed NekoDrift Claude hooks. Backup: ${formatUserPath(result.backupPath) ?? "not needed"}` : result.message;
     writeActionJournal({ action: "update", selectedPetId, command: createHookJournalCommand("install-hooks", selectedPetId), previousStatus: result.status, success: result.status !== "error", message });
     return { ok: result.status !== "error", action, message, changed: result.changed };
   }
@@ -308,11 +308,11 @@ async function runAction(action: AgentSetupAction, selectedPetId: string | undef
   if (action === "configure") {
     if (detection.openPetsEntry.present && detection.openPetsEntry.verified && detection.openPetsEntry.matchesExpected) {
       const memoryResult = safeInstallClaudeMemory();
-      const message = `OpenPets MCP is already configured for Claude Code.${memoryResult.ok ? ` ${memoryResult.message}` : ` Claude instructions were not updated: ${memoryResult.message}`}`;
+      const message = `NekoDrift MCP is already configured for Claude Code.${memoryResult.ok ? ` ${memoryResult.message}` : ` Claude instructions were not updated: ${memoryResult.message}`}`;
       return { ok: true, action, message, changed: memoryResult.ok && memoryResult.message.startsWith("Added") };
     }
     if (detection.openPetsEntry.present) {
-      return { ok: false, action, message: "Claude already has an openpets MCP entry. OpenPets will keep it as installed; use Replace only if you want to recreate it with the recommended command.", changed: false };
+      return { ok: false, action, message: "Claude already has an nekodrift MCP entry. NekoDrift will keep it as installed; use Replace only if you want to recreate it with the recommended command.", changed: false };
     }
     return runAdd(preview, selectedPetId, previousStatus, action);
   }
@@ -328,14 +328,14 @@ async function runAction(action: AgentSetupAction, selectedPetId: string | undef
     return {
       ok: false,
       action,
-      message: `${added.message} The previous openpets entry was removed; use this command to restore the intended entry: ${preview.displayCommand}`,
+      message: `${added.message} The previous nekodrift entry was removed; use this command to restore the intended entry: ${preview.displayCommand}`,
       changed: true,
     };
   }
-  return { ok: true, action, message: `Replaced Claude Code OpenPets MCP entry.${summarizeMemoryMessages(removed.message, added.message)}`, changed: true };
+  return { ok: true, action, message: `Replaced Claude Code NekoDrift MCP entry.${summarizeMemoryMessages(removed.message, added.message)}`, changed: true };
 }
 
-async function getOpenCodeSetup(commandMode: OpenPetsCommandMode, selectedPetId: string | undefined): Promise<{ readonly status: OpenCodeSetupStatus; readonly preview: OpenCodeSetupPreview }> {
+async function getOpenCodeSetup(commandMode: NekoDriftCommandMode, selectedPetId: string | undefined): Promise<{ readonly status: OpenCodeSetupStatus; readonly preview: OpenCodeSetupPreview }> {
   const configDir = getGlobalOpenCodeConfigDir(process.env, app.getPath("home"), process.platform);
   const petId = selectedPetId || undefined;
   const cliVersion = getCliPackageVersion();
@@ -360,14 +360,14 @@ async function getOpenCodeSetup(commandMode: OpenPetsCommandMode, selectedPetId:
       configPath: prepared.ok ? (formatUserPath(prepared.configPath) ?? prepared.configPath) : "",
       cleanupConfigPaths: prepared.ok ? prepared.cleanupConfigPaths.map((path) => formatUserPath(path) ?? path) : [],
       mcpCommand: prepared.ok ? prepared.command : [],
-      plugin: prepared.ok ? prepared.plugin : (petId ? [`@open-pets/opencode@${pluginVersion}`, { pet: petId }] : `@open-pets/opencode@${pluginVersion}`),
+      plugin: prepared.ok ? prepared.plugin : (petId ? [`@neko-drift/opencode@${pluginVersion}`, { pet: petId }] : `@neko-drift/opencode@${pluginVersion}`),
       instructionPath: prepared.ok ? (formatUserPath(prepared.instructionPath) ?? prepared.instructionPath) : "",
       configPreview: prepared.ok ? prepared.configPreview : {},
     },
   };
 }
 
-async function getCursorSetup(commandMode: OpenPetsCommandMode, selectedPetId: string | undefined): Promise<{ readonly status: CursorSetupStatus; readonly preview: CursorSetupPreview }> {
+async function getCursorSetup(commandMode: NekoDriftCommandMode, selectedPetId: string | undefined): Promise<{ readonly status: CursorSetupStatus; readonly preview: CursorSetupPreview }> {
   const homeDir = app.getPath("home");
   const configPath = getCursorGlobalMcpPath(homeDir);
   const petId = selectedPetId || undefined;
@@ -393,8 +393,8 @@ async function getCursorSetup(commandMode: OpenPetsCommandMode, selectedPetId: s
     preview: {
       global: true,
       configPath: formatUserPath(configPath) ?? configPath,
-      mcpEntry: buildOpenPetsOnlyPreview({ mcpVersion, petId, commandMode: "published" }),
-      rulesPath: ".cursor/rules/openpets.mdc",
+      mcpEntry: buildNekoDriftOnlyPreview({ mcpVersion, petId, commandMode: "published" }),
+      rulesPath: ".cursor/rules/nekodrift.mdc",
       rulesContent: buildCursorRulesPreview(),
       commandMode: "published",
     },
@@ -480,29 +480,29 @@ function quoteCommandForDisplay(command: string): string {
   return /\s/.test(command) ? JSON.stringify(command) : command;
 }
 
-function safePrepareOpenCode(configDir: string, selectedPetId: string | undefined, cliVersion: string, pluginVersion: string, commandMode: OpenPetsCommandMode, cliEntryPath: string | undefined): { readonly ok: true; readonly command: readonly string[]; readonly configPath: string; readonly cleanupConfigPaths: readonly string[]; readonly instructionPath: string; readonly plugin: readonly unknown[] | string; readonly configPreview: Record<string, unknown> } | { readonly ok: false; readonly message: string } {
+function safePrepareOpenCode(configDir: string, selectedPetId: string | undefined, cliVersion: string, pluginVersion: string, commandMode: NekoDriftCommandMode, cliEntryPath: string | undefined): { readonly ok: true; readonly command: readonly string[]; readonly configPath: string; readonly cleanupConfigPaths: readonly string[]; readonly instructionPath: string; readonly plugin: readonly unknown[] | string; readonly configPreview: Record<string, unknown> } | { readonly ok: false; readonly message: string } {
   try {
     const prepared = prepareOpenCodeGlobalSetup({ configDir, petId: selectedPetId || undefined, cliVersion, pluginVersion, commandMode, cliEntryPath });
     const parsed = parseOpenCodeConfig(prepared.configWrite.content);
     if (!parsed.ok) return { ok: false, message: parsed.message };
-    const config = parsed.value as { mcp?: { openpets?: { command?: readonly string[] } }; plugin?: readonly unknown[] };
+    const config = parsed.value as { mcp?: { nekodrift?: { command?: readonly string[] } }; plugin?: readonly unknown[] };
     const plugin = Array.isArray(config.plugin) ? config.plugin[config.plugin.length - 1] : undefined;
-    return { ok: true, command: config.mcp?.openpets?.command ?? [], configPath: prepared.configPath, cleanupConfigPaths: prepared.cleanupConfigWrites.map((write) => write.targetPath), instructionPath: prepared.instructionPath, plugin: plugin === undefined ? [] : (plugin as readonly unknown[] | string), configPreview: parsed.value };
+    return { ok: true, command: config.mcp?.nekodrift?.command ?? [], configPath: prepared.configPath, cleanupConfigPaths: prepared.cleanupConfigWrites.map((write) => write.targetPath), instructionPath: prepared.instructionPath, plugin: plugin === undefined ? [] : (plugin as readonly unknown[] | string), configPreview: parsed.value };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "OpenCode setup preview failed." };
   }
 }
 
-async function installOpenCodeGlobal(selectedPetId: string | undefined, commandMode: OpenPetsCommandMode): Promise<AgentSetupActionResult> {
+async function installOpenCodeGlobal(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
   if (commandMode === "bundled") {
     const node = await runCommand({ command: getPreferredNodeCommand(), args: ["--version"] });
-    if (!node.ok) return { ok: false, action: "opencode-install", message: `Node.js is required for packaged OpenPets commands. Open OpenCode configuration, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, changed: false };
+    if (!node.ok) return { ok: false, action: "opencode-install", message: `Node.js is required for packaged NekoDrift commands. Open OpenCode configuration, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, changed: false };
   }
   try {
     const configDir = getGlobalOpenCodeConfigDir(process.env, app.getPath("home"), process.platform);
     const prepared = prepareOpenCodeGlobalSetup({ configDir, petId: selectedPetId || undefined, cliVersion: getCliPackageVersion(), pluginVersion: getOpenCodePackageVersion(), commandMode, cliEntryPath: commandMode === "published" ? undefined : getDesktopCliEntryPath(commandMode) });
     writePreparedOpenCodeGlobalSetup(prepared);
-    return { ok: true, action: "opencode-install", message: `Installed global OpenCode OpenPets setup. Config: ${formatUserPath(prepared.configPath) ?? prepared.configPath}. Instructions: ${formatUserPath(prepared.instructionPath) ?? prepared.instructionPath}.`, changed: true };
+    return { ok: true, action: "opencode-install", message: `Installed global OpenCode NekoDrift setup. Config: ${formatUserPath(prepared.configPath) ?? prepared.configPath}. Instructions: ${formatUserPath(prepared.instructionPath) ?? prepared.instructionPath}.`, changed: true };
   } catch (error) {
     return { ok: false, action: "opencode-install", message: error instanceof Error ? error.message : "OpenCode setup failed.", changed: false };
   }
@@ -513,13 +513,13 @@ async function removeOpenCodeGlobal(): Promise<AgentSetupActionResult> {
     const configDir = getGlobalOpenCodeConfigDir(process.env, app.getPath("home"), process.platform);
     const prepared = prepareOpenCodeGlobalRemove(configDir);
     writePreparedOpenCodeGlobalRemove(prepared);
-    return { ok: true, action: "opencode-remove", message: prepared.configWrites.length > 0 ? "Removed global OpenCode OpenPets setup." : "Global OpenCode OpenPets setup was already absent.", changed: prepared.configWrites.length > 0 };
+    return { ok: true, action: "opencode-remove", message: prepared.configWrites.length > 0 ? "Removed global OpenCode NekoDrift setup." : "Global OpenCode NekoDrift setup was already absent.", changed: prepared.configWrites.length > 0 };
   } catch (error) {
     return { ok: false, action: "opencode-remove", message: error instanceof Error ? error.message : "OpenCode removal failed.", changed: false };
   }
 }
 
-async function installCursorGlobal(selectedPetId: string | undefined, commandMode: OpenPetsCommandMode): Promise<AgentSetupActionResult> {
+async function installCursorGlobal(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
   void commandMode;
   try {
     const homeDir = app.getPath("home");
@@ -532,7 +532,7 @@ async function installCursorGlobal(selectedPetId: string | undefined, commandMod
     if ("targetPath" in plan) {
       executeCursorMcpWrite(plan);
       const backupMsg = plan.backupPath ? ` Backup: ${formatUserPath(plan.backupPath) ?? plan.backupPath}.` : "";
-      return { ok: true, action: "cursor-install", message: `Installed Cursor OpenPets MCP config at ${formatUserPath(configPath) ?? configPath}.${backupMsg} Cursor may need to be restarted or reloaded.`, changed: true };
+      return { ok: true, action: "cursor-install", message: `Installed Cursor NekoDrift MCP config at ${formatUserPath(configPath) ?? configPath}.${backupMsg} Cursor may need to be restarted or reloaded.`, changed: true };
     }
     return { ok: false, action: "cursor-install", message: "Failed to plan Cursor MCP install.", changed: false };
   } catch (error) {
@@ -540,7 +540,7 @@ async function installCursorGlobal(selectedPetId: string | undefined, commandMod
   }
 }
 
-async function replaceCursorGlobal(selectedPetId: string | undefined, commandMode: OpenPetsCommandMode): Promise<AgentSetupActionResult> {
+async function replaceCursorGlobal(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<AgentSetupActionResult> {
   void commandMode;
   try {
     const homeDir = app.getPath("home");
@@ -553,7 +553,7 @@ async function replaceCursorGlobal(selectedPetId: string | undefined, commandMod
     if ("targetPath" in plan) {
       executeCursorMcpWrite(plan);
       const backupMsg = plan.backupPath ? ` Backup: ${formatUserPath(plan.backupPath) ?? plan.backupPath}.` : "";
-      return { ok: true, action: "cursor-replace", message: `Replaced Cursor OpenPets MCP config at ${formatUserPath(configPath) ?? configPath}.${backupMsg} Cursor may need to be restarted or reloaded.`, changed: true };
+      return { ok: true, action: "cursor-replace", message: `Replaced Cursor NekoDrift MCP config at ${formatUserPath(configPath) ?? configPath}.${backupMsg} Cursor may need to be restarted or reloaded.`, changed: true };
     }
     return { ok: false, action: "cursor-replace", message: "Failed to plan Cursor MCP replace.", changed: false };
   } catch (error) {
@@ -571,7 +571,7 @@ async function removeCursorGlobal(): Promise<AgentSetupActionResult> {
     }
     if ("targetPath" in plan) {
       executeCursorMcpWrite(plan);
-      return { ok: true, action: "cursor-remove", message: `Removed Cursor OpenPets MCP config at ${formatUserPath(configPath) ?? configPath}. Cursor may need to be restarted or reloaded.`, changed: true };
+      return { ok: true, action: "cursor-remove", message: `Removed Cursor NekoDrift MCP config at ${formatUserPath(configPath) ?? configPath}. Cursor may need to be restarted or reloaded.`, changed: true };
     }
     return { ok: false, action: "cursor-remove", message: "Failed to plan Cursor MCP remove.", changed: false };
   } catch (error) {
@@ -579,17 +579,17 @@ async function removeCursorGlobal(): Promise<AgentSetupActionResult> {
   }
 }
 
-function getDesktopCliEntryPath(commandMode: OpenPetsCommandMode): string {
-  const path = require.resolve("@open-pets/cli");
+function getDesktopCliEntryPath(commandMode: NekoDriftCommandMode): string {
+  const path = require.resolve("@neko-drift/cli");
   return commandMode === "bundled" ? mapAsarPathToUnpacked(path) : path;
 }
 
 function getCliPackageVersion(): string {
-  return getWorkspacePackageVersion("@open-pets/cli");
+  return getWorkspacePackageVersion("@neko-drift/cli");
 }
 
 function getOpenCodePackageVersion(): string {
-  return getWorkspacePackageVersion("@open-pets/opencode");
+  return getWorkspacePackageVersion("@neko-drift/opencode");
 }
 
 function getWorkspacePackageVersion(packageName: string): string {
@@ -604,23 +604,23 @@ function getWorkspacePackageVersion(packageName: string): string {
 }
 
 function getMcpPackageVersion(): string {
-  return getWorkspacePackageVersion("@open-pets/mcp");
+  return getWorkspacePackageVersion("@neko-drift/mcp");
 }
 
 function summarizeMemoryMessages(...messages: readonly string[]): string {
-  const memoryMessages = messages.flatMap((message) => message.match(/Claude (?:OpenPets )?instructions[^.]*\./g) ?? []);
+  const memoryMessages = messages.flatMap((message) => message.match(/Claude (?:NekoDrift )?instructions[^.]*\./g) ?? []);
   return memoryMessages.length > 0 ? ` ${memoryMessages.join(" ")}` : "";
 }
 
 function createHookJournalCommand(command: "doctor-hooks" | "install-hooks", selectedPetId: string | undefined): readonly string[] {
-  return selectedPetId ? ["open-pets-claude", command, "--pet", selectedPetId] : ["open-pets-claude", command];
+  return selectedPetId ? ["neko-drift-claude", command, "--pet", selectedPetId] : ["neko-drift-claude", command];
 }
 
 async function runAdd(preview: ClaudeMcpPreview, selectedPetId: string | undefined, previousStatus: string, action: AgentSetupAction): Promise<AgentSetupActionResult> {
   const result = await runClaudeCommand(preview.add);
   const memoryResult = result.ok ? safeInstallClaudeMemory() : { ok: false as const, message: "" };
   const message = result.ok
-    ? `Configured Claude Code OpenPets MCP entry.${memoryResult.ok ? ` ${memoryResult.message}` : ` Claude instructions were not updated: ${memoryResult.message}`}`
+    ? `Configured Claude Code NekoDrift MCP entry.${memoryResult.ok ? ` ${memoryResult.message}` : ` Claude instructions were not updated: ${memoryResult.message}`}`
     : `Claude MCP add failed: ${summarizeCommandResult(result)}`;
   writeActionJournal({ action: journalActionFor(action), selectedPetId, command: [preview.add.command, ...preview.add.args], previousStatus, success: result.ok, message });
   return { ok: result.ok, action, message, changed: result.ok };
@@ -630,7 +630,7 @@ async function runRemove(preview: ClaudeMcpPreview, selectedPetId: string | unde
   const result = await runClaudeCommand(preview.remove);
   const memoryResult = result.ok ? safeUninstallClaudeMemory() : { ok: false as const, message: "" };
   const message = result.ok
-    ? `Removed Claude Code OpenPets MCP entry.${memoryResult.ok ? ` ${memoryResult.message}` : ` Claude instructions were not updated: ${memoryResult.message}`}`
+    ? `Removed Claude Code NekoDrift MCP entry.${memoryResult.ok ? ` ${memoryResult.message}` : ` Claude instructions were not updated: ${memoryResult.message}`}`
     : `Claude MCP remove failed: ${summarizeCommandResult(result)}`;
   writeActionJournal({ action: journalActionFor(action), selectedPetId, command: [preview.remove.command, ...preview.remove.args], previousStatus, success: result.ok, message });
   return { ok: result.ok, action, message, changed: result.ok };
@@ -638,8 +638,8 @@ async function runRemove(preview: ClaudeMcpPreview, selectedPetId: string | unde
 
 function safeInstallClaudeMemory(): { readonly ok: true; readonly message: string } | { readonly ok: false; readonly message: string } {
   try {
-    const result = installClaudeOpenPetsMemory(app.getPath("home"));
-    return { ok: true, message: result.changed ? "Added Claude OpenPets instructions." : "Claude OpenPets instructions already present." };
+    const result = installClaudeNekoDriftMemory(app.getPath("home"));
+    return { ok: true, message: result.changed ? "Added Claude NekoDrift instructions." : "Claude NekoDrift instructions already present." };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Unknown error." };
   }
@@ -647,17 +647,17 @@ function safeInstallClaudeMemory(): { readonly ok: true; readonly message: strin
 
 function safeUninstallClaudeMemory(): { readonly ok: true; readonly message: string } | { readonly ok: false; readonly message: string } {
   try {
-    const result = uninstallClaudeOpenPetsMemory(app.getPath("home"));
-    return { ok: true, message: result.changed ? "Removed Claude OpenPets instructions." : "Claude OpenPets instructions were already absent." };
+    const result = uninstallClaudeNekoDriftMemory(app.getPath("home"));
+    return { ok: true, message: result.changed ? "Removed Claude NekoDrift instructions." : "Claude NekoDrift instructions were already absent." };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Unknown error." };
   }
 }
 
-async function detectClaudeCodeStatus(selectedPetId: string | undefined, commandMode: OpenPetsCommandMode): Promise<ClaudeCodeStatus> {
+async function detectClaudeCodeStatus(selectedPetId: string | undefined, commandMode: NekoDriftCommandMode): Promise<ClaudeCodeStatus> {
   if (commandMode === "bundled") {
     const node = await runCommand({ command: getPreferredNodeCommand(), args: ["--version"] });
-    if (!node.ok) return createStatus("error", "Node required", `Node.js is required for packaged OpenPets commands. Open Claude configuration, expand Advanced detection, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, undefined, node, { present: false, source: "none", verified: false, matchesExpected: false });
+    if (!node.ok) return createStatus("error", "Node required", `Node.js is required for packaged NekoDrift commands. Open Claude configuration, expand Advanced detection, set the Node.js command path, then try again. ${summarizeCommandResult(node)}`, undefined, node, { present: false, source: "none", verified: false, matchesExpected: false });
   }
 
   const version = await runClaudeCommand({ command: "claude", args: ["--version"] });
@@ -678,10 +678,10 @@ async function detectClaudeCodeStatus(selectedPetId: string | undefined, command
     if (get.ok) entry = classifyClaudeMcpStatus(list.stdout, get.stdout, selectedPetId, commandMode, getPreferredNodeCommand());
   }
 
-  if (!entry.present) return createStatus("needs_setup", "Needs setup", "Claude Code is detected, but OpenPets MCP is not configured.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
-  if (entry.verified && entry.matchesExpected) return createStatus("configured", "Configured", "Claude Code has the expected OpenPets MCP entry.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
-  if (entry.verified) return createStatus("configured", "Installed — custom", "Claude Code has an openpets MCP entry with a custom command. OpenPets will leave it alone unless you choose Replace with recommended.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
-  return createStatus("configured", "Installed — unverified", "Claude Code lists an openpets MCP entry, but command details were not available. OpenPets will leave it alone unless you choose Replace with recommended.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
+  if (!entry.present) return createStatus("needs_setup", "Needs setup", "Claude Code is detected, but NekoDrift MCP is not configured.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
+  if (entry.verified && entry.matchesExpected) return createStatus("configured", "Configured", "Claude Code has the expected NekoDrift MCP entry.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
+  if (entry.verified) return createStatus("configured", "Installed — custom", "Claude Code has an nekodrift MCP entry with a custom command. NekoDrift will leave it alone unless you choose Replace with recommended.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
+  return createStatus("configured", "Installed — unverified", "Claude Code lists an nekodrift MCP entry, but command details were not available. NekoDrift will leave it alone unless you choose Replace with recommended.", sanitizeAgentSetupOutput(version.stdout || version.stderr), list, entry);
 }
 
 async function runClaudeCommandWithTimeoutRetry(spec: ClaudeCommandSpec): Promise<CommandResult> {
@@ -715,7 +715,7 @@ function validateSelectedPetId(value: unknown): string | undefined {
   return pet.id;
 }
 
-function validateCommandMode(value: unknown): OpenPetsCommandMode {
+function validateCommandMode(value: unknown): NekoDriftCommandMode {
   if (app.isPackaged) return "bundled";
   return value === "local" ? "local" : "published";
 }
@@ -868,7 +868,7 @@ function writeActionJournal(entry: Omit<AgentSetupJournalEntry, "timestamp"> & {
     writeFileSync(tempPath, `${JSON.stringify(entries, null, 2)}\n`, "utf8");
     renameSync(tempPath, path);
   } catch (error) {
-    console.error("Failed to write OpenPets agent setup action journal.", error);
+    console.error("Failed to write NekoDrift agent setup action journal.", error);
   }
 }
 
@@ -899,5 +899,5 @@ function journalActionFor(action: AgentSetupAction): JournalAction {
 
 export const agentSetupInternalsForChecks = {
   sanitizeAgentSetupOutput,
-  createOpenPetsHookSettingsPreview,
+  createNekoDriftHookSettingsPreview,
 };

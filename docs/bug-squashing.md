@@ -17,7 +17,7 @@ Each bug should record:
 
 ## Windows transparent pet block and lost interaction
 
-- **GitHub issue:** https://github.com/alvinunreal/openpets/issues/18
+- **GitHub issue:** https://github.com/alvinunreal/nekodrift/issues/18
 - **Platform:** Windows
 - **Reported version(s):** `2.0.5`; also reproduced by reporter when building from source.
 - **Status:** first fix implemented locally; awaiting checks, release, and community confirmation.

@@ -32,8 +32,8 @@ Agent Event → pickHookSpeech(category, randomFn) → validateHookSpeech(messag
 ## Integration Points
 
 **Consumers**:
-- `@open-pets/claude` - Hook message generation
-- `@open-pets/opencode` - Plugin speech events
+- `@neko-drift/claude` - Hook message generation
+- `@neko-drift/opencode` - Plugin speech events
 
 **Exports**:
 - `hookSpeechPools` - Readonly record of message arrays

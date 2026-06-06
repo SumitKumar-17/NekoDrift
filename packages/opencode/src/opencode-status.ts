@@ -14,69 +14,69 @@ export function classifyOpenCodeMcpStatus(configs: readonly Record<string, unkno
     const entry = mcp?.[openCodeMcpServerName];
     return entry === undefined ? [] : [{ source: String(index), entry }];
   });
-  if (entries.length === 0) return { status: "not_installed", message: "OpenCode OpenPets MCP is not installed.", matches: [] };
+  if (entries.length === 0) return { status: "not_installed", message: "OpenCode NekoDrift MCP is not installed.", matches: [] };
   const expectedEntry = buildOpenCodeMcpEntry(expected);
   const current = entries.filter(({ entry }) => isSameMcpEntry(entry, expectedEntry));
-  const managed = entries.filter(({ entry }) => isManagedOpenPetsMcpEntry(entry, expectedEntry.command));
-  if (current.length === 1 && entries.length === 1) return { status: "installed", message: "OpenCode OpenPets MCP is installed.", matches: [entries[0]?.source ?? "0"] };
-  if (current.length > 0 || managed.length > 0) return { status: entries.length > 1 ? "conflict" : "needs_update", message: "OpenCode OpenPets MCP needs update.", matches: entries.map((entry) => entry.source) };
-  return { status: "custom", message: "OpenCode has a custom openpets MCP entry.", matches: entries.map((entry) => entry.source) };
+  const managed = entries.filter(({ entry }) => isManagedNekoDriftMcpEntry(entry, expectedEntry.command));
+  if (current.length === 1 && entries.length === 1) return { status: "installed", message: "OpenCode NekoDrift MCP is installed.", matches: [entries[0]?.source ?? "0"] };
+  if (current.length > 0 || managed.length > 0) return { status: entries.length > 1 ? "conflict" : "needs_update", message: "OpenCode NekoDrift MCP needs update.", matches: entries.map((entry) => entry.source) };
+  return { status: "custom", message: "OpenCode has a custom nekodrift MCP entry.", matches: entries.map((entry) => entry.source) };
 }
 
 export function classifyOpenCodeInstructionsStatus(configs: readonly Record<string, unknown>[], scope: "project" | "global", configDir?: string, instructionFiles: Record<string, string> = {}): OpenCodeStatusResult {
   const expected = buildOpenCodeInstructionPath(scope, configDir);
-  const allEntries = configs.flatMap((config, index) => Array.isArray(config.instructions) ? config.instructions.filter((entry): entry is string => typeof entry === "string" && isOpenPetsLikeInstruction(entry)).map((entry) => ({ source: String(index), entry })) : []);
+  const allEntries = configs.flatMap((config, index) => Array.isArray(config.instructions) ? config.instructions.filter((entry): entry is string => typeof entry === "string" && isNekoDriftLikeInstruction(entry)).map((entry) => ({ source: String(index), entry })) : []);
   const managedEntries = allEntries.filter(({ entry }) => entry === expected);
   const customEntries = allEntries.filter(({ entry }) => entry !== expected);
-  if (allEntries.length === 0) return { status: "not_installed", message: "OpenCode OpenPets instructions are not installed.", matches: [] };
-  if (managedEntries.length > 1 || (managedEntries.length > 0 && customEntries.length > 0)) return { status: "conflict", message: "OpenCode has conflicting OpenPets instruction entries.", matches: allEntries.map((entry) => entry.source) };
-  if (managedEntries.length === 1 && hasManagedInstructionBlock(instructionFiles[expected])) return { status: "installed", message: "OpenCode OpenPets instructions are installed.", matches: managedEntries.map((entry) => entry.source) };
-  if (managedEntries.length === 1) return { status: "needs_update", message: "OpenCode OpenPets instruction file needs managed block.", matches: managedEntries.map((entry) => entry.source) };
-  return { status: "custom", message: "OpenCode has custom OpenPets-like instruction entries.", matches: customEntries.map((entry) => entry.source) };
+  if (allEntries.length === 0) return { status: "not_installed", message: "OpenCode NekoDrift instructions are not installed.", matches: [] };
+  if (managedEntries.length > 1 || (managedEntries.length > 0 && customEntries.length > 0)) return { status: "conflict", message: "OpenCode has conflicting NekoDrift instruction entries.", matches: allEntries.map((entry) => entry.source) };
+  if (managedEntries.length === 1 && hasManagedInstructionBlock(instructionFiles[expected])) return { status: "installed", message: "OpenCode NekoDrift instructions are installed.", matches: managedEntries.map((entry) => entry.source) };
+  if (managedEntries.length === 1) return { status: "needs_update", message: "OpenCode NekoDrift instruction file needs managed block.", matches: managedEntries.map((entry) => entry.source) };
+  return { status: "custom", message: "OpenCode has custom NekoDrift-like instruction entries.", matches: customEntries.map((entry) => entry.source) };
 }
 
 export function classifyOpenCodePluginStatus(configs: readonly Record<string, unknown>[], petId?: string, packageVersion?: string): OpenCodeStatusResult {
   const expected = buildOpenCodePluginPreview(petId, packageVersion);
   const pluginEntries = configs.flatMap((config, index) => Array.isArray(config.plugin) ? config.plugin.map((entry) => ({ source: String(index), entry })) : []);
   const current = pluginEntries.filter(({ entry }) => isExpectedPlugin(entry, expected));
-  const recognizable = pluginEntries.filter(({ entry }) => isManagedOpenPetsPluginEntry(entry));
-  const custom = pluginEntries.filter(({ entry }) => !isManagedOpenPetsPluginEntry(entry) && isOpenPetsLikePluginEntry(entry));
-  if (current.length === 1 && recognizable.length === 1 && custom.length === 0) return { status: "installed", message: "OpenCode OpenPets plugin is installed.", matches: current.map((entry) => entry.source) };
-  if (recognizable.length > 0 && custom.length > 0) return { status: "conflict", message: "OpenCode has conflicting OpenPets plugin entries.", matches: [...recognizable, ...custom].map((entry) => entry.source) };
-  if (recognizable.length > 0) return { status: recognizable.length > 1 ? "conflict" : "needs_update", message: "OpenCode OpenPets plugin needs update.", matches: recognizable.map((entry) => entry.source) };
-  if (custom.length > 0) return { status: "custom", message: "OpenCode has custom OpenPets-like plugin entries.", matches: custom.map((entry) => entry.source) };
-  return { status: "not_installed", message: "OpenCode OpenPets plugin is not installed.", matches: [] };
+  const recognizable = pluginEntries.filter(({ entry }) => isManagedNekoDriftPluginEntry(entry));
+  const custom = pluginEntries.filter(({ entry }) => !isManagedNekoDriftPluginEntry(entry) && isNekoDriftLikePluginEntry(entry));
+  if (current.length === 1 && recognizable.length === 1 && custom.length === 0) return { status: "installed", message: "OpenCode NekoDrift plugin is installed.", matches: current.map((entry) => entry.source) };
+  if (recognizable.length > 0 && custom.length > 0) return { status: "conflict", message: "OpenCode has conflicting NekoDrift plugin entries.", matches: [...recognizable, ...custom].map((entry) => entry.source) };
+  if (recognizable.length > 0) return { status: recognizable.length > 1 ? "conflict" : "needs_update", message: "OpenCode NekoDrift plugin needs update.", matches: recognizable.map((entry) => entry.source) };
+  if (custom.length > 0) return { status: "custom", message: "OpenCode has custom NekoDrift-like plugin entries.", matches: custom.map((entry) => entry.source) };
+  return { status: "not_installed", message: "OpenCode NekoDrift plugin is not installed.", matches: [] };
 }
 
-export function isManagedOpenPetsMcpEntry(value: unknown, expectedCommand?: readonly string[]): boolean {
+export function isManagedNekoDriftMcpEntry(value: unknown, expectedCommand?: readonly string[]): boolean {
   if (!isRecord(value) || value.type !== "local" || value.enabled !== true || !Array.isArray(value.command)) return false;
   const keys = Object.keys(value).sort();
   if (!hasManagedMcpKeys(keys) || !hasValidMcpEnvironment(value.environment)) return false;
-  return isManagedOpenPetsMcpCommand(value.command, expectedCommand);
+  return isManagedNekoDriftMcpCommand(value.command, expectedCommand);
 }
 
-function isManagedOpenPetsMcpCommand(command: readonly unknown[], expectedCommand?: readonly string[]): boolean {
+function isManagedNekoDriftMcpCommand(command: readonly unknown[], expectedCommand?: readonly string[]): boolean {
   if (!command.every((part) => typeof part === "string")) return false;
   const parts = command as readonly string[];
   if (expectedCommand && isSameCommand(parts, expectedCommand)) return true;
-  if (expectedCommand && isExpectedNodeOpenPetsMcpCommand(parts, expectedCommand)) return true;
-  return isPublishedOpenPetsMcpCommand(parts) || isNodeOpenPetsMcpCommand(parts);
+  if (expectedCommand && isExpectedNodeNekoDriftMcpCommand(parts, expectedCommand)) return true;
+  return isPublishedNekoDriftMcpCommand(parts) || isNodeNekoDriftMcpCommand(parts);
 }
 
-function isExpectedNodeOpenPetsMcpCommand(command: readonly string[], expected: readonly string[]): boolean {
+function isExpectedNodeNekoDriftMcpCommand(command: readonly string[], expected: readonly string[]): boolean {
   return expected[0] === "node" && command.length >= 3 && command[0] === "node" && command[1] === expected[1] && command[2] === "mcp" && hasValidPetArgs(command.slice(3));
 }
 
-function isPublishedOpenPetsMcpCommand(command: readonly string[]): boolean {
-  return command.length >= 4 && command[0] === "npx" && command[1] === "-y" && /^@open-pets\/cli@\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?$/.test(command[2] ?? "") && command[3] === "mcp" && hasValidPetArgs(command.slice(4));
+function isPublishedNekoDriftMcpCommand(command: readonly string[]): boolean {
+  return command.length >= 4 && command[0] === "npx" && command[1] === "-y" && /^@neko-drift\/cli@\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?$/.test(command[2] ?? "") && command[3] === "mcp" && hasValidPetArgs(command.slice(4));
 }
 
-function isNodeOpenPetsMcpCommand(command: readonly string[]): boolean {
-  return command.length >= 3 && command[0] === "node" && isOpenPetsCliEntryPath(command[1] ?? "") && command[2] === "mcp" && hasValidPetArgs(command.slice(3));
+function isNodeNekoDriftMcpCommand(command: readonly string[]): boolean {
+  return command.length >= 3 && command[0] === "node" && isNekoDriftCliEntryPath(command[1] ?? "") && command[2] === "mcp" && hasValidPetArgs(command.slice(3));
 }
 
-function isOpenPetsCliEntryPath(path: string): boolean {
-  return /(?:^|[\\/])node_modules[\\/]@open-pets[\\/]cli[\\/]dist[\\/]index\.js$/u.test(path) || /(?:^|[\\/])packages[\\/]cli[\\/]dist[\\/]index\.js$/u.test(path);
+function isNekoDriftCliEntryPath(path: string): boolean {
+  return /(?:^|[\\/])node_modules[\\/]@neko-drift[\\/]cli[\\/]dist[\\/]index\.js$/u.test(path) || /(?:^|[\\/])packages[\\/]cli[\\/]dist[\\/]index\.js$/u.test(path);
 }
 
 function hasValidPetArgs(args: readonly string[]): boolean {
@@ -93,14 +93,14 @@ function isExpectedPlugin(value: unknown, expected: string | readonly [string, {
   return Array.isArray(value) && value.length === 2 && value[0] === expected[0] && isSamePluginOptions(value[1], expected[1]);
 }
 
-export function isManagedOpenPetsPluginEntry(value: unknown): boolean {
-  if (typeof value === "string") return /^@open-pets\/opencode(?:@[^/]+)?$/.test(value);
-  return Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && /^@open-pets\/opencode(?:@[^/]+)?$/.test(value[0]) && isPetPluginOptions(value[1]);
+export function isManagedNekoDriftPluginEntry(value: unknown): boolean {
+  if (typeof value === "string") return /^@neko-drift\/opencode(?:@[^/]+)?$/.test(value);
+  return Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && /^@neko-drift\/opencode(?:@[^/]+)?$/.test(value[0]) && isPetPluginOptions(value[1]);
 }
 
-export function isOpenPetsLikePluginEntry(value: unknown): boolean {
-  if (typeof value === "string") return /openpets|open-pets/i.test(value);
-  if (Array.isArray(value)) return value.some(isOpenPetsLikePluginEntry);
+export function isNekoDriftLikePluginEntry(value: unknown): boolean {
+  if (typeof value === "string") return /nekodrift|neko-drift/i.test(value);
+  if (Array.isArray(value)) return value.some(isNekoDriftLikePluginEntry);
   return false;
 }
 
@@ -134,8 +134,8 @@ function isSamePluginOptions(value: unknown, expected: { readonly pet?: string }
   return keys.length === Object.keys(expected).length && value.pet === expected.pet;
 }
 
-function isOpenPetsLikeInstruction(value: string): boolean {
-  return /openpets\.md$/i.test(value) || /@open-pets\/opencode/i.test(value);
+function isNekoDriftLikeInstruction(value: string): boolean {
+  return /nekodrift\.md$/i.test(value) || /@neko-drift\/opencode/i.test(value);
 }
 
 function hasManagedInstructionBlock(value: string | undefined): boolean {

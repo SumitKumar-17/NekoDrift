@@ -2,9 +2,9 @@
 
 ## Goal
 
-Create the private local control plane between the Electron desktop app and Node-based adapters such as `@open-pets/mcp`, `@open-pets/claude`, and `@open-pets/cli`.
+Create the private local control plane between the Electron desktop app and Node-based adapters such as `@neko-drift/mcp`, `@neko-drift/claude`, and `@neko-drift/cli`.
 
-After this phase, a developer can run the desktop app and use `@open-pets/client` from Node to call local IPC methods that report app status and make the visible default pet react in a small, manually verifiable way.
+After this phase, a developer can run the desktop app and use `@neko-drift/client` from Node to call local IPC methods that report app status and make the visible default pet react in a small, manually verifiable way.
 
 ## Non-goals
 
@@ -49,8 +49,8 @@ The desktop app rejects invalid tokens/versions. `pet.react` and `pet.say` produ
 - Malformed JSON and unknown methods return errors without crashing the app.
 - IPC request size is bounded.
 - The server handles socket/client errors without crashing.
-- `@open-pets/client` can read discovery, connect, send one request, and return typed results.
-- `@open-pets/client` has connection/request timeout behavior.
+- `@neko-drift/client` can read discovery, connect, send one request, and return typed results.
+- `@neko-drift/client` has connection/request timeout behavior.
 - Initial methods are implemented:
   - `hello`
   - `status`
@@ -86,12 +86,12 @@ Exact file split may change during implementation if a simpler structure is clea
 
 ### Transport
 
-Use Node `node:net` in the Electron main process and in `@open-pets/client`.
+Use Node `node:net` in the Electron main process and in `@neko-drift/client`.
 
 Platform endpoint rules:
 
-- macOS/Linux: create a Unix socket under a user-owned OpenPets runtime directory.
-- Windows: create a named pipe path like `\\.\pipe\openpets-<user-or-session>-<pid>`.
+- macOS/Linux: create a Unix socket under a user-owned NekoDrift runtime directory.
+- Windows: create a named pipe path like `\\.\pipe\nekodrift-<user-or-session>-<pid>`.
 
 No TCP listener is used in Phase 05.
 
@@ -102,17 +102,17 @@ Use a shared deterministic discovery location so the app and client can agree wi
 Discovery file location:
 
 ```text
-macOS:   ~/Library/Application Support/OpenPets/runtime/ipc.json
-Linux:   $XDG_RUNTIME_DIR/openpets/ipc.json when secure, otherwise ~/.config/OpenPets/runtime/ipc.json
-Windows: %APPDATA%\OpenPets\runtime\ipc.json
+macOS:   ~/Library/Application Support/NekoDrift/runtime/ipc.json
+Linux:   $XDG_RUNTIME_DIR/nekodrift/ipc.json when secure, otherwise ~/.config/NekoDrift/runtime/ipc.json
+Windows: %APPDATA%\NekoDrift\runtime\ipc.json
 ```
 
 Socket/pipe endpoint location:
 
 ```text
-macOS:   /tmp/openpets-<uid>/openpets-<pid>.sock
-Linux:   $XDG_RUNTIME_DIR/openpets/openpets-<pid>.sock when secure, otherwise /tmp/openpets-<uid>/openpets-<pid>.sock
-Windows: \\.\pipe\openpets-<random>-<pid>
+macOS:   /tmp/nekodrift-<uid>/nekodrift-<pid>.sock
+Linux:   $XDG_RUNTIME_DIR/nekodrift/nekodrift-<pid>.sock when secure, otherwise /tmp/nekodrift-<uid>/nekodrift-<pid>.sock
+Windows: \\.\pipe\nekodrift-<random>-<pid>
 ```
 
 Do not put Unix socket files under the longer application-support discovery directory because common Unix socket path length limits are around 103-107 bytes.
@@ -131,8 +131,8 @@ Discovery shape:
 ```json
 {
   "protocolVersion": 1,
-  "protocol": "openpets-ipc",
-  "endpoint": "/short/path/openpets.sock",
+  "protocol": "nekodrift-ipc",
+  "endpoint": "/short/path/nekodrift.sock",
   "token": "random-startup-token",
   "appVersion": "0.0.0",
   "pid": 12345,
@@ -142,7 +142,7 @@ Discovery shape:
 
 Write discovery atomically through a temp file then rename where practical. Remove the discovery file on normal app shutdown if it still points at the current pid/token.
 
-Treat discovery as untrusted in `@open-pets/client`: reject malformed JSON, wrong protocol, wrong protocol version, mismatched platform, unsupported endpoint shape, TCP-like host/port values, missing token, missing pid, and oversized discovery files.
+Treat discovery as untrusted in `@neko-drift/client`: reject malformed JSON, wrong protocol, wrong protocol version, mismatched platform, unsupported endpoint shape, TCP-like host/port values, missing token, missing pid, and oversized discovery files.
 
 Threat model: the startup token protects against accidental or cross-user access when file permissions hold. It is not a strong same-user security boundary. A same-user process that can read the discovery file can control the pet for that app run.
 
@@ -223,10 +223,10 @@ Error response:
 
 ### Client package
 
-`@open-pets/client` should expose typed helpers:
+`@neko-drift/client` should expose typed helpers:
 
 ```ts
-createOpenPetsClient(options?): OpenPetsClient
+createNekoDriftClient(options?): NekoDriftClient
 client.hello()
 client.status()
 client.react(reaction)
@@ -293,8 +293,8 @@ Automated checks:
 pnpm check
 pnpm typecheck
 pnpm build
-pnpm --filter @open-pets/desktop check
-pnpm --filter @open-pets/client check
+pnpm --filter @neko-drift/desktop check
+pnpm --filter @neko-drift/client check
 ```
 
 Phase 05 should add checks for:
@@ -313,26 +313,26 @@ Phase 05 should add checks for:
 1. Run the desktop app:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. In another terminal, run the client smoke command added by this phase, for example:
 
    ```bash
-   pnpm --filter @open-pets/client smoke:status
-   pnpm --filter @open-pets/client smoke:react testing
-   pnpm --filter @open-pets/client smoke:say "Working on it" working
+   pnpm --filter @neko-drift/client smoke:status
+   pnpm --filter @neko-drift/client smoke:react testing
+   pnpm --filter @neko-drift/client smoke:say "Working on it" working
    ```
 
 3. Confirm status returns app/default-pet information.
 4. Confirm invalid token smoke check fails with a structured rejection.
 5. Confirm the visible default pet label/state changes for react/say.
-6. Quit OpenPets and confirm the client reports that the app is unavailable.
+6. Quit NekoDrift and confirm the client reports that the app is unavailable.
 
 Manual acceptance question:
 
 ```text
-Does Phase 05 pass on your machine: local IPC discovery works, @open-pets/client can call status/react/say, invalid tokens are rejected, and quitting the app makes the client report unavailable?
+Does Phase 05 pass on your machine: local IPC discovery works, @neko-drift/client can call status/react/say, invalid tokens are rejected, and quitting the app makes the client report unavailable?
 ```
 
 ## Oracle plan review
@@ -349,20 +349,20 @@ Oracle reviewed the Phase 05 plan and approved the architecture/scope with shoul
 - Fixed: Added numeric protocol limits for request/response bytes and timeouts.
 - Fixed: Required `pet.say` to respect speech/paused controls where practical, replace transient messages, and HTML-escape dynamic text.
 - Fixed: Tightened automated check requirements for discovery validation, endpoint generation, invalid token/version/method, malformed/oversized input, say validation, and client response parsing.
-- Fixed: Noted package Node typings/build requirement for `@open-pets/client`.
-- Deferred: Environment override such as `OPENPETS_DISCOVERY_FILE` is useful for smoke tests and may be implemented if it stays simple.
+- Fixed: Noted package Node typings/build requirement for `@neko-drift/client`.
+- Deferred: Environment override such as `NEKODRIFT_DISCOVERY_FILE` is useful for smoke tests and may be implemented if it stays simple.
 
 Implementation review disposition:
 
 - Fixed: Escaped built-in pet transient label/message text before injecting into generated pet HTML.
 - Fixed: External `pet.react`/`pet.say` no longer force-show the default pet when the user has hidden it and disabled open-default-pet-on-launch; events only show an already-visible pet or the normal open-on-launch default pet.
-- Fixed: Hardened fallback `/tmp/openpets-<uid>` runtime directory handling with ownership, symlink, and mode checks before trusting it.
+- Fixed: Hardened fallback `/tmp/nekodrift-<uid>` runtime directory handling with ownership, symlink, and mode checks before trusting it.
 - Fixed: Discovery file parsing now checks file size before read and wraps malformed JSON in structured client errors.
 - Fixed: Discovery cleanup now removes the file only if it still points at the current pid/token/endpoint.
-- Fixed: Client-side Unix endpoint validation now only accepts expected OpenPets runtime socket filename/directory patterns.
+- Fixed: Client-side Unix endpoint validation now only accepts expected NekoDrift runtime socket filename/directory patterns.
 - Fixed: Paused behavior is quiet: `pet.say` and `pet.react` do not show/update visible transient state while paused.
 - Fixed: Windows pipe suffix now uses cryptographic random bytes instead of `Math.random()`.
 - Fixed: Reused the protocol transient display TTL constant instead of a hardcoded value.
-- Fixed: Corrected macOS/Linux fallback socket endpoint generation to use literal `/tmp/openpets-<uid>` so it matches the documented path and client validation.
+- Fixed: Corrected macOS/Linux fallback socket endpoint generation to use literal `/tmp/nekodrift-<uid>` so it matches the documented path and client validation.
 - Fixed: Malformed/oversized local IPC requests now return `invalid_request` structured errors instead of generic internal errors where possible.
 - Deferred: Response id matching, stronger Windows pipe ACLs, and broader cross-platform endpoint-generation tests can be added with the MCP/packaging phases if needed.

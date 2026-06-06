@@ -1,12 +1,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-const tokenArg = process.argv.find((arg) => arg.startsWith("--openpets-plugin-token="));
-const channel = tokenArg ? `openpets:plugin-sdk:${tokenArg.slice("--openpets-plugin-token=".length)}` : "";
+const tokenArg = process.argv.find((arg) => arg.startsWith("--nekodrift-plugin-token="));
+const channel = tokenArg ? `nekodrift:plugin-sdk:${tokenArg.slice("--nekodrift-plugin-token=".length)}` : "";
 let callbackId = 0;
 const callbacks = new Map();
 
 async function call(path, args) {
-  if (!channel) throw new Error("OpenPets plugin SDK is unavailable.");
+  if (!channel) throw new Error("NekoDrift plugin SDK is unavailable.");
   return ipcRenderer.invoke(channel, path, normalizeForIpc(args));
 }
 

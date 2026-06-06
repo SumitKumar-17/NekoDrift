@@ -2,13 +2,13 @@
 
 ## Goal
 
-Add a reliable current-platform desktop packaging checkpoint for the OpenPets tray app and document the MVP validation matrix, while explicitly deferring the unresolved packaged Claude command distribution path to Phase 10B.
+Add a reliable current-platform desktop packaging checkpoint for the NekoDrift tray app and document the MVP validation matrix, while explicitly deferring the unresolved packaged Claude command distribution path to Phase 10B.
 
 Phase 10A should prove that the packaged desktop app itself can launch and run the core local experience: tray, default pet, onboarding, Pet Manager, settings, local state, assets, and local IPC startup/cleanup behavior.
 
 ## Non-goals
 
-- No real packaged Claude end-to-end demo unless the user already has published `@open-pets/*` packages available.
+- No real packaged Claude end-to-end demo unless the user already has published `@neko-drift/*` packages available.
 - No npm package publishing.
 - No bundled packaged MCP/Claude resource command mode.
 - No signed/notarized public release.
@@ -20,7 +20,7 @@ Phase 10A should prove that the packaged desktop app itself can launch and run t
 
 Phase 10B should choose the Claude distribution path:
 
-- publish `@open-pets/mcp` and `@open-pets/claude`, or
+- publish `@neko-drift/mcp` and `@neko-drift/claude`, or
 - bundle unpacked MCP/Claude command resources inside the packaged app and point Agent Setup at those paths.
 
 ## User-visible/manual outcome
@@ -35,7 +35,7 @@ pnpm package:desktop:dir
 
 Then launch the generated current-platform packaged app and verify:
 
-- OpenPets starts as a tray/menu bar app.
+- NekoDrift starts as a tray/menu bar app.
 - The default pet appears and uses packaged assets.
 - First-run onboarding can complete.
 - Pet Manager opens and can show installed pets/catalog state.
@@ -59,7 +59,7 @@ The phase also creates `docs/mvp-validation.md` with a platform matrix, unsigned
   - `preload.cjs`,
   - `assets/tray-icon.png`,
   - bundled/default pet runtime assets or generated-renderer code,
-  - workspace runtime dependencies required by the desktop app, including built `@open-pets/claude` and `@open-pets/client` files because Agent Setup imports Claude helpers at startup,
+  - workspace runtime dependencies required by the desktop app, including built `@neko-drift/claude` and `@neko-drift/client` files because Agent Setup imports Claude helpers at startup,
   - package metadata needed by Electron.
 - Packaging must not leave pnpm symlinks that escape the packaged app, especially symlinks back to `packages/*` in the checkout.
 - Packaging excludes obvious repo bulk/secrets/user data:
@@ -85,7 +85,7 @@ The phase also creates `docs/mvp-validation.md` with a platform matrix, unsigned
   - CSP/navigation guards retained.
 - Local dev command mode for Agent Setup remains unavailable or clearly dev-only in packaged builds.
 - Published/npx Claude commands remain documented as requiring real published packages; packaged Claude end-to-end is explicitly deferred to Phase 10B.
-- In Phase 10A packaged app verification, do not apply Claude MCP/hooks unless `@open-pets/*` packages are actually published and intentionally being tested.
+- In Phase 10A packaged app verification, do not apply Claude MCP/hooks unless `@neko-drift/*` packages are actually published and intentionally being tested.
 - `docs/mvp-validation.md` documents:
   - platform validation matrix for macOS/Windows/Linux,
   - current-platform package command,
@@ -139,7 +139,7 @@ Root scripts should build relevant workspace dependencies before packaging. For 
 
 ```json
 {
-  "package:desktop:dir": "pnpm build && pnpm --filter @open-pets/desktop package:dir"
+  "package:desktop:dir": "pnpm build && pnpm --filter @neko-drift/desktop package:dir"
 }
 ```
 
@@ -154,7 +154,7 @@ Candidate includes:
 - `dist/**`
 - `preload.cjs`
 - `assets/**`
-- built workspace runtime dependencies needed by desktop imports, especially `@open-pets/claude` and `@open-pets/client`
+- built workspace runtime dependencies needed by desktop imports, especially `@neko-drift/claude` and `@neko-drift/client`
 - `package.json`
 
 If built-in pet assets live outside those paths or are resolved through `app.getAppPath()`, include them explicitly and adjust path helpers. If the bundled default pet is generated/rendered from compiled code rather than external files, document that in the packaging contract.
@@ -175,7 +175,7 @@ If `electron-builder` fails because of pnpm workspace dependency layout:
 
 Phase 10A must not pretend packaged Claude works while packages are private/unpublished.
 
-Agent Setup published mode may still show `npx -y @open-pets/...`, but `docs/mvp-validation.md` should state that a packaged end-to-end Claude demo requires Phase 10B unless those packages have been published.
+Agent Setup published mode may still show `npx -y @neko-drift/...`, but `docs/mvp-validation.md` should state that a packaged end-to-end Claude demo requires Phase 10B unless those packages have been published.
 
 Local dev command mode should stay disabled in packaged builds, because absolute checkout paths are not suitable for a distributed app.
 
@@ -261,7 +261,7 @@ Reviewed by Oracle after user chose to split broad Phase 10 into Phase 10A/10B.
 
 Blocker:
 
-- Even with Claude end-to-end deferred, desktop imports `@open-pets/claude` through Agent Setup, and that imports `@open-pets/client`. Phase 10A must explicitly include those workspace runtime deps' built files or use staging/deploy; packaging only desktop `dist`, preload, assets, and package metadata is likely insufficient.
+- Even with Claude end-to-end deferred, desktop imports `@neko-drift/claude` through Agent Setup, and that imports `@neko-drift/client`. Phase 10A must explicitly include those workspace runtime deps' built files or use staging/deploy; packaging only desktop `dist`, preload, assets, and package metadata is likely insufficient.
 
 Should-fix feedback:
 
@@ -284,7 +284,7 @@ Verdict: original packaged-Claude blocker is resolved by the split. Phase 10A is
 
 Fixed:
 
-- Added hard acceptance criterion for packaged workspace runtime deps, especially `@open-pets/claude` and `@open-pets/client`.
+- Added hard acceptance criterion for packaged workspace runtime deps, especially `@neko-drift/claude` and `@neko-drift/client`.
 - Added no-escaping-symlink acceptance criterion.
 - Made electron-builder config expectations explicit.
 - Added post-package content check requirement.

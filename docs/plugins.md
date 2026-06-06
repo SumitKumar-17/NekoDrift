@@ -1,10 +1,10 @@
-# OpenPets Plugins
+# NekoDrift Plugins
 
-OpenPets has a first-party plugin platform for optional desktop-pet behaviors. The desktop app remains responsible for rendering pets, tray/window UI, persistence, IPC, permission checks, sandboxing, and safety. Plugins add narrowly scoped companion behaviors such as ambient presence, break nudges, playful pet actions, focus timers, and developer notifications.
+NekoDrift has a first-party plugin platform for optional desktop-pet behaviors. The desktop app remains responsible for rendering pets, tray/window UI, persistence, IPC, permission checks, sandboxing, and safety. Plugins add narrowly scoped companion behaviors such as ambient presence, break nudges, playful pet actions, focus timers, and developer notifications.
 
 The guiding model is:
 
-> OpenPets is the pet runtime. Plugins are optional, permissioned behaviors that make the pet feel useful and alive.
+> NekoDrift is the pet runtime. Plugins are optional, permissioned behaviors that make the pet feel useful and alive.
 
 ## Current status
 
@@ -13,17 +13,17 @@ The current implementation includes:
 - Manifest v2 JavaScript plugins, with manifest v1 declarative plugin compatibility retained.
 - A sandboxed JavaScript plugin host in the desktop app.
 - Capability-based SDK access for pet actions, schedules, storage, config, commands, status, logging, and approved HTTP requests.
-- Catalog v2 support at `https://openpets.dev/plugins/catalog.v2.json`, with v1 fallback for older/declarative catalog support.
+- Catalog v2 support at `https://nekodrift.app/plugins/catalog.v2.json`, with v1 fallback for older/declarative catalog support.
 - Local developer plugin loading through explicit environment variables.
 - Host-rendered plugin configuration and command UI in the desktop Plugins window.
 - Seven launch-current first-party JavaScript plugins under `plugins/official`:
-  - `openpets.ambient-companion`
-  - `openpets.break-buddy`
-  - `openpets.pet-pal`
-  - `openpets.focus-buddy`
-  - `openpets.wander-buddy`
-  - `openpets.quick-reminders`
-  - `openpets.github-notifications`
+  - `nekodrift.ambient-companion`
+  - `nekodrift.break-buddy`
+  - `nekodrift.pet-pal`
+  - `nekodrift.focus-buddy`
+  - `nekodrift.wander-buddy`
+  - `nekodrift.quick-reminders`
+  - `nekodrift.github-notifications`
 
 Ambient Companion, Break Buddy, Pet Pal, Focus Buddy, Wander Buddy, and Quick Reminders form the companion-first default bundle. GitHub Notifications remains available as a Developer/Advanced plugin and is not part of the regular-user default experience.
 
@@ -50,7 +50,7 @@ New production plugins should use manifest v2 and `runtime: "javascript"`.
 JavaScript plugins provide one browser-compatible JavaScript entry file and register with:
 
 ```js
-OpenPetsPlugin.register({
+NekoDriftPlugin.register({
   async start(ctx) {
     // Register schedules, commands, status, config listeners, etc.
   },
@@ -83,9 +83,9 @@ Each enabled JavaScript plugin runs in its own hidden Electron renderer:
 - storage/cache cleared when the plugin host stops
 - startup timeout and crash/unresponsive handling
 
-Plugin code talks to OpenPets only through `plugin-sdk-preload.cjs`, which exposes a small SDK object. All SDK calls cross validated IPC handlers in the main process. Values crossing IPC are normalized to clone-safe data.
+Plugin code talks to NekoDrift only through `plugin-sdk-preload.cjs`, which exposes a small SDK object. All SDK calls cross validated IPC handlers in the main process. Values crossing IPC are normalized to clone-safe data.
 
-The host loads plugin code from the installed/snapshotted plugin entry. For local development and catalog installs, OpenPets validates the manifest path, install root containment, entry containment, and symlink restrictions before running code.
+The host loads plugin code from the installed/snapshotted plugin entry. For local development and catalog installs, NekoDrift validates the manifest path, install root containment, entry containment, and symlink restrictions before running code.
 
 ## Lifecycle
 
@@ -103,7 +103,7 @@ For each enabled JavaScript plugin, desktop startup or reload does this:
 10. Call `start(ctx)`.
 11. Keep registered schedules, commands, status, and config listeners in host-managed runtime state.
 
-On reload, disable, uninstall, crash, or startup failure, OpenPets cancels schedules, clears commands/status/listeners, calls plugin `stop()` when possible, removes the SDK IPC handler, destroys the host window, and marks the plugin broken if the failure is actionable.
+On reload, disable, uninstall, crash, or startup failure, NekoDrift cancels schedules, clears commands/status/listeners, calls plugin `stop()` when possible, removes the SDK IPC handler, destroys the host window, and marks the plugin broken if the failure is actionable.
 
 ## Manifest v2 shape
 
@@ -112,11 +112,11 @@ Example:
 ```json
 {
   "manifestVersion": 2,
-  "id": "openpets.break-buddy",
+  "id": "nekodrift.break-buddy",
   "name": "Break Buddy",
   "version": "1.0.0",
   "description": "Friendly break nudges delivered by your pet.",
-  "author": "OpenPets",
+  "author": "NekoDrift",
   "runtime": "javascript",
   "entry": "index.js",
   "sdkVersion": "1.0.0",
@@ -148,7 +148,7 @@ Current JavaScript plugin permissions:
 - `storage`: use per-plugin persisted state.
 - `status`: show status text/tone in the Plugins UI.
 - `commands`: register host-rendered commands/buttons.
-- `network`: request approved HTTPS hosts through OpenPets' HTTP proxy.
+- `network`: request approved HTTPS hosts through NekoDrift' HTTP proxy.
 
 Permission changes require reapproval. Network host changes also require reapproval, even if `network` was already approved.
 
@@ -157,7 +157,7 @@ Permission changes require reapproval. Network host changes also require reappro
 The SDK is intentionally small and capability-based.
 
 ```ts
-type OpenPetsPluginContext = {
+type NekoDriftPluginContext = {
   pet: {
     speak(message: string): Promise<void>
     react(reaction: string): Promise<void>
@@ -211,7 +211,7 @@ type OpenPetsPluginContext = {
 
 The main-process SDK bridge validates and limits plugin behavior:
 
-- Pet messages/reactions go through normal OpenPets validation.
+- Pet messages/reactions go through normal NekoDrift validation.
 - Pet movement only affects the default pet, never resizes windows, clamps to the primary work area, caps each move to about 160px, uses 250-1500ms stepped animation, skips while hidden/paused/dragging/busy, and saves the final position.
 - Schedule ids and command ids must be short safe identifiers.
 - Commands may include a tiny host-rendered form schema. The pet context menu opens these forms in a dedicated dialog and passes validated values to the command handler.
@@ -226,7 +226,7 @@ The main-process SDK bridge validates and limits plugin behavior:
 
 ## Config schema and Plugins UI
 
-OpenPets renders plugin configuration itself. Plugins declare fields in `configSchema`; they do not render arbitrary settings UI.
+NekoDrift renders plugin configuration itself. Plugins declare fields in `configSchema`; they do not render arbitrary settings UI.
 
 Supported config field types include:
 
@@ -274,12 +274,12 @@ The plugin state record tracks:
 Catalog v2 is the JavaScript plugin catalog. The desktop app defaults to:
 
 ```txt
-https://openpets.dev/plugins/catalog.v2.json
+https://nekodrift.app/plugins/catalog.v2.json
 ```
 
 and falls back to v1 where needed.
 
-Catalog entries include compatibility/status metadata such as runtime, SDK version, min/max OpenPets version, disabled/deprecated flags, and network host information. Disabled catalog entries cannot be newly enabled and are disabled locally when catalog metadata marks them disabled.
+Catalog entries include compatibility/status metadata such as runtime, SDK version, min/max NekoDrift version, disabled/deprecated flags, and network host information. Disabled catalog entries cannot be newly enabled and are disabled locally when catalog metadata marks them disabled.
 
 Plugin ZIP installs validate:
 
@@ -310,8 +310,8 @@ pnpm plugins:deploy
 
 Local plugin loading is explicit and development-only. Desktop reads path lists from environment variables:
 
-- `OPENPETS_DEV_PLUGIN_ROOTS`: path-list of directories whose child folders are scanned for `openpets.plugin.json`.
-- `OPENPETS_DEV_PLUGIN_PATHS`: path-list of exact plugin folders.
+- `NEKODRIFT_DEV_PLUGIN_ROOTS`: path-list of directories whose child folders are scanned for `nekodrift.plugin.json`.
+- `NEKODRIFT_DEV_PLUGIN_PATHS`: path-list of exact plugin folders.
 
 For this repository, run from the root:
 
@@ -324,10 +324,10 @@ This points desktop at `plugins/official`, snapshots each official plugin into t
 To load one plugin manually:
 
 ```bash
-OPENPETS_DEV_PLUGIN_PATHS=/absolute/path/to/plugin pnpm dev:desktop
+NEKODRIFT_DEV_PLUGIN_PATHS=/absolute/path/to/plugin pnpm dev:desktop
 ```
 
-Local plugin snapshots copy `openpets.plugin.json` and the declared JavaScript entry into app data. After editing plugin source, restart desktop or reload/load the plugin again through the Plugins UI/dev command path so the snapshot updates.
+Local plugin snapshots copy `nekodrift.plugin.json` and the declared JavaScript entry into app data. After editing plugin source, restart desktop or reload/load the plugin again through the Plugins UI/dev command path so the snapshot updates.
 
 ## First-party plugins
 
@@ -409,7 +409,7 @@ Config includes repository list, poll interval, notification toggles, and messag
 Desktop logs are written by the existing logger to:
 
 ```txt
-<Electron userData>/logs/openpets.log
+<Electron userData>/logs/nekodrift.log
 ```
 
 Plugin runtime events use the `plugin` log scope. Important messages include:
@@ -435,7 +435,7 @@ Common development failures:
 Desktop plugin/runtime validation:
 
 ```bash
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop test
 ```
 
 Plugin catalog validation and local packaging:

@@ -3,7 +3,7 @@ import { BrowserWindow, powerMonitor, screen } from "electron";
 import { getAppStateSnapshot, getDefaultPetPosition, resetDefaultPetPosition, setDefaultPetPosition, updatePreferences } from "./app-state.js";
 import { defaultPetWindowSize, getDefaultPetInitialPosition } from "./display.js";
 import { debug, info } from "./logger.js";
-import { transientDisplayMs, type OpenPetsReaction } from "./local-ipc-protocol.js";
+import { transientDisplayMs, type NekoDriftReaction } from "./local-ipc-protocol.js";
 import { clearTransientReaction, createDefaultPetWindow, getSafeDefaultPetPosition, getTransientDisplayDurationMs, getTransientReactionAnimationMs, isPetWindowDragging, loadDefaultPetContent, mergePetTransientDisplay, readWindowPosition, recoverPetMouseInterop, setPetReactionState, type PetStatusBadgeReaction, type PetTransientDisplay } from "./pet-window.js";
 
 let defaultPetWindow: BrowserWindow | null = null;
@@ -87,7 +87,7 @@ export function recoverDefaultPetMouseInterop(reason: string): void {
   recoverPetMouseInterop(defaultPetWindow, reason);
 }
 
-export function applyExternalPetReaction(reaction: OpenPetsReaction): { readonly shown: boolean; readonly reason?: string } {
+export function applyExternalPetReaction(reaction: NekoDriftReaction): { readonly shown: boolean; readonly reason?: string } {
   if (paused) {
     return { shown: false, reason: "paused" };
   }
@@ -97,7 +97,7 @@ export function applyExternalPetReaction(reaction: OpenPetsReaction): { readonly
   return { shown: isDefaultPetVisible() };
 }
 
-export function applyExternalPetSay(message: string, reaction?: OpenPetsReaction): { readonly shown: boolean; readonly reason?: string } {
+export function applyExternalPetSay(message: string, reaction?: NekoDriftReaction): { readonly shown: boolean; readonly reason?: string } {
   if (paused) {
     return { shown: false, reason: "paused" };
   }
@@ -287,7 +287,7 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function setStatusBadge(reaction: OpenPetsReaction): void {
+function setStatusBadge(reaction: NekoDriftReaction): void {
   if (reaction === "idle") {
     clearStatusBadge();
     return;
@@ -324,7 +324,7 @@ function getCurrentDismissToken(): string | undefined {
   return transientDisplay?.dismissToken ?? (statusBadge ? String(displayGeneration) : undefined);
 }
 
-function isBusyStatusBadgeReaction(reaction: OpenPetsReaction): boolean {
+function isBusyStatusBadgeReaction(reaction: NekoDriftReaction): boolean {
   return reaction === "thinking" || reaction === "working" || reaction === "editing" || reaction === "running" || reaction === "testing" || reaction === "waiting";
 }
 

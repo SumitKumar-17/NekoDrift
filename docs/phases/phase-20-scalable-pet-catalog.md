@@ -25,7 +25,7 @@ preview: `${PUBLIC_BASE_URL}${pet.spritesheetPath}`
 That means the picker can request hundreds or thousands of full files like:
 
 ```text
-https://openpets.dev/pets/<slug>/spritesheet.webp
+https://nekodrift.app/pets/<slug>/spritesheet.webp
 ```
 
 With a 1,000+ pet catalog, this creates excessive network, decode, memory, and layout work. Desktop-side lazy loading helps, but it does not solve the root issue: gallery cards need tiny thumbnails, not full runtime spritesheets.
@@ -49,7 +49,7 @@ For every public catalog pet under `web/public/pets/<slug>/`, generate and publi
 spritesheet.webp  # existing full runtime/install asset
 thumb.webp        # new tiny static thumbnail for gallery cards
 preview.webp      # optional small animated/detail preview, if cheap to generate
-<petId>.zip       # existing install package, served from zip.openpets.dev
+<petId>.zip       # existing install package, served from zip.nekodrift.app
 ```
 
 Recommended budgets:
@@ -72,7 +72,7 @@ Add `public/pets/catalog.v3.json` as an index:
   "generatedAt": "2026-05-12T00:00:00.000Z",
   "total": 2500,
   "pageSize": 100,
-  "search": "https://openpets.dev/pets/catalog.v3/search.json",
+  "search": "https://nekodrift.app/pets/catalog.v3/search.json",
   "filters": {
     "categories": [
       { "id": "western", "label": "Western", "count": 1250 },
@@ -80,8 +80,8 @@ Add `public/pets/catalog.v3.json` as an index:
     ]
   },
   "pages": [
-    "https://openpets.dev/pets/catalog.v3/page-000.json",
-    "https://openpets.dev/pets/catalog.v3/page-001.json"
+    "https://nekodrift.app/pets/catalog.v3/page-000.json",
+    "https://nekodrift.app/pets/catalog.v3/page-001.json"
   ]
 }
 ```
@@ -95,8 +95,8 @@ Add a lightweight searchable metadata index under `public/pets/catalog.v3/search
   "total": 2500,
   "pageSize": 250,
   "pages": [
-    "https://openpets.dev/pets/catalog.v3/search-page-000.json",
-    "https://openpets.dev/pets/catalog.v3/search-page-001.json"
+    "https://nekodrift.app/pets/catalog.v3/search-page-000.json",
+    "https://nekodrift.app/pets/catalog.v3/search-page-001.json"
   ]
 }
 ```
@@ -134,10 +134,10 @@ Add paginated page files under `public/pets/catalog.v3/`:
       "id": "snoopy",
       "displayName": "Snoopy",
       "description": "A tiny black-and-white beagle with a red collar for calm coding sessions.",
-      "thumbnail": "https://openpets.dev/pets/snoopy-23e05847/thumb.webp",
-      "preview": "https://openpets.dev/pets/snoopy-23e05847/preview.webp",
-      "spritesheet": "https://openpets.dev/pets/snoopy-23e05847/spritesheet.webp",
-      "zip": "https://zip.openpets.dev/pets/snoopy-23e05847/snoopy.zip",
+      "thumbnail": "https://nekodrift.app/pets/snoopy-23e05847/thumb.webp",
+      "preview": "https://nekodrift.app/pets/snoopy-23e05847/preview.webp",
+      "spritesheet": "https://nekodrift.app/pets/snoopy-23e05847/spritesheet.webp",
+      "zip": "https://zip.nekodrift.app/pets/snoopy-23e05847/snoopy.zip",
       "category": "western",
       "subcategory": "cartoons"
     }
@@ -164,9 +164,9 @@ V3 index invariants:
 - Maximum page count: 100 pages for this phase.
 - `total` must equal the sum of pets across all pages during generation.
 - Pet IDs must be unique across all pages.
-- Page URLs must match `https://openpets.dev/pets/catalog.v3/page-<3 digit>.json`.
-- Search URL must match `https://openpets.dev/pets/catalog.v3/search.json`.
-- Search page URLs must match `https://openpets.dev/pets/catalog.v3/search-page-<3 digit>.json`.
+- Page URLs must match `https://nekodrift.app/pets/catalog.v3/page-<3 digit>.json`.
+- Search URL must match `https://nekodrift.app/pets/catalog.v3/search.json`.
+- Search page URLs must match `https://nekodrift.app/pets/catalog.v3/search-page-<3 digit>.json`.
 - Search index and search page responses must each stay within the 256 KB response budget.
 - Deploy ordering must publish page files before publishing the index that references them.
 
@@ -211,7 +211,7 @@ Tasks:
 4. Continue writing `catalog.v2.json` as a backward-compatible subset capped to 300 pets.
 5. Write `catalog.v3.json` plus `catalog.v3/page-XXX.json` files for all eligible public pets.
 6. Write `catalog.v3/search.json` for full-catalog desktop search.
-7. Keep zip URLs on `zip.openpets.dev` unchanged.
+7. Keep zip URLs on `zip.nekodrift.app` unchanged.
 8. Include the existing web category metadata in every v3 pet as `category: "western" | "asian"`.
 9. Add validation that every v3 page item has safe `id`, `thumbnail`, `zip`, and known `category` fields.
 10. Add category counts to the v3 index so desktop can show correct filters before every page is loaded.
@@ -227,7 +227,7 @@ Thumbnail generation options:
 
 Add a new desktop catalog path while keeping v2 fallback:
 
-1. Fetch `https://openpets.dev/pets/catalog.v3.json` first.
+1. Fetch `https://nekodrift.app/pets/catalog.v3.json` first.
 2. Validate the index response size and exact final URL.
 3. Fetch the first page only on initial Pet Manager open.
 4. Fetch the lightweight v3 search index when the user searches, or eagerly after initial open if cheap enough, so search can find pets across the full catalog.
@@ -263,7 +263,7 @@ Renderer behavior:
 
 This phase is implemented across both repositories in this workspace:
 
-- Root OpenPets desktop app: `apps/desktop/**`.
+- Root NekoDrift desktop app: `apps/desktop/**`.
 - Nested web catalog project: `web/**`.
 
 ### Web catalog generation
@@ -350,8 +350,8 @@ Validation must check:
 - search page file names use exactly three digits
 - page/index/search JSON byte size budgets
 - thumbnail file exists for every v3 pet
-- thumbnail/preview/spritesheet URLs are `https://openpets.dev/pets/.../*.webp`
-- zip URLs are `https://zip.openpets.dev/pets/.../*.zip`
+- thumbnail/preview/spritesheet URLs are `https://nekodrift.app/pets/.../*.webp`
+- zip URLs are `https://zip.nekodrift.app/pets/.../*.zip`
 
 Update `web/nuxt.config.js` route rules or deployment headers for catalog JSON coherence. Either:
 
@@ -410,7 +410,7 @@ Installation changes in `apps/desktop/src/pet-installation.ts`:
 
 - Replace the current `getCatalogUiState().pets.find(...)` lookup with `getCatalogPetForInstall(petId)`.
 - Store installed state with the catalog version that supplied the pet (`2` or `3`) while preserving existing state compatibility.
-- Continue downloading ZIPs only from validated `zip.openpets.dev` URLs.
+- Continue downloading ZIPs only from validated `zip.nekodrift.app` URLs.
 
 State changes in `apps/desktop/src/app-state.ts`:
 
@@ -420,14 +420,14 @@ State changes in `apps/desktop/src/app-state.ts`:
 
 IPC changes in `apps/desktop/src/windows.ts`:
 
-- Keep `openpets:get-catalog` for initial state.
+- Keep `nekodrift:get-catalog` for initial state.
 - Add handlers for:
-  - `openpets:load-catalog-page`
-  - `openpets:query-catalog`
-  - `openpets:get-catalog-pet-detail`
+  - `nekodrift:load-catalog-page`
+  - `nekodrift:query-catalog`
+  - `nekodrift:get-catalog-pet-detail`
 - Gate each handler with `assertAllowedSender(event, ["pet-manager"])`.
 - Validate every renderer-supplied IPC argument before calling catalog service methods.
-- Keep Pet Manager CSP at `img-src data: https://openpets.dev`; do not add `zip.openpets.dev` to image CSP.
+- Keep Pet Manager CSP at `img-src data: https://nekodrift.app`; do not add `zip.nekodrift.app` to image CSP.
 
 ### Desktop renderer / preload behavior
 
@@ -436,7 +436,7 @@ Update `apps/desktop/preload.cjs` Pet Manager logic:
 - Treat catalog state as versioned (`mode: "v3" | "v2"`).
 - Render v3 cards from `thumbnail` with `previewIsSpriteSheet: false`.
 - Do not use `spritesheet` for cards.
-- For selected detail, call `openpets:get-catalog-pet-detail` and render the returned validated spritesheet as an animated sprite when it arrives.
+- For selected detail, call `nekodrift:get-catalog-pet-detail` and render the returned validated spritesheet as an animated sprite when it arrives.
 - While selected-detail spritesheet is loading, show the thumbnail or empty placeholder.
 - Hide/degrade mini state previews until a real spritesheet is available.
 - Keep Codex/local pets using their current preview paths and behavior.
@@ -446,8 +446,8 @@ Paging and search:
 - Initial render shows built-in/installed rows plus v3 page 0 public catalog rows.
 - Add a scroll listener or `IntersectionObserver` sentinel near the bottom of `#catalog-pets` to load the next page automatically when not searching.
 - Debounce search input.
-- For non-empty search, call `openpets:query-catalog` so results can include unloaded pages.
-- For `Western` and `Asian` filters, call `openpets:query-catalog` even when search is empty so category results are full-catalog and paged, not limited to already-loaded pages.
+- For non-empty search, call `nekodrift:query-catalog` so results can include unloaded pages.
+- For `Western` and `Asian` filters, call `nekodrift:query-catalog` even when search is empty so category results are full-catalog and paged, not limited to already-loaded pages.
 - For empty `All`, return to loaded-page browsing and continue scroll pagination.
 - Avoid rendering all 1,000+ pets at once; query results must be bounded and cursor/page-loaded from the main process.
 - Protect selected-detail spritesheet rendering with a request token or equivalent cancellation guard so stale responses cannot update the detail pane after the user selects another pet.
@@ -487,7 +487,7 @@ Implement this work in reviewable phases. After each phase, run the relevant che
    - Add v3 installed-source normalization while preserving existing v2 state.
    - Add IPC handlers with strict argument validation, request dedupe, and concurrency bounds.
    - Add packaging coverage for v2 fixture fallback if it remains enabled.
-   - Checks: `pnpm --filter @open-pets/desktop build` and focused catalog/check tests.
+   - Checks: `pnpm --filter @neko-drift/desktop build` and focused catalog/check tests.
    - Oracle review gate: security boundaries, URL validation, app-state compatibility, fallback behavior, and install lookup outside page 0.
 
 3. **Pet Manager renderer update**
@@ -544,7 +544,7 @@ Desktop:
 
 ## Security and compatibility notes
 
-- Desktop CSP should continue to allow only `data:` and `https://openpets.dev` for Pet Manager images unless the implementation requires a narrower path/origin rule.
+- Desktop CSP should continue to allow only `data:` and `https://nekodrift.app` for Pet Manager images unless the implementation requires a narrower path/origin rule.
 - The renderer must not independently derive `thumbnail`, `preview`, `spritesheet`, or `zip` URLs.
 - Main process should validate:
   - catalog index final URL,
@@ -580,7 +580,7 @@ Desktop:
 - `catalog.v2.json` output remains backward compatible and capped to 300 pets.
 - `catalog.v3.json` and page files are generated by all relevant web catalog sync/import flows for all eligible public pets.
 - `catalog.v3/search.json` is generated and enables full-catalog desktop search without loading all page files or thumbnails initially.
-- Every v3 pet has a small `thumbnail` URL under `https://openpets.dev/pets/` ending in `.webp`.
+- Every v3 pet has a small `thumbnail` URL under `https://nekodrift.app/pets/` ending in `.webp`.
 - Desktop Pet Manager card grid uses `thumbnail` for catalog pets.
 - Desktop Pet Manager includes compact right-aligned filters ordered `All`, `Western`, `Asian`, existing `Codex`, and `Installed` when v3 metadata is available.
 - Desktop Pet Manager moves the pet count/status label to the bottom corner and keeps it minimal, without `Live` wording or Codex count.
@@ -610,8 +610,8 @@ bun run sync:pets
 Desktop:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 pnpm package:desktop:dir
 ```
 

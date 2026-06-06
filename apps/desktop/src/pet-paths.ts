@@ -25,6 +25,6 @@ export function assertInsideRoot(root: string, target: string): void {
   const resolvedTarget = resolve(target);
 
   if (resolvedTarget !== resolvedRoot && !resolvedTarget.startsWith(`${resolvedRoot}${sep}`)) {
-    throw new Error("Resolved path escapes OpenPets pets directory.");
+    throw new Error("Resolved path escapes NekoDrift pets directory.");
   }
 }

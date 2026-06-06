@@ -1,6 +1,6 @@
 # packages/cli/src/
 
-TypeScript source files for the OpenPets CLI.
+TypeScript source files for the NekoDrift CLI.
 
 ## Files
 
@@ -11,7 +11,7 @@ Main CLI entry point (625 lines). Command routing, argument parsing, project con
 **Commands:**
 - `install <pet-id>` - Install pet via running desktop app
 - `configure` - Interactive project setup for Claude, OpenCode, or Cursor
-- `status` - Check OpenPets desktop app connectivity
+- `status` - Check NekoDrift desktop app connectivity
 - `pets` - List installed pets
 - `react <reaction>` - Send reaction to desktop app
 - `say <message> [--reaction <reaction>]` - Display message on pet

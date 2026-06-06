@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {
   allowedReactions,
-  type OpenPetsReaction,
+  type NekoDriftReaction,
 } from "../src/local-ipc-protocol.js";
 import {
   defaultPetSprite,
@@ -71,13 +71,13 @@ for (const [stateId, def] of Object.entries(defaultPetSprite.states) as [Univers
 }
 
 // Reaction mapping keys match allowedReactions
-const reactionMappingKeys = Object.keys(defaultReactionToSpriteState) as OpenPetsReaction[];
-assertSameMembers(reactionMappingKeys, [...allowedReactions] as OpenPetsReaction[], "reaction mapping keys must match allowedReactions");
+const reactionMappingKeys = Object.keys(defaultReactionToSpriteState) as NekoDriftReaction[];
+assertSameMembers(reactionMappingKeys, [...allowedReactions] as NekoDriftReaction[], "reaction mapping keys must match allowedReactions");
 
 // Every mapped value is selectable and exists in sprite states
 const selectableSet = new Set(EXPECTED_SELECTABLE_ANIMATION_IDS);
 const spriteStateSet = new Set(EXPECTED_SPRITE_STATE_IDS);
-for (const [reaction, state] of Object.entries(defaultReactionToSpriteState) as [OpenPetsReaction, UserSelectableAnimationState][]) {
+for (const [reaction, state] of Object.entries(defaultReactionToSpriteState) as [NekoDriftReaction, UserSelectableAnimationState][]) {
   assert.ok(selectableSet.has(state), `${reaction}: mapped state ${state} must be user-selectable`);
   assert.ok(spriteStateSet.has(state), `${reaction}: mapped state ${state} must exist in sprite states`);
 }

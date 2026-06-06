@@ -6,12 +6,12 @@ This checklist tracks Cursor implementation work. Each phase has an Oracle appro
 
 - [x] Validate strict JSON vs JSONC support in Cursor MCP config.
 - [x] Validate whether Cursor requires restart/reload after MCP config changes.
-- [x] Validate global/project precedence for duplicate `mcpServers.openpets`.
+- [x] Validate global/project precedence for duplicate `mcpServers.nekodrift`.
 - [x] Validate duplicate server behavior across scopes. Project priority is documented; UI duplicate behavior still needs smoke-test awareness.
 - [x] Validate documented stdio fields for Cursor MCP entries.
 - [x] Choose final command strategy:
-  - [x] direct `@open-pets/mcp@VERSION`, or
-  - [ ] `@open-pets/cli@VERSION mcp`.
+  - [x] direct `@neko-drift/mcp@VERSION`, or
+  - [ ] `@neko-drift/cli@VERSION mcp`.
 - [x] Smoke test real Cursor MCP connection.
 - [x] Record validation results in `docs/cursor-phase-1-spec.md` and/or `docs/cursor-integration.md`.
 - [x] **Oracle review/approval gate.**
@@ -24,7 +24,7 @@ This checklist tracks Cursor implementation work. Each phase has an Oracle appro
 - [x] Add status/classification helpers.
 - [x] Add safe read helpers.
 - [x] Add safe write/remove helpers.
-- [x] Add OpenPets-only preview helpers.
+- [x] Add NekoDrift-only preview helpers.
 - [x] Add redaction helpers.
 - [x] Add package build/typecheck/test/check scripts.
 - [x] Add temp-file tests for missing/empty config.
@@ -40,13 +40,13 @@ This checklist tracks Cursor implementation work. Each phase has an Oracle appro
 
 ## Phase 1C — CLI integration
 
-- [x] Add `@open-pets/cursor` dependency to CLI if CLI consumes shared helpers.
+- [x] Add `@neko-drift/cursor` dependency to CLI if CLI consumes shared helpers.
 - [x] Add `cursor` to accepted configure agents.
 - [x] Implement project-local default behavior matching existing configure semantics:
   - [x] no `--cwd` → `process.cwd()/.cursor/mcp.json`;
   - [x] `--cwd` → `<cwd>/.cursor/mcp.json`.
 - [x] Do not add global CLI behavior unless explicit `--global` is designed and reviewed.
-- [x] Print target path, status, OpenPets-only preview, backup path, and restart/reload note.
+- [x] Print target path, status, NekoDrift-only preview, backup path, and restart/reload note.
 - [x] Ensure unrelated Cursor config secrets are never printed.
 - [x] Add CLI contract tests.
 - [x] Run CLI/package checks.
@@ -54,7 +54,7 @@ This checklist tracks Cursor implementation work. Each phase has an Oracle appro
 
 ## Phase 1D — Desktop Agent Setup
 
-- [x] Add `@open-pets/cursor` dependency to desktop if desktop consumes shared helpers.
+- [x] Add `@neko-drift/cursor` dependency to desktop if desktop consumes shared helpers.
 - [x] Replace Cursor “Soon” card with active config-status card.
 - [x] Add Cursor detail pane.
 - [x] Add pet selector.
@@ -62,7 +62,7 @@ This checklist tracks Cursor implementation work. Each phase has an Oracle appro
 - [x] Use global `~/.cursor/mcp.json` only in desktop Phase 1.
 - [x] Show warning that Cursor may need restart/reload.
 - [x] Show warning that published `npx` mode may need npm/network/cache access.
-- [x] Show warning that OpenPets edits only `mcpServers.openpets`.
+- [x] Show warning that NekoDrift edits only `mcpServers.nekodrift`.
 - [x] Bind preload actions.
 - [x] Add desktop contract checks.
 - [x] Run desktop checks.
@@ -88,7 +88,7 @@ This checklist tracks Cursor implementation work. Each phase has an Oracle appro
 - [x] Draft Phase 2 rules spec in `docs/cursor-phase-2-rules-spec.md`.
 - [x] **Oracle review before implementation.**
 - [x] Run/record Cursor rules validation spike.
-- [x] Implement `@open-pets/cursor` rules helpers.
+- [x] Implement `@neko-drift/cursor` rules helpers.
 - [x] Add CLI project-local rules install/update/remove flow.
 - [x] Add desktop rules preview/copy guidance only, unless separately reviewed.
 - [x] Run package and full checks.

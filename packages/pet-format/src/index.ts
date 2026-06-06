@@ -1,5 +1,5 @@
 export interface PetFormatPackageMarker {
-  readonly packageName: "@open-pets/pet-format";
+  readonly packageName: "@neko-drift/pet-format";
 }
 
-export const petFormatPackageName = "@open-pets/pet-format";
+export const petFormatPackageName = "@neko-drift/pet-format";

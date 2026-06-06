@@ -9,7 +9,7 @@ const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const desktopDir = resolve(scriptsDir, "..");
 const repoRoot = resolve(desktopDir, "../..");
 const outputDir = join(desktopDir, "dist-electron");
-const repository = "alvinunreal/openpets";
+const repository = "alvinunreal/nekodrift";
 
 const allowedArgs = new Set([
   "--dry-run",
@@ -55,7 +55,7 @@ function main() {
   preflight();
   if (!skipChecks) {
     run("pnpm", ["build"], { cwd: repoRoot });
-    run("pnpm", ["--filter", "@open-pets/desktop", "check"], { cwd: repoRoot });
+    run("pnpm", ["--filter", "@neko-drift/desktop", "check"], { cwd: repoRoot });
   }
 
   run("node", ["scripts/clean-package-output.cjs"], { cwd: desktopDir });
@@ -85,7 +85,7 @@ function main() {
   }
 
   const target = commandOutput("git", ["rev-parse", "HEAD"], { cwd: repoRoot }).trim();
-  run("gh", ["release", "create", tag, "--repo", repository, "--target", target, "--title", `OpenPets ${tag}`, "--notes", defaultReleaseNotes()], { cwd: repoRoot });
+  run("gh", ["release", "create", tag, "--repo", repository, "--target", target, "--title", `NekoDrift ${tag}`, "--notes", defaultReleaseNotes()], { cwd: repoRoot });
   run("gh", ["release", "upload", tag, "--repo", repository, ...uploadArtifacts], { cwd: repoRoot });
   console.log(`\nPublished release created: https://github.com/${repository}/releases/tag/${tag}`);
   console.log("Published releases are visible to the app update checker.");
@@ -208,11 +208,11 @@ function run(command, args, options) {
 
 function defaultReleaseNotes() {
   return [
-    `OpenPets ${tag} ships the first official plugin release with polished desktop plugin management.`,
+    `NekoDrift ${tag} ships the first official plugin release with polished desktop plugin management.`,
     "",
-    "## New: OpenPets Plugins",
+    "## New: NekoDrift Plugins",
     "",
-    "OpenPets now includes a first-party plugin platform for bundled desktop companion behaviors.",
+    "NekoDrift now includes a first-party plugin platform for bundled desktop companion behaviors.",
     "",
     "## Included plugins",
     "",
@@ -227,7 +227,7 @@ function defaultReleaseNotes() {
     "- New polished Plugins window with install, enable, configure, update, reload, and uninstall actions.",
     "- Friendly plugin configuration UI; no JSON editing required.",
     "- Plugin permissions, network hosts, and official plugin icons are explicit.",
-    "- JavaScript plugins run in a sandboxed renderer with a narrow OpenPets SDK.",
+    "- JavaScript plugins run in a sandboxed renderer with a narrow NekoDrift SDK.",
     "",
     "## Developer notes",
     "",

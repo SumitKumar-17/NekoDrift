@@ -1,10 +1,10 @@
-# OpenPets Desktop Release Guide
+# NekoDrift Desktop Release Guide
 
-This guide is for an AI agent creating a new OpenPets desktop release from a local macOS machine. The release flow builds Electron artifacts locally, creates a published GitHub Release, and uploads the assets.
+This guide is for an AI agent creating a new NekoDrift desktop release from a local macOS machine. The release flow builds Electron artifacts locally, creates a published GitHub Release, and uploads the assets.
 
 ## Repository and app
 
-- GitHub repo: `alvinunreal/openpets`
+- GitHub repo: `alvinunreal/nekodrift`
 - Desktop app: `apps/desktop`
 - Release script: `apps/desktop/scripts/release-local.mjs`
 - Root command: `pnpm release:desktop`
@@ -12,22 +12,22 @@ This guide is for an AI agent creating a new OpenPets desktop release from a loc
 
 ## Current WSL/NPM patch release plan
 
-The next end-user release is a **public npm package patch** for issue #3. Desktop `v2.1.1` already advertises WSL NAT TCP endpoints correctly, but WSL/OpenCode uses `npx @open-pets/cli`, and npm `latest` was still `2.0.7`, whose client rejects non-loopback TCP discovery endpoints.
+The next end-user release is a **public npm package patch** for issue #3. Desktop `v2.1.1` already advertises WSL NAT TCP endpoints correctly, but WSL/OpenCode uses `npx @neko-drift/cli`, and npm `latest` was still `2.0.7`, whose client rejects non-loopback TCP discovery endpoints.
 
 Release goals:
 
-1. Publish all public npm packages at `2.1.1` so `npx -y @open-pets/cli@latest` includes the WSL NAT client fix.
+1. Publish all public npm packages at `2.1.1` so `npx -y @neko-drift/cli@latest` includes the WSL NAT client fix.
 2. Keep the existing desktop GitHub Release `v2.1.1`; do not create another desktop release for this npm-only patch unless desktop code changes again.
 3. Preserve desktop package version `2.1.1` and align public package versions to `2.1.1`.
-4. Document OpenCode's per-MCP `environment` key for setting `OPENPETS_DISCOVERY_FILE` explicitly.
+4. Document OpenCode's per-MCP `environment` key for setting `NEKODRIFT_DISCOVERY_FILE` explicitly.
 5. Verify from a Windows + WSL lab that a WSL client can read the Windows discovery file and reach the advertised TCP endpoint.
 
 Suggested issue response:
 
 ```md
-I reproduced the remaining failure. Windows OpenPets is advertising the TCP endpoint correctly and WSL can read `ipc.json`, but `npx -y @open-pets/cli@latest` was still resolving to npm `2.0.7`, whose client rejected private WSL NAT endpoints like `tcp://172.x.x.x:<port>` before connecting.
+I reproduced the remaining failure. Windows NekoDrift is advertising the TCP endpoint correctly and WSL can read `ipc.json`, but `npx -y @neko-drift/cli@latest` was still resolving to npm `2.0.7`, whose client rejected private WSL NAT endpoints like `tcp://172.x.x.x:<port>` before connecting.
 
-The fix is to publish the public npm packages at `2.1.1`, matching the desktop release. After npm updates, restart OpenCode or clear any npx cache and use the OpenCode MCP `environment` field for `OPENPETS_DISCOVERY_FILE`.
+The fix is to publish the public npm packages at `2.1.1`, matching the desktop release. After npm updates, restart OpenCode or clear any npx cache and use the OpenCode MCP `environment` field for `NEKODRIFT_DISCOVERY_FILE`.
 ```
 
 Required validation:
@@ -48,9 +48,9 @@ pnpm release:npm -- --yes
 Post-publish verification:
 
 ```bash
-npm view @open-pets/client@2.1.1 version
-npm view @open-pets/cli@2.1.1 version
-npx -y @open-pets/cli@2.1.1 --help
+npm view @neko-drift/client@2.1.1 version
+npm view @neko-drift/cli@2.1.1 version
+npx -y @neko-drift/cli@2.1.1 --help
 ```
 
 WSL lab verification should include a discovery file with a private Windows endpoint such as:
@@ -65,8 +65,8 @@ WSL lab verification should include a discovery file with a private Windows endp
 and then:
 
 ```bash
-OPENPETS_DISCOVERY_FILE=/mnt/c/Users/<WindowsUser>/AppData/Roaming/OpenPets/runtime/ipc.json \
-  npx -y @open-pets/cli@2.1.1 status
+NEKODRIFT_DISCOVERY_FILE=/mnt/c/Users/<WindowsUser>/AppData/Roaming/NekoDrift/runtime/ipc.json \
+  npx -y @neko-drift/cli@2.1.1 status
 ```
 
 ## Companion-first plugin release plan
@@ -77,13 +77,13 @@ Release goals:
 
 1. Ship the desktop JavaScript plugin runtime and polished Plugins UI.
 2. Publish the official plugin catalog with exactly these first-party plugins:
-   - Ambient Companion (`openpets.ambient-companion`)
-   - Break Buddy (`openpets.break-buddy`)
-   - Pet Pal (`openpets.pet-pal`)
-   - Focus Buddy (`openpets.focus-buddy`)
-   - Wander Buddy (`openpets.wander-buddy`)
-   - Quick Reminders (`openpets.quick-reminders`)
-   - GitHub Notifications (`openpets.github-notifications`)
+   - Ambient Companion (`nekodrift.ambient-companion`)
+   - Break Buddy (`nekodrift.break-buddy`)
+   - Pet Pal (`nekodrift.pet-pal`)
+   - Focus Buddy (`nekodrift.focus-buddy`)
+   - Wander Buddy (`nekodrift.wander-buddy`)
+   - Quick Reminders (`nekodrift.quick-reminders`)
+   - GitHub Notifications (`nekodrift.github-notifications`)
 3. Remove legacy sample plugins from public discovery:
    - Break Reminder
    - Eye Rest
@@ -111,14 +111,14 @@ Desktop release includes:
 Required validation before desktop release:
 
 ```bash
-pnpm --filter @open-pets/desktop check
-pnpm --filter @open-pets/desktop test
-pnpm --filter @open-pets/desktop package:dir
+pnpm --filter @neko-drift/desktop check
+pnpm --filter @neko-drift/desktop test
+pnpm --filter @neko-drift/desktop package:dir
 ```
 
 Manual desktop QA:
 
-1. Run normal desktop dev startup or a packaged app (`pnpm dev:desktop` or the output from `pnpm --filter @open-pets/desktop package:dir`) so bundled seeding runs.
+1. Run normal desktop dev startup or a packaged app (`pnpm dev:desktop` or the output from `pnpm --filter @neko-drift/desktop package:dir`) so bundled seeding runs.
 2. Open tray → Plugins.
 3. Confirm Ambient Companion, Break Buddy, Pet Pal, Focus Buddy, Wander Buddy, and GitHub Notifications appear in dev mode.
 4. Confirm old sample plugins do not appear.
@@ -170,24 +170,24 @@ Publishing sequence:
    pnpm plugins:deploy
    ```
 6. Verify live endpoints:
-   - `https://openpets.dev/plugins/catalog.v2.json`
-   - `https://openpets.dev/plugins/catalog.v1.json`
-   - each `https://zip.openpets.dev/plugins/<plugin-id>.zip`
+   - `https://nekodrift.app/plugins/catalog.v2.json`
+   - `https://nekodrift.app/plugins/catalog.v1.json`
+   - each `https://zip.nekodrift.app/plugins/<plugin-id>.zip`
 
 ### C. GitHub Release notes
 
 Suggested release title:
 
 ```txt
-OpenPets v<version> — Plugins
+NekoDrift v<version> — Plugins
 ```
 
 Suggested release notes:
 
 ```md
-## New: OpenPets Plugins
+## New: NekoDrift Plugins
 
-OpenPets now includes a first-party plugin platform for optional desktop companion behaviors.
+NekoDrift now includes a first-party plugin platform for optional desktop companion behaviors.
 
 ### Included plugins
 
@@ -204,7 +204,7 @@ OpenPets now includes a first-party plugin platform for optional desktop compani
 - New polished Plugins window with install, enable, configure, update, reload, and uninstall actions.
 - Friendly plugin configuration UI; no JSON editing required.
 - Plugin permissions and network hosts are explicit.
-- JavaScript plugins run in a sandboxed renderer with a narrow OpenPets SDK.
+- JavaScript plugins run in a sandboxed renderer with a narrow NekoDrift SDK.
 
 ### Developer notes
 
@@ -236,7 +236,7 @@ If npm is needed, publish all public npm packages together using the NPM package
 1. Requires macOS.
 2. Requires `pnpm` and `gh`.
 3. Requires GitHub CLI auth for `github.com`.
-4. Requires `origin` to point to `alvinunreal/openpets`.
+4. Requires `origin` to point to `alvinunreal/nekodrift`.
 5. Requires a clean git working tree.
 6. Requires the current branch to have an upstream.
 7. Requires local `HEAD` to match the upstream branch.
@@ -267,10 +267,10 @@ Default build matrix for the local release script:
 Expected main artifacts look like:
 
 ```txt
-OpenPets-<version>-mac-x64.dmg
-OpenPets-<version>-mac-arm64.dmg
-OpenPets-<version>-win-x64-setup.exe
-OpenPets-<version>-linux-x86_64.AppImage
+NekoDrift-<version>-mac-x64.dmg
+NekoDrift-<version>-mac-arm64.dmg
+NekoDrift-<version>-win-x64-setup.exe
+NekoDrift-<version>-linux-x86_64.AppImage
 SHA256SUMS
 ```
 
@@ -313,7 +313,7 @@ Desktop-only releases may intentionally use a different version than the root wo
 
 For a full workspace/npm release, update all workspace package versions together so bundled packages and npm packages report the same release version.
 
-Use a new version for every release artifact you publish. npm package versions are immutable, so any change to a published package requires a new version across all public OpenPets npm packages.
+Use a new version for every release artifact you publish. npm package versions are immutable, so any change to a published package requires a new version across all public NekoDrift npm packages.
 
 Files to update for a full workspace/npm release:
 
@@ -354,7 +354,7 @@ Run:
 
 ```bash
 pnpm build
-pnpm --filter @open-pets/desktop check
+pnpm --filter @neko-drift/desktop check
 ```
 
 Fix any failures before continuing.
@@ -472,7 +472,7 @@ If the script creates the release but upload fails:
 2. Upload missing artifacts manually with:
 
 ```bash
-gh release upload v<version> --repo alvinunreal/openpets <artifact-path>
+gh release upload v<version> --repo alvinunreal/nekodrift <artifact-path>
 ```
 
 3. Or delete the release/tag and rerun after fixing the issue.
@@ -482,7 +482,7 @@ gh release upload v<version> --repo alvinunreal/openpets <artifact-path>
 These do not create a GitHub Release:
 
 ```bash
-pnpm --filter @open-pets/desktop build
+pnpm --filter @neko-drift/desktop build
 node apps/desktop/scripts/clean-package-output.cjs
 pnpm --dir apps/desktop exec electron-builder --mac dmg --x64 --publish never
 pnpm --dir apps/desktop exec electron-builder --mac dmg --arm64 --publish never
@@ -511,7 +511,7 @@ Electron Builder v26 uses the Windows Store target name `appx`. There is no sepa
 
 AppX tile assets are separate from `win.icon`/`app-icon.ico`. Keep branded tile assets in `apps/desktop/build/appx/`; if these files are missing, Electron Builder falls back to its bundled `SampleAppx.*.png` placeholders and Microsoft Store certification rejects the package as using default tile images.
 
-Required OpenPets AppX tile assets:
+Required NekoDrift AppX tile assets:
 
 ```txt
 apps/desktop/build/appx/StoreLogo.png
@@ -529,18 +529,18 @@ apps/desktop/build/appx/BadgeLogo.png
 apps/desktop/build/appx/SplashScreen.png
 ```
 
-These assets are generated from `apps/desktop/assets/app-icon.png` plus OpenPets-branded tile art. Do not delete or rename them unless the AppX manifest/build config is updated at the same time.
+These assets are generated from `apps/desktop/assets/app-icon.png` plus NekoDrift-branded tile art. Do not delete or rename them unless the AppX manifest/build config is updated at the same time.
 
 Build a Windows x64 AppX package:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop exec electron-builder --win appx --x64 \
-  -c.appx.identityName=AlvinUnreal.OpenPetsDesktopCompanion \
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop exec electron-builder --win appx --x64 \
+  -c.appx.identityName=AlvinUnreal.NekoDriftDesktopCompanion \
   -c.appx.publisher=CN=5749BA4D-6A45-4111-8CAA-6B151AEDC238 \
   -c.appx.publisherDisplayName=AlvinUnreal \
-  -c.appx.displayName="OpenPets: Desktop Companion" \
-  -c.appx.applicationId=OpenPetsDesktopCompanion
+  -c.appx.displayName="NekoDrift: Desktop Companion" \
+  -c.appx.applicationId=NekoDriftDesktopCompanion
 ```
 
 `publisherDisplayName` must match the exact publisher display name shown by Partner Center. For the current Store account this is:
@@ -554,11 +554,11 @@ If Partner Center reports `The PublisherDisplayName element ... doesn't match yo
 Partner Center validates AppX identity against the reserved Store product identity. For the current Store reservation, the expected values are:
 
 ```txt
-identityName: AlvinUnreal.OpenPetsDesktopCompanion
-package family name: AlvinUnreal.OpenPetsDesktopCompanion_aq5mzr83863gr
+identityName: AlvinUnreal.NekoDriftDesktopCompanion
+package family name: AlvinUnreal.NekoDriftDesktopCompanion_aq5mzr83863gr
 publisher: CN=5749BA4D-6A45-4111-8CAA-6B151AEDC238
-displayName: OpenPets: Desktop Companion
-applicationId: OpenPetsDesktopCompanion
+displayName: NekoDrift: Desktop Companion
+applicationId: NekoDriftDesktopCompanion
 ```
 
 If Partner Center reports `Invalid package identity name`, `Invalid package family name`, `Invalid package publisher name`, or an unreserved `Package/Properties/DisplayName`, rebuild using the exact values above. The package family name is derived from `identityName` and `publisher`, so do not set it manually.
@@ -566,7 +566,7 @@ If Partner Center reports `Invalid package identity name`, `Invalid package fami
 Expected artifact:
 
 ```txt
-apps/desktop/dist-electron/OpenPets-<version>-win-x64.appx
+apps/desktop/dist-electron/NekoDrift-<version>-win-x64.appx
 ```
 
 On macOS, AppX packaging runs Windows `makeappx.exe` through Parallels. If the repo is on an external drive and the build fails with `prlctl process failed 2` or a `\\Mac\\Host\\Volumes\\...` path error, either enable Parallels shared folders for all Mac disks or copy the repo to a Parallels-accessible home-folder path and build there.
@@ -580,7 +580,7 @@ If Electron Builder creates the AppX staging folder but fails only at the final 
 Known-good local workaround path from the May 2026 Store packaging session:
 
 ```txt
-/Users/alvin/Downloads/openpets-msix-build/apps/desktop/dist-electron/OpenPets-2.5.0-win-x64.appx
+/Users/alvin/Downloads/nekodrift-msix-build/apps/desktop/dist-electron/NekoDrift-2.5.0-win-x64.appx
 ```
 
 Known-good corrected `2.5.0` AppX after rebuilding with Store identity values:
@@ -589,12 +589,12 @@ Known-good corrected `2.5.0` AppX after rebuilding with Store identity values:
 SHA256 4cc451a94d4be146b18ac59eb011ef3e89ff46e4e0836c8de0f36e68ad9b4a25
 ```
 
-Verify the final AppX contains OpenPets tile assets, not Electron Builder sample defaults:
+Verify the final AppX contains NekoDrift tile assets, not Electron Builder sample defaults:
 
 ```bash
 python3 - <<'PY'
 from zipfile import ZipFile
-appx = 'apps/desktop/dist-electron/OpenPets-<version>-win-x64.appx'
+appx = 'apps/desktop/dist-electron/NekoDrift-<version>-win-x64.appx'
 with ZipFile(appx) as z:
     for name in [
         'assets/StoreLogo.png',
@@ -616,44 +616,44 @@ Upload the Store package to the public R2-backed download host:
 
 ```bash
 bunx wrangler r2 object put \
-  "openpets/releases/OpenPets-<version>-win-x64.appx" \
-  --file "apps/desktop/dist-electron/OpenPets-<version>-win-x64.appx" \
+  "nekodrift/releases/NekoDrift-<version>-win-x64.appx" \
+  --file "apps/desktop/dist-electron/NekoDrift-<version>-win-x64.appx" \
   --remote
 ```
 
 Public URL shape:
 
 ```txt
-https://zip.openpets.dev/releases/OpenPets-<version>-win-x64.appx
+https://zip.nekodrift.app/releases/NekoDrift-<version>-win-x64.appx
 ```
 
 Verify before submitting to Partner Center:
 
 ```bash
-curl -I "https://zip.openpets.dev/releases/OpenPets-<version>-win-x64.appx"
+curl -I "https://zip.nekodrift.app/releases/NekoDrift-<version>-win-x64.appx"
 ```
 
 R2 upload is optional for Partner Center MSIX/AppX submissions because the Store package flow accepts direct file upload. Use R2 only as a backup/share URL or for internal handoff.
 
 ## NPM package release
 
-OpenPets publishes these public npm packages, in dependency order:
+NekoDrift publishes these public npm packages, in dependency order:
 
 ```txt
-@open-pets/client
-@open-pets/agent-events
-@open-pets/mcp
-@open-pets/claude
-@open-pets/opencode
-@open-pets/cursor
-@open-pets/pi
-@open-pets/cli
+@neko-drift/client
+@neko-drift/agent-events
+@neko-drift/mcp
+@neko-drift/claude
+@neko-drift/opencode
+@neko-drift/cursor
+@neko-drift/pi
+@neko-drift/cli
 install-pet
 ```
 
-Do not publish the private workspace root, `@open-pets/desktop`, or `@open-pets/pet-format`.
+Do not publish the private workspace root, `@neko-drift/desktop`, or `@neko-drift/pet-format`.
 
-Publish all public packages together at the same version whenever any public package changes. The CLI depends on the other `@open-pets/*` packages by exact published version, so partial/mixed-version npm releases can break `npx -y @open-pets/cli ...`.
+Publish all public packages together at the same version whenever any public package changes. The CLI depends on the other `@neko-drift/*` packages by exact published version, so partial/mixed-version npm releases can break `npx -y @neko-drift/cli ...`.
 
 Dry-run npm publishing first:
 
@@ -678,16 +678,16 @@ Publishing with the npm helper requires `npm whoami` to succeed, a clean working
 After publishing, verify the npm dependency set resolves:
 
 ```bash
-npm view @open-pets/client@<version> version
-npm view @open-pets/agent-events@<version> version
-npm view @open-pets/mcp@<version> version
-npm view @open-pets/claude@<version> version
-npm view @open-pets/opencode@<version> version
-npm view @open-pets/cursor@<version> version
-npm view @open-pets/pi@<version> version
-npm view @open-pets/cli@<version> version
+npm view @neko-drift/client@<version> version
+npm view @neko-drift/agent-events@<version> version
+npm view @neko-drift/mcp@<version> version
+npm view @neko-drift/claude@<version> version
+npm view @neko-drift/opencode@<version> version
+npm view @neko-drift/cursor@<version> version
+npm view @neko-drift/pi@<version> version
+npm view @neko-drift/cli@<version> version
 npm view install-pet@<version> version
-npx -y @open-pets/cli@<version> --help
+npx -y @neko-drift/cli@<version> --help
 ```
 
 ## Important notes for future agents

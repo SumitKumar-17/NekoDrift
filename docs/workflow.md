@@ -1,6 +1,6 @@
-# OpenPets 2.0 workflow
+# NekoDrift 2.0 workflow
 
-This document defines the day-to-day working workflow for OpenPets 2.0.
+This document defines the day-to-day working workflow for NekoDrift 2.0.
 
 The goal is to build in clear phases with excellent DX, strong review, and manual confirmation after every meaningful checkpoint.
 
@@ -173,7 +173,7 @@ Example:
 Please verify Phase 01:
 
 1. Run `pnpm dev:desktop`.
-2. Confirm the OpenPets tray icon appears.
+2. Confirm the NekoDrift tray icon appears.
 3. Open Manage Pets, Configure Agents, and Settings from the tray.
 4. Confirm each placeholder window opens.
 5. Quit from the tray and confirm the app exits cleanly.

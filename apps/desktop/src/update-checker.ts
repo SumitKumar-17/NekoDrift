@@ -20,7 +20,7 @@ interface GitHubReleaseResponse {
   readonly html_url?: unknown;
 }
 
-const githubRepository = process.env.OPENPETS_GITHUB_REPOSITORY || "alvinunreal/openpets";
+const githubRepository = process.env.NEKODRIFT_GITHUB_REPOSITORY || "alvinunreal/nekodrift";
 const latestReleaseApiUrl = `https://api.github.com/repos/${githubRepository}/releases/latest`;
 const releasesPageUrl = `https://github.com/${githubRepository}/releases`;
 const releaseCheckTimeoutMs = 6_000;
@@ -90,7 +90,7 @@ function fetchLatestRelease(): Promise<GitHubReleaseResponse> {
     const request = https.get(latestReleaseApiUrl, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": `OpenPets/${getCurrentAppVersion()}`,
+        "User-Agent": `NekoDrift/${getCurrentAppVersion()}`,
       },
       timeout: releaseCheckTimeoutMs,
     }, (response) => {
@@ -104,7 +104,7 @@ function fetchLatestRelease(): Promise<GitHubReleaseResponse> {
       });
       response.on("end", () => {
         if (response.statusCode === 404) {
-          reject(new Error("No public OpenPets releases found yet."));
+          reject(new Error("No public NekoDrift releases found yet."));
           return;
         }
         if ((response.statusCode ?? 0) < 200 || (response.statusCode ?? 0) >= 300) {

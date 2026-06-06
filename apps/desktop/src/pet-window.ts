@@ -7,7 +7,7 @@ import { getAppStateSnapshot, markPetBroken, type PetScaleValue } from "./app-st
 import { clampToPrimaryWorkArea, defaultPetWindowSize, getDefaultPetInitialPosition, type Point } from "./display.js";
 import { builtInPet } from "./built-in-pet.js";
 import { getInstalledPetDir } from "./pet-paths.js";
-import type { OpenPetsReaction } from "./local-ipc-protocol.js";
+import type { NekoDriftReaction } from "./local-ipc-protocol.js";
 import { pickReactionMessage } from "./reaction-messages.js";
 import { debug, error as logError, info } from "./logger.js";
 import { executeDefaultPetPluginCommand, getDefaultPetPluginCommands } from "./plugin-service.js";
@@ -36,13 +36,13 @@ export interface AgentPetWindowOptions {
 }
 
 export interface PetTransientDisplay {
-  readonly reaction?: OpenPetsReaction;
+  readonly reaction?: NekoDriftReaction;
   readonly message?: string;
   readonly reactionMessage?: string;
   readonly dismissToken?: string;
 }
 
-export type PetStatusBadgeReaction = Exclude<OpenPetsReaction, "idle">;
+export type PetStatusBadgeReaction = Exclude<NekoDriftReaction, "idle">;
 
 interface PetContentRender {
   readonly html: string;
@@ -63,7 +63,7 @@ export function isPetWindowDragging(window: BrowserWindow): boolean {
 }
 
 export function createDefaultPetWindow(options: DefaultPetWindowOptions, dismissToken?: string): BrowserWindow {
-  const window = createBasePetWindow("OpenPets — Default Pet", options.position);
+  const window = createBasePetWindow("NekoDrift — Default Pet", options.position);
   info("pet.window", "default window create", { windowId: window.id, position: options.position, paused: options.paused, hasDisplay: Boolean(options.display), badge: options.badge });
   installMousePassthroughAndDrag(window, options.onBubbleDismissed);
   installMotionStatePublisher(window);
@@ -90,7 +90,7 @@ export function createDefaultPetWindow(options: DefaultPetWindowOptions, dismiss
 }
 
 export function createAgentPetWindow(options: AgentPetWindowOptions, dismissToken?: string): BrowserWindow {
-  const window = createBasePetWindow(`OpenPets — ${options.displayName}`, options.position);
+  const window = createBasePetWindow(`NekoDrift — ${options.displayName}`, options.position);
   info("pet.window", "agent window create", { windowId: window.id, petId: options.petId, displayName: options.displayName, position: options.position, hasDisplay: Boolean(options.display), badge: options.badge });
   installMousePassthroughAndDrag(window, options.onBubbleDismissed);
   installMotionStatePublisher(window);
@@ -259,7 +259,7 @@ function installMousePassthroughAndDrag(window: BrowserWindow, onBubbleDismissed
     const probe = getCursorProbe();
     if (logProbe) debug("pet.window", "cursor hit-test probe", { windowId, reason, inside: probe.inside, cursor: probe.cursor, bounds: probe.bounds });
     if (!probe.inside) return;
-    webContents.send("openpets:pet-probe-hit-test", { clientX: probe.clientX, clientY: probe.clientY, reason });
+    webContents.send("nekodrift:pet-probe-hit-test", { clientX: probe.clientX, clientY: probe.clientY, reason });
   };
 
   const rearmWindowsMouseForwarding = (reason: string, logRearm = true): void => {
@@ -393,12 +393,12 @@ function installMousePassthroughAndDrag(window: BrowserWindow, onBubbleDismissed
   const removeListeners = (): void => {
     if (listenersRemoved) return;
     listenersRemoved = true;
-    ipcMain.off("openpets:pet-ready", handleReady);
-    ipcMain.off("openpets:pet-hit-test", handleHitTest);
-    ipcMain.off("openpets:pet-drag-start", handleDragStart);
-    ipcMain.off("openpets:pet-drag-move", handleDragMove);
-    ipcMain.off("openpets:pet-drag-end", handleDragEnd);
-    ipcMain.off("openpets:bubble-dismissed", handleBubbleDismissed);
+    ipcMain.off("nekodrift:pet-ready", handleReady);
+    ipcMain.off("nekodrift:pet-hit-test", handleHitTest);
+    ipcMain.off("nekodrift:pet-drag-start", handleDragStart);
+    ipcMain.off("nekodrift:pet-drag-move", handleDragMove);
+    ipcMain.off("nekodrift:pet-drag-end", handleDragEnd);
+    ipcMain.off("nekodrift:bubble-dismissed", handleBubbleDismissed);
     clearRearmTimers();
     clearWindowsForwardingWatch();
     petMouseInteropRecovery.delete(window);
@@ -414,12 +414,12 @@ function installMousePassthroughAndDrag(window: BrowserWindow, onBubbleDismissed
 
   petMouseInteropRecovery.set(window, scheduleMouseInteropRecovery);
 
-  ipcMain.on("openpets:pet-ready", handleReady);
-  ipcMain.on("openpets:pet-hit-test", handleHitTest);
-  ipcMain.on("openpets:pet-drag-start", handleDragStart);
-  ipcMain.on("openpets:pet-drag-move", handleDragMove);
-  ipcMain.on("openpets:pet-drag-end", handleDragEnd);
-  ipcMain.on("openpets:bubble-dismissed", handleBubbleDismissed);
+  ipcMain.on("nekodrift:pet-ready", handleReady);
+  ipcMain.on("nekodrift:pet-hit-test", handleHitTest);
+  ipcMain.on("nekodrift:pet-drag-start", handleDragStart);
+  ipcMain.on("nekodrift:pet-drag-move", handleDragMove);
+  ipcMain.on("nekodrift:pet-drag-end", handleDragEnd);
+  ipcMain.on("nekodrift:bubble-dismissed", handleBubbleDismissed);
   webContents.on("did-start-navigation", resetForNavigation);
   webContents.on("did-start-loading", resetForNavigation);
   webContents.on("did-finish-load", rearmAfterLoad);
@@ -568,7 +568,7 @@ export function clearTransientReaction(display: PetTransientDisplay): PetTransie
 
 export function setPetReactionState(window: BrowserWindow, state: UniversalSpriteState): void {
   if (window.isDestroyed()) return;
-  window.webContents.send("openpets:pet-reaction-state", state);
+  window.webContents.send("nekodrift:pet-reaction-state", state);
 }
 
 function tryUpdateLoadedPetContent(window: BrowserWindow, render: PetContentRender, name: string, sequence: number): boolean {
@@ -577,7 +577,7 @@ function tryUpdateLoadedPetContent(window: BrowserWindow, render: PetContentRend
   const url = window.webContents.getURL();
   if (!isAllowedPetDocumentUrl(url)) return false;
   debug("pet.window", "content update in place", { windowId: window.id, name, sequence, reactionState: render.reactionState });
-  window.webContents.send("openpets:pet-content-state", { bodyHtml: render.bodyHtml, reactionState: render.reactionState });
+  window.webContents.send("nekodrift:pet-content-state", { bodyHtml: render.bodyHtml, reactionState: render.reactionState });
   return true;
 }
 
@@ -633,7 +633,7 @@ async function createDefaultPetRender(paused: boolean, display: PetTransientDisp
   }
 
   const spriteUrl = pathToFileURL(join(app.getAppPath(), "assets", defaultPetSprite.fileName)).toString();
-  const bodyHtml = createPetBodyMarkup("OpenPets default pet", createBubbleMarkup(display, paused, badge, dismissToken), `<div class="sprite" role="img" aria-label="Claude animated default pet"></div>`);
+  const bodyHtml = createPetBodyMarkup("NekoDrift default pet", createBubbleMarkup(display, paused, badge, dismissToken), `<div class="sprite" role="img" aria-label="Claude animated default pet"></div>`);
   const reactionState = getReactionSpriteState(display?.reaction);
   const stateRows = defaultPetSprite.states;
   const scale = getAppStateSnapshot().preferences.petScale as PetScaleValue;
@@ -648,7 +648,7 @@ async function createDefaultPetRender(paused: boolean, display: PetTransientDisp
         <meta charset="utf-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src file: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>OpenPets Default Pet</title>
+        <title>NekoDrift Default Pet</title>
         <style>
           ${createPetWindowCss(paused, scale)}
           .sprite {
@@ -724,7 +724,7 @@ async function createInstalledPetRender(petId: string, displayName: string, paus
           <meta charset="utf-8" />
           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src file: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>OpenPets Default Pet</title>
+          <title>NekoDrift Default Pet</title>
           <style>
             ${createPetWindowCss(paused, scale)}
             .installed-card { width: ${Math.ceil(defaultPetSprite.frameWidth * scale)}px; height: ${Math.ceil(defaultPetSprite.frameHeight * scale)}px; overflow: visible; position: relative; }
@@ -761,8 +761,16 @@ async function createInstalledPetRender(petId: string, displayName: string, paus
   };
 }
 
+function createFixedNoteMarkup(): string {
+  const prefs = getAppStateSnapshot().preferences;
+  if (!prefs.fixedMessageEnabled || !prefs.fixedMessage) return "";
+  const text = escapeHtml(prefs.fixedMessage.slice(0, 200));
+  return `<div class="fixed-note" role="note" aria-label="Pinned note">${text}</div>`;
+}
+
 function createPetBodyMarkup(stageLabel: string, bubble: string, spriteMarkup: string): string {
   return `<div class="stage" aria-label="${stageLabel}">
+    ${createFixedNoteMarkup()}
     ${bubble}
     <div class="pet-hitbox" aria-hidden="true">
       <div class="pet-shell">
@@ -788,6 +796,7 @@ function createPetWindowCss(paused: boolean, scale: PetScaleValue): string {
     html { color: #172033; }
     body { -webkit-app-region: no-drag; pointer-events: none; }
     .stage { width: 100%; height: 100%; position: relative; box-sizing: border-box; overflow: visible; }
+    .fixed-note { position: absolute; left: 50%; bottom: ${bubbleBottom + 48}px; z-index: 5; transform: translateX(-50%); box-sizing: border-box; max-width: min(220px, calc(100vw - 18px)); padding: 8px 12px; background: linear-gradient(135deg, rgba(254,249,195,0.97), rgba(253,230,138,0.94)); color: #713f12; font: 660 10.5px/14px Inter, ui-sans-serif, system-ui, sans-serif; border: 1px solid rgba(253,230,138,0.82); border-radius: 10px 10px 3px 10px; box-shadow: 0 4px 16px rgba(120,80,0,0.14), inset 0 1px 0 rgba(255,255,255,0.7); word-break: break-word; overflow-wrap: break-word; pointer-events: none; }
     .pet-hitbox { position: absolute; left: 50%; bottom: ${Math.max(0, petBottom - hitPadding)}px; z-index: 1; width: ${scaledWidth + hitPadding * 2}px; height: ${scaledHeight + hitPadding * 2}px; display: grid; place-items: center; transform: translateX(-50%); pointer-events: auto; -webkit-app-region: no-drag; cursor: grab; }
     .pet-shell { position: relative; width: ${scaledWidth}px; height: ${scaledHeight}px; display: block; opacity: var(--pet-opacity); filter: ${petShellFilter}; transition-property: opacity, filter; transition-duration: 180ms; transition-timing-function: cubic-bezier(0.2, 0, 0, 1); pointer-events: auto; -webkit-app-region: no-drag; cursor: grab; }
     .bubble { position: absolute; left: 50%; bottom: ${bubbleBottom}px; z-index: 4; box-sizing: border-box; display: inline-flex; flex-direction: column; width: fit-content; min-width: 92px; max-width: min(220px, calc(100vw - 18px)); max-height: 128px; padding: 10px 12px; background: linear-gradient(135deg, rgba(239, 246, 255, 0.97), rgba(237, 233, 254, 0.96)); color: #172033; font: 760 11px/14px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-align: left; border: 1px solid rgba(255, 255, 255, 0.78); border-radius: 14px; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16), 0 2px 5px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82); white-space: normal; overflow-wrap: break-word; word-break: normal; overflow: visible; pointer-events: auto; -webkit-app-region: no-drag; opacity: 1; backdrop-filter: ${bubbleBackdropFilter}; transform: translateX(-50%); transform-origin: 64% 100%; animation: bubble-in 180ms cubic-bezier(0.2, 0, 0, 1); }
@@ -836,7 +845,7 @@ function createSpriteRule(selector: string, state: UniversalSpriteState): string
   return `${selector} { --sprite-row-y: -${row.row * defaultPetSprite.frameHeight}px; --sprite-frames: ${row.frames}; --sprite-duration: ${row.durationMs}ms; --sprite-iterations: ${iterations}; }`;
 }
 
-function getReactionSpriteState(reaction: OpenPetsReaction | undefined): UniversalSpriteState {
+function getReactionSpriteState(reaction: NekoDriftReaction | undefined): UniversalSpriteState {
   return resolveReactionSpriteState(reaction, getAppStateSnapshot().preferences.reactionAnimationOverrides);
 }
 
@@ -906,7 +915,7 @@ function installMotionStatePublisher(window: BrowserWindow): void {
   const sendMotionState = (state: PetMotionState): void => {
     if (window.isDestroyed() || lastSent === state) return;
     lastSent = state;
-    window.webContents.send("openpets:pet-motion", state);
+    window.webContents.send("nekodrift:pet-motion", state);
   };
 
   const scheduleIdle = (): void => {
@@ -933,7 +942,7 @@ function installMotionStatePublisher(window: BrowserWindow): void {
   window.on("moved", handleMove);
   window.webContents.on("did-finish-load", () => {
     lastSent = "idle";
-    window.webContents.send("openpets:pet-motion", "idle");
+    window.webContents.send("nekodrift:pet-motion", "idle");
   });
   window.on("closed", () => {
     if (idleTimer) clearTimeout(idleTimer);

@@ -18,8 +18,8 @@ When a Claude integration is configured with a selected pet, Claude hook speech/
 
 ## Acceptance criteria
 
-- `open-pets-claude hook --openpets-managed --pet <id>` validates `<id>` and passes it to hook handling.
-- Hook handling acquires a short OpenPets lease for the configured pet and passes that `leaseId` into `say`/`react`.
+- `neko-drift-claude hook --nekodrift-managed --pet <id>` validates `<id>` and passes it to hook handling.
+- Hook handling acquires a short NekoDrift lease for the configured pet and passes that `leaseId` into `say`/`react`.
 - Integrations hook doctor/install uses the selected pet when checking/writing hooks.
 - Hook status text makes the target explicit.
 - Invalid hook `--pet` values are rejected at CLI boundary.
@@ -36,7 +36,7 @@ When a Claude integration is configured with a selected pet, Claude hook speech/
 
 - Extend the Claude hook CLI with `--pet` parsing using the same pet-id validation as MCP setup.
 - Include `--pet <id>` in generated Claude hook commands when a selected pet exists.
-- During hook runtime, acquire a short lease for the configured pet and pass the returned lease id to the OpenPets client call.
+- During hook runtime, acquire a short lease for the configured pet and pass the returned lease id to the NekoDrift client call.
 - Do not release hook leases immediately; rely on the existing short TTL so the explicit pet remains visible briefly after the hook event.
 - Preserve default-pet behavior when no `--pet` is present.
 
@@ -53,11 +53,11 @@ When a Claude integration is configured with a selected pet, Claude hook speech/
 
 ## Test/check plan
 
-- `pnpm --filter @open-pets/claude build`
-- `pnpm --filter @open-pets/claude test`
-- `pnpm --filter @open-pets/desktop build`
-- `pnpm --filter @open-pets/desktop test`
-- `pnpm --filter @open-pets/mcp test`
+- `pnpm --filter @neko-drift/claude build`
+- `pnpm --filter @neko-drift/claude test`
+- `pnpm --filter @neko-drift/desktop build`
+- `pnpm --filter @neko-drift/desktop test`
+- `pnpm --filter @neko-drift/mcp test`
 
 ## Manual verification guide
 
@@ -77,7 +77,7 @@ Skipped as emergency bugfix; implementation review requested immediately after t
 
 Implementation review via Oracle found no blocking issues.
 
-- Fixed: Added CLI-level regression coverage for `open-pets-claude hook --pet fixer` and invalid `--pet bad/pet`.
+- Fixed: Added CLI-level regression coverage for `neko-drift-claude hook --pet fixer` and invalid `--pet bad/pet`.
 - Fixed: Hook status message now states whether hook events target the selected pet or default pet.
 - Fixed: Hook CLI validates `--pet` at the boundary instead of relying only on IPC fallback.
 - Fixed: Hook action journal commands include `--pet <id>` when applicable.

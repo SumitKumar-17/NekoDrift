@@ -12,7 +12,7 @@ Move the desktop management UI from generated HTML/CSS strings and preload-drive
 
 ## End Goal
 
-The end goal is a single polished desktop management experience for OpenPets:
+The end goal is a single polished desktop management experience for NekoDrift:
 
 ```text
 Tray app
@@ -115,7 +115,7 @@ Important details:
   - Node integration disabled
   - navigation blocked
   - `window.open` blocked
-- In development, it can load `OPENPETS_RENDERER_URL`, but only from loopback hosts.
+- In development, it can load `NEKODRIFT_RENDERER_URL`, but only from loopback hosts.
 - In packaged builds, it loads `dist/renderer/index.html`.
 
 ### Tray integration
@@ -200,7 +200,7 @@ The Control Center Settings page now supports:
 - reaction-to-animation mapping
 - default pet position reset
 - compact system/update status
-- default-pet reaction previews using the `openpets-pet-preview:` protocol
+- default-pet reaction previews using the `nekodrift-pet-preview:` protocol
 - bottom-center floating notifications that do not shift layout
 
 Settings is now served by the Control Center route.
@@ -267,9 +267,9 @@ Important files:
 Validated with:
 
 ```bash
-pnpm --filter @open-pets/desktop typecheck
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop typecheck
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 node --check apps/desktop/control-center-preload.cjs
 ```
 
@@ -319,8 +319,8 @@ Remaining follow-up:
 Use these after each phase:
 
 ```bash
-pnpm --filter @open-pets/desktop typecheck
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop typecheck
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 node --check apps/desktop/control-center-preload.cjs
 ```

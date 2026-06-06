@@ -3,14 +3,14 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { mapAsarPathToUnpacked } from "@open-pets/claude";
-import { doctorOpenCodeGlobalSetup, parseOpenCodeConfig, prepareOpenCodeGlobalRemove, prepareOpenCodeGlobalSetup, writePreparedOpenCodeGlobalRemove, writePreparedOpenCodeGlobalSetup } from "@open-pets/opencode";
+import { mapAsarPathToUnpacked } from "@neko-drift/claude";
+import { doctorOpenCodeGlobalSetup, parseOpenCodeConfig, prepareOpenCodeGlobalRemove, prepareOpenCodeGlobalSetup, writePreparedOpenCodeGlobalRemove, writePreparedOpenCodeGlobalSetup } from "@neko-drift/opencode";
 
-const root = mkdtempSync(join(tmpdir(), "openpets-desktop-opencode-"));
+const root = mkdtempSync(join(tmpdir(), "nekodrift-desktop-opencode-"));
 
 try {
   const globalDir = join(root, "opencode-global");
-  const bundledCli = mapAsarPathToUnpacked(join(root, "OpenPets.app", "Contents", "Resources", "app.asar", "node_modules", "@open-pets", "cli", "dist", "index.js"));
+  const bundledCli = mapAsarPathToUnpacked(join(root, "NekoDrift.app", "Contents", "Resources", "app.asar", "node_modules", "@neko-drift", "cli", "dist", "index.js"));
 
   assert.equal(doctorOpenCodeGlobalSetup(globalDir).status, "not_installed");
 
@@ -24,20 +24,20 @@ try {
   });
 
   assert.equal(install.configPath, join(globalDir, "opencode.jsonc"));
-  assert.equal(install.instructionPath, join(globalDir, "openpets.md"));
+  assert.equal(install.instructionPath, join(globalDir, "nekodrift.md"));
   assert.match(install.configWrite.content, /app\.asar\.unpacked/);
   assert.doesNotMatch(install.configWrite.content, /app\.asar(?!\.unpacked)/);
-  assert.match(install.configWrite.content, /@open-pets\/opencode@4\.5\.6/);
+  assert.match(install.configWrite.content, /@neko-drift\/opencode@4\.5\.6/);
 
   const preview = parseOpenCodeConfig(install.configWrite.content);
   assert.equal(preview.ok, true, "desktop OpenCode preview must parse as JSONC without JSON.parse.");
-  const previewConfig = preview.value as { readonly mcp?: { readonly openpets?: { readonly command?: readonly string[] } }; readonly plugin?: readonly unknown[] };
-  assert.deepEqual(previewConfig.mcp?.openpets?.command, ["node", bundledCli, "mcp", "--pet", "fixer"]);
-  assert.deepEqual(previewConfig.plugin, [["@open-pets/opencode@4.5.6", { pet: "fixer" }]]);
+  const previewConfig = preview.value as { readonly mcp?: { readonly nekodrift?: { readonly command?: readonly string[] } }; readonly plugin?: readonly unknown[] };
+  assert.deepEqual(previewConfig.mcp?.nekodrift?.command, ["node", bundledCli, "mcp", "--pet", "fixer"]);
+  assert.deepEqual(previewConfig.plugin, [["@neko-drift/opencode@4.5.6", { pet: "fixer" }]]);
 
   writePreparedOpenCodeGlobalSetup(install);
   assert.equal(doctorOpenCodeGlobalSetup(globalDir).status, "installed");
-  assert.match(readFileSync(join(globalDir, "openpets.md"), "utf8"), /OPENPETS:START/);
+  assert.match(readFileSync(join(globalDir, "nekodrift.md"), "utf8"), /OPENPETS:START/);
 
   const remove = prepareOpenCodeGlobalRemove(globalDir);
   assert.equal(remove.configWrites.length, 1);

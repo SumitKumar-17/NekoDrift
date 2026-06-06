@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create the first runnable OpenPets desktop app shell as a tray/menu-bar-first Electron app.
+Create the first runnable NekoDrift desktop app shell as a tray/menu-bar-first Electron app.
 
 This phase should prove the desktop process, tray icon/menu, placeholder task windows, and clean quit flow work before building pet rendering or integrations.
 
@@ -27,7 +27,7 @@ This phase does not implement:
 After this phase, the user/developer should be able to run the desktop app and confirm:
 
 ```text
-OpenPets launches as a tray/menu-bar app, exposes the agreed tray menu, opens placeholder windows, and quits cleanly.
+NekoDrift launches as a tray/menu-bar app, exposes the agreed tray menu, opens placeholder windows, and quits cleanly.
 ```
 
 ## Acceptance criteria
@@ -38,7 +38,7 @@ OpenPets launches as a tray/menu-bar app, exposes the agreed tray menu, opens pl
 - Tray menu contains the agreed initial entries:
 
   ```text
-  OpenPets
+  NekoDrift
   ────────────────
   Default Pet: <name>
   Show Default Pet / Hide Default Pet
@@ -48,10 +48,10 @@ OpenPets launches as a tray/menu-bar app, exposes the agreed tray menu, opens pl
   Configure Agents...
   Settings...
   ────────────────
-  Quit OpenPets
+  Quit NekoDrift
   ```
 
-- `OpenPets` is a disabled title row.
+- `NekoDrift` is a disabled title row.
 - `Default Pet: <name>` exists and can open the placeholder Pet Manager window.
 - `Show Default Pet / Hide Default Pet` exists but may be disabled or no-op until Phase 02.
 - `Pause All Pets / Resume All Pets` exists and toggles visible menu state, even if no pets exist yet.
@@ -61,7 +61,7 @@ OpenPets launches as a tray/menu-bar app, exposes the agreed tray menu, opens pl
 - Placeholder windows are single-instance: choosing the same menu item focuses/reopens the existing window instead of spawning duplicates.
 - Closing a placeholder window destroys only that window, clears its window reference, and does not quit the app.
 - The app process is single-instance: a second launch must not create duplicate tray icons.
-- `Quit OpenPets` exits the app cleanly.
+- `Quit NekoDrift` exits the app cleanly.
 - macOS behavior is handled intentionally: closing placeholder windows does not quit; explicit quit does quit.
 - Basic app lifecycle errors are logged clearly during development.
 - Existing Phase 00 checks continue to pass.
@@ -96,7 +96,7 @@ Use Electron for the desktop shell.
 Recommended Phase 01 behavior:
 
 - Add Electron as a development/runtime dependency of `apps/desktop` only.
-- Add a dev command such as `pnpm --filter @open-pets/desktop dev`.
+- Add a dev command such as `pnpm --filter @neko-drift/desktop dev`.
 - Keep renderer placeholders minimal; do not introduce a frontend framework yet unless required.
 - Use simple BrowserWindow placeholder windows with hardcoded data URLs for Phase 01.
 - Keep all real product logic out of placeholders.
@@ -134,10 +134,10 @@ Electron lifecycle rules:
 - No window opens on startup.
 - `window-all-closed` does not quit the app.
 - macOS `activate` does not create a dashboard/main window.
-- `Quit OpenPets` sets an intentional quit flag and calls `app.quit()`.
+- `Quit NekoDrift` sets an intentional quit flag and calls `app.quit()`.
 - Use `app.requestSingleInstanceLock()` so a second launch does not create duplicate tray icons.
 - On second instance, keep/focus the existing app where practical and exit the second process.
-- Set the app name to `OpenPets` where practical.
+- Set the app name to `NekoDrift` where practical.
 
 macOS tray/Dock decision:
 
@@ -201,7 +201,7 @@ Mitigation:
 
 - Manage app quit explicitly.
 - Closing placeholder task windows should not quit the app.
-- `Quit OpenPets` should be the clear exit path.
+- `Quit NekoDrift` should be the clear exit path.
 
 ### Risk: static assets fail at runtime
 
@@ -251,7 +251,7 @@ pnpm build
 Manual app run command should be documented after implementation, likely:
 
 ```bash
-pnpm --filter @open-pets/desktop dev
+pnpm --filter @neko-drift/desktop dev
 ```
 
 Expected automated result:
@@ -266,7 +266,7 @@ After implementation, the user should verify:
 
 1. Start the desktop app with the documented command.
 2. Confirm no dashboard/main window opens automatically.
-3. Confirm OpenPets appears in the tray/menu bar.
+3. Confirm NekoDrift appears in the tray/menu bar.
 4. Open the tray menu and verify entries match the Phase 01 menu.
 5. Click `Manage Pets...` and confirm one placeholder Pet Manager window opens.
 6. Click `Manage Pets...` again and confirm it focuses/reuses the existing window instead of spawning duplicates.
@@ -274,7 +274,7 @@ After implementation, the user should verify:
 8. Repeat for `Settings...`.
 9. Toggle `Pause All Pets` and confirm the menu changes to `Resume All Pets`.
 10. Close placeholder windows and confirm the app stays running in tray/menu bar.
-11. Choose `Quit OpenPets` and confirm the app exits cleanly.
+11. Choose `Quit NekoDrift` and confirm the app exits cleanly.
 
 Manual acceptance question:
 
@@ -313,7 +313,7 @@ Summary of required Oracle feedback:
 Oracle reviewed the implemented Phase 01 diff after successful validation with:
 
 ```bash
-pnpm check && pnpm typecheck && pnpm build && pnpm --filter @open-pets/desktop exec electron --version
+pnpm check && pnpm typecheck && pnpm build && pnpm --filter @neko-drift/desktop exec electron --version
 ```
 
 Initial implementation review blocked manual verification until two issues were fixed:

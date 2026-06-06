@@ -1,6 +1,6 @@
 # WSL and cross-OS IPC
 
-OpenPets normally uses OS-native local IPC:
+NekoDrift normally uses OS-native local IPC:
 
 - Windows desktop app: Windows named pipe
 - macOS/Linux desktop app: Unix socket
@@ -15,15 +15,15 @@ WSL2 with **mirrored networking mode** allows WSL processes to reach Windows ser
 
 **Windows (PowerShell):**
 ```powershell
-$env:OPENPETS_IPC_BIND = "tcp://127.0.0.1:37645"
-$env:OPENPETS_IPC_ENDPOINT = "tcp://127.0.0.1:37645"
-OpenPets.exe
+$env:NEKODRIFT_IPC_BIND = "tcp://127.0.0.1:37645"
+$env:NEKODRIFT_IPC_ENDPOINT = "tcp://127.0.0.1:37645"
+NekoDrift.exe
 ```
 
 **WSL (Bash):**
 ```bash
-export OPENPETS_DISCOVERY_FILE="/mnt/c/Users/<WindowsUser>/AppData/Roaming/OpenPets/runtime/ipc.json"
-npx -y @open-pets/mcp
+export NEKODRIFT_DISCOVERY_FILE="/mnt/c/Users/<WindowsUser>/AppData/Roaming/NekoDrift/runtime/ipc.json"
+npx -y @neko-drift/mcp
 ```
 
 ### NAT mode
@@ -43,10 +43,10 @@ echo "Windows host IP: $WIN_HOST"
 ```powershell
 # Bind to all interfaces for incoming connections from WSL.
 # This can expose the port on private/LAN interfaces if Windows Firewall allows it.
-$env:OPENPETS_IPC_BIND = "tcp://0.0.0.0:37645"
+$env:NEKODRIFT_IPC_BIND = "tcp://0.0.0.0:37645"
 # Advertise the Windows host IP to WSL clients
-$env:OPENPETS_IPC_ENDPOINT = "tcp://172.25.32.1:37645"  # Replace with your actual WIN_HOST
-OpenPets.exe
+$env:NEKODRIFT_IPC_ENDPOINT = "tcp://172.25.32.1:37645"  # Replace with your actual WIN_HOST
+NekoDrift.exe
 ```
 
 If you know the specific Windows virtual adapter address that WSL can reach, you can bind that address instead of `0.0.0.0` to reduce exposure.
@@ -54,8 +54,8 @@ If you know the specific Windows virtual adapter address that WSL can reach, you
 **Step 3: Configure WSL client**
 
 ```bash
-export OPENPETS_DISCOVERY_FILE="/mnt/c/Users/<WindowsUser>/AppData/Roaming/OpenPets/runtime/ipc.json"
-npx -y @open-pets/mcp
+export NEKODRIFT_DISCOVERY_FILE="/mnt/c/Users/<WindowsUser>/AppData/Roaming/NekoDrift/runtime/ipc.json"
+npx -y @neko-drift/mcp
 ```
 
 If you use OpenCode, prefer putting the discovery-file override directly in the OpenCode MCP entry. OpenCode uses the `environment` key for per-MCP environment variables:
@@ -63,12 +63,12 @@ If you use OpenCode, prefer putting the discovery-file override directly in the 
 ```jsonc
 {
   "mcp": {
-    "openpets": {
+    "nekodrift": {
       "type": "local",
-      "command": ["npx", "-y", "@open-pets/cli@latest", "mcp"],
+      "command": ["npx", "-y", "@neko-drift/cli@latest", "mcp"],
       "enabled": true,
       "environment": {
-        "OPENPETS_DISCOVERY_FILE": "/mnt/c/Users/<WindowsUser>/AppData/Roaming/OpenPets/runtime/ipc.json"
+        "NEKODRIFT_DISCOVERY_FILE": "/mnt/c/Users/<WindowsUser>/AppData/Roaming/NekoDrift/runtime/ipc.json"
       }
     }
   }
@@ -81,16 +81,16 @@ This avoids relying on OpenCode inheriting the shell environment that launched i
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `OPENPETS_IPC_BIND` | TCP endpoint to bind the server to; setting this opts into TCP IPC | `tcp://0.0.0.0:37645` |
-| `OPENPETS_IPC_ENDPOINT` | TCP endpoint advertised in discovery file; this does not start TCP listening by itself | `tcp://172.25.32.1:37645` |
-| `OPENPETS_DISCOVERY_FILE` | Path to the discovery JSON file (client-side) | `/mnt/c/Users/.../ipc.json` |
+| `NEKODRIFT_IPC_BIND` | TCP endpoint to bind the server to; setting this opts into TCP IPC | `tcp://0.0.0.0:37645` |
+| `NEKODRIFT_IPC_ENDPOINT` | TCP endpoint advertised in discovery file; this does not start TCP listening by itself | `tcp://172.25.32.1:37645` |
+| `NEKODRIFT_DISCOVERY_FILE` | Path to the discovery JSON file (client-side) | `/mnt/c/Users/.../ipc.json` |
 
 ### Variable combinations
 
 - **Neither set**: Uses platform default (named pipe on Windows, Unix socket on macOS/Linux)
-- **Only `OPENPETS_IPC_ENDPOINT`**: Invalid. `OPENPETS_IPC_ENDPOINT` only advertises; set `OPENPETS_IPC_BIND` to opt into TCP IPC.
-- **Only `OPENPETS_IPC_BIND`**: Binds to the specified endpoint and advertises the same (cannot use `0.0.0.0` alone)
-- **Both set**: Binds to `OPENPETS_IPC_BIND`, advertises `OPENPETS_IPC_ENDPOINT` (required for NAT mode with `0.0.0.0`)
+- **Only `NEKODRIFT_IPC_ENDPOINT`**: Invalid. `NEKODRIFT_IPC_ENDPOINT` only advertises; set `NEKODRIFT_IPC_BIND` to opt into TCP IPC.
+- **Only `NEKODRIFT_IPC_BIND`**: Binds to the specified endpoint and advertises the same (cannot use `0.0.0.0` alone)
+- **Both set**: Binds to `NEKODRIFT_IPC_BIND`, advertises `NEKODRIFT_IPC_ENDPOINT` (required for NAT mode with `0.0.0.0`)
 
 ## Security considerations
 
@@ -100,7 +100,7 @@ This avoids relying on OpenCode inheriting the shell environment that launched i
 
 2. **Always use the discovery token**: Even with TCP, clients must present the per-run token from the discovery file. The token is randomly generated on each app start.
 
-3. **Firewall considerations**: Binding to `0.0.0.0` listens on all Windows interfaces, including private/LAN interfaces. Ensure Windows Firewall blocks external access to the OpenPets port except from the WSL virtual network.
+3. **Firewall considerations**: Binding to `0.0.0.0` listens on all Windows interfaces, including private/LAN interfaces. Ensure Windows Firewall blocks external access to the NekoDrift port except from the WSL virtual network.
 
 4. **Network isolation**: In NAT mode, the advertised Windows host IP is intended for WSL. Binding to `0.0.0.0` can still expose the listener more broadly if firewall rules permit it.
 
@@ -128,20 +128,20 @@ This avoids relying on OpenCode inheriting the shell environment that launched i
 
 ## Quick health check
 
-After starting the desktop app with the appropriate environment variables and exporting `OPENPETS_DISCOVERY_FILE` in WSL, run:
+After starting the desktop app with the appropriate environment variables and exporting `NEKODRIFT_DISCOVERY_FILE` in WSL, run:
 
 ```bash
-npx -y @open-pets/mcp
+npx -y @neko-drift/mcp
 ```
 
-Then use your MCP client's `openpets_status` tool to confirm the desktop app is reachable.
+Then use your MCP client's `nekodrift_status` tool to confirm the desktop app is reachable.
 
 For NAT mode, check raw TCP reachability from WSL before testing MCP:
 
 ```bash
-cat "$OPENPETS_DISCOVERY_FILE"
-nc -vz $(jq -r '.endpoint | sub("^tcp://"; "") | split(":")[0]' "$OPENPETS_DISCOVERY_FILE") \
-  $(jq -r '.endpoint | split(":")[-1]' "$OPENPETS_DISCOVERY_FILE")
+cat "$NEKODRIFT_DISCOVERY_FILE"
+nc -vz $(jq -r '.endpoint | sub("^tcp://"; "") | split(":")[0]' "$NEKODRIFT_DISCOVERY_FILE") \
+  $(jq -r '.endpoint | split(":")[-1]' "$NEKODRIFT_DISCOVERY_FILE")
 ```
 
-If `cat` works but `openpets_status` still says IPC is unavailable, confirm the OpenCode MCP entry has `environment.OPENPETS_DISCOVERY_FILE` set and restart OpenCode.
+If `cat` works but `nekodrift_status` still says IPC is unavailable, confirm the OpenCode MCP entry has `environment.NEKODRIFT_DISCOVERY_FILE` set and restart OpenCode.

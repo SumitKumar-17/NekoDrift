@@ -1,8 +1,8 @@
-# OpenPets 2.0 implementation process
+# NekoDrift 2.0 implementation process
 
 ## Goal
 
-OpenPets 2.0 should be implemented in clear, manually verifiable phases.
+NekoDrift 2.0 should be implemented in clear, manually verifiable phases.
 
 The process should optimize for:
 
@@ -111,7 +111,7 @@ Acceptance criteria:
 - Development uses Node-based tooling and does not require Bun at runtime.
 - Basic scripts are clear and documented.
 - Type checking/lint/build commands are defined.
-- The package shape matches the planned `@open-pets/*` architecture.
+- The package shape matches the planned `@neko-drift/*` architecture.
 
 Manual confirmation:
 
@@ -197,7 +197,7 @@ Manual confirmation:
 
 - User can install a real catalog pet, set it as default, restart, and see it work.
 
-### Phase 5: Local IPC and `@open-pets/client`
+### Phase 5: Local IPC and `@neko-drift/client`
 
 Goal:
 
@@ -211,23 +211,23 @@ Acceptance criteria:
 - Startup token/version validation exists.
 - Token lifetime and stale discovery cleanup are defined.
 - Local-only threat model is documented.
-- `@open-pets/client` can connect and call status/say/react-style methods.
+- `@neko-drift/client` can connect and call status/say/react-style methods.
 - Invalid token/version requests are rejected.
 
 Manual confirmation:
 
 - User/developer can run a local test command and see the pet react through IPC.
 
-### Phase 6: `@open-pets/mcp` agent-neutral integration
+### Phase 6: `@neko-drift/mcp` agent-neutral integration
 
 Goal:
 
-Make OpenPets usable from MCP-capable coding agents through the minimal public tool set.
+Make NekoDrift usable from MCP-capable coding agents through the minimal public tool set.
 
 Acceptance criteria:
 
 - MCP server runs with Node/npx.
-- Tools exist: `openpets_status`, `openpets_say`, `openpets_react`.
+- Tools exist: `nekodrift_status`, `nekodrift_say`, `nekodrift_react`.
 - MCP startup immediately acquires a lease and opens/shows the configured/default pet.
 - `--pet` chooses target pet.
 - Missing explicit pet falls back to default and reports fallback.
@@ -258,8 +258,8 @@ Acceptance criteria:
 - Backup restore behavior is defined.
 - Expected Claude config paths are documented per platform.
 - Doctor/check reports actionable status.
-- Uninstall/remove integration path exists for changes made by OpenPets.
-- Uninstall verification confirms OpenPets-managed config was removed without damaging unrelated user config.
+- Uninstall/remove integration path exists for changes made by NekoDrift.
+- Uninstall verification confirms NekoDrift-managed config was removed without damaging unrelated user config.
 
 Manual confirmation:
 
@@ -273,7 +273,7 @@ Make Claude Code feel polished through hook-driven reactions and short safe spee
 
 Acceptance criteria:
 
-- `@open-pets/claude` installs global Claude hooks safely.
+- `@neko-drift/claude` installs global Claude hooks safely.
 - Hook events map to agreed reactions.
 - Speech comes from local short message pools/templates.
 - Speech is throttled/selective.
@@ -300,7 +300,7 @@ Acceptance criteria:
 - Default pet appears early.
 - Optional pet install step works or gracefully skips on catalog failure.
 - Agent setup step uses the real Agent Setup flow.
-- Done state clearly says OpenPets is ready.
+- Done state clearly says NekoDrift is ready.
 - Onboarding completion persists.
 
 Manual confirmation:

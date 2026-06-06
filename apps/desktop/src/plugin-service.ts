@@ -7,7 +7,7 @@ import { getEffectivePluginConfig, validatePluginConfigReplacement, type PluginC
 import { publishLocalPluginSnapshot, readLocalPluginSourceManifest } from "./plugin-local-loader.js";
 import { readSafePluginManifest } from "./plugin-manifest-reader.js";
 import type { PluginJsHost } from "./plugin-js-host.js";
-import { OPENPETS_PLUGIN_MANIFEST_FILENAME, type OpenPetsPluginManifest, type PluginIcon, type PluginPermission } from "./plugin-manifest.js";
+import { NEKODRIFT_PLUGIN_MANIFEST_FILENAME, type NekoDriftPluginManifest, type PluginIcon, type PluginPermission } from "./plugin-manifest.js";
 import { downloadCatalogPluginZip, installCatalogPluginPackage, readCatalogPluginManifestFromZip, resolveSafePluginInstallDir } from "./plugin-package.js";
 import type { PluginPetApi } from "./plugin-pet-api.js";
 import { JsonPluginStorageStore, type PluginCommand, type PluginLogLevel, type PluginStatus } from "./plugin-sdk-bridge.js";
@@ -30,7 +30,7 @@ export type SafePluginRecord = {
   readonly catalogDisabled?: boolean;
   readonly catalogDeprecated?: boolean;
   readonly catalogStatusReason?: string;
-  readonly configSchema?: OpenPetsPluginManifest["configSchema"];
+  readonly configSchema?: NekoDriftPluginManifest["configSchema"];
   readonly effectiveConfig?: PluginConfig;
   readonly configErrors?: readonly PluginConfigValidationError[];
   readonly commands?: readonly PluginCommand[];
@@ -43,7 +43,7 @@ export type PluginCatalogSnapshot = { readonly plugins: readonly SafeCatalogPlug
 export type PluginServiceResult = { readonly ok: true; readonly snapshot: PluginServiceSnapshot } | { readonly ok: false; readonly error: string; readonly snapshot: PluginServiceSnapshot };
 export type DevPluginLoadResult = { readonly path: string; readonly id?: string; readonly ok: true } | { readonly path: string; readonly ok: false; readonly error: string };
 export type PluginFolderDialog = () => Promise<{ readonly canceled: boolean; readonly filePaths: readonly string[] }>;
-export type PluginPermissionDialog = (manifest: OpenPetsPluginManifest) => Promise<boolean>;
+export type PluginPermissionDialog = (manifest: NekoDriftPluginManifest) => Promise<boolean>;
 
 export type PluginServiceOptions = {
   readonly userDataPath?: string;
@@ -65,9 +65,9 @@ export type PluginServiceOptions = {
   readonly bundledPluginSourceDirs?: readonly string[];
 };
 
-export const bundledOfficialPluginIds = ["openpets.ambient-companion", "openpets.break-buddy", "openpets.pet-pal", "openpets.focus-buddy", "openpets.wander-buddy", "openpets.quick-reminders", "openpets.github-notifications"] as const;
-const bundledEnabledByDefault = new Set<string>(["openpets.ambient-companion", "openpets.break-buddy", "openpets.pet-pal", "openpets.focus-buddy", "openpets.wander-buddy", "openpets.quick-reminders"]);
-const staleBundledPluginIds = ["openpets.daily-reminders", "openpets.pomodoro"] as const;
+export const bundledOfficialPluginIds = ["nekodrift.ambient-companion", "nekodrift.break-buddy", "nekodrift.pet-pal", "nekodrift.focus-buddy", "nekodrift.wander-buddy", "nekodrift.quick-reminders", "nekodrift.github-notifications"] as const;
+const bundledEnabledByDefault = new Set<string>(["nekodrift.ambient-companion", "nekodrift.break-buddy", "nekodrift.pet-pal", "nekodrift.focus-buddy", "nekodrift.wander-buddy", "nekodrift.quick-reminders"]);
+const staleBundledPluginIds = ["nekodrift.daily-reminders", "nekodrift.pomodoro"] as const;
 
 export class PluginService {
   readonly stateStore: PluginStateStore;
@@ -159,7 +159,7 @@ export class PluginService {
   async saveConfig(id: string, config: unknown): Promise<PluginServiceResult> {
     const record = this.stateStore.getRecord(id);
     if (!record) return this.#error("Plugin is not installed.");
-    let manifest: OpenPetsPluginManifest;
+    let manifest: NekoDriftPluginManifest;
     try {
       manifest = await this.#readManifest(record);
     } catch {
@@ -193,7 +193,7 @@ export class PluginService {
     try {
       const catalog = await getPluginCatalog({ ...this.#catalogOptions, fetchImpl: this.#fetchImpl ?? this.#catalogOptions?.fetchImpl, refresh });
       for (const entry of catalog.plugins) await this.#updateCatalogMetadata(entry);
-      return { plugins: catalog.plugins.filter((entry) => !isEntryDisabled(entry) && isCatalogEntryCompatible(entry.minOpenPetsVersion, getMaxVersion(entry), this.#currentAppVersion)).map((entry) => { const installed = this.stateStore.getRecord(entry.id); return { id: entry.id, name: entry.name, version: entry.version, description: entry.description, runtime: entry.runtime, icon: entry.icon, sdkVersion: getSdkVersion(entry), permissions: entry.permissions, installed: installed?.source === "catalog", bundled: installed?.bundled || undefined, deprecated: isEntryDeprecated(entry) || undefined, statusReason: getStatusReason(entry) }; }) };
+      return { plugins: catalog.plugins.filter((entry) => !isEntryDisabled(entry) && isCatalogEntryCompatible(entry.minNekoDriftVersion, getMaxVersion(entry), this.#currentAppVersion)).map((entry) => { const installed = this.stateStore.getRecord(entry.id); return { id: entry.id, name: entry.name, version: entry.version, description: entry.description, runtime: entry.runtime, icon: entry.icon, sdkVersion: getSdkVersion(entry), permissions: entry.permissions, installed: installed?.source === "catalog", bundled: installed?.bundled || undefined, deprecated: isEntryDeprecated(entry) || undefined, statusReason: getStatusReason(entry) }; }) };
     } catch {
       return { plugins: [] };
     }
@@ -205,7 +205,7 @@ export class PluginService {
 
   async updateCatalog(id: string): Promise<PluginServiceResult> {
     const record = this.stateStore.getRecord(id);
-    if (record?.bundled) return this.#error("Bundled plugins update with OpenPets.");
+    if (record?.bundled) return this.#error("Bundled plugins update with NekoDrift.");
     return this.#installOrUpdateCatalog(id, true);
   }
 
@@ -291,7 +291,7 @@ export class PluginService {
         continue;
       }
       for (const path of entries) {
-        try { await fs.access(join(path, OPENPETS_PLUGIN_MANIFEST_FILENAME)); }
+        try { await fs.access(join(path, NEKODRIFT_PLUGIN_MANIFEST_FILENAME)); }
         catch { continue; }
         let id: string | undefined;
         try { id = (await readLocalPluginSourceManifest({ sourceFolder: path, maxManifestBytes: this.#maxManifestBytes })).manifest.id; }
@@ -327,7 +327,7 @@ export class PluginService {
   async #installOrUpdateCatalog(id: string, update: boolean): Promise<PluginServiceResult> {
     if (!this.#userDataPath) return this.#error("Catalog plugin installation is unavailable.");
     const existing = this.stateStore.getRecord(id);
-    if (existing?.bundled) return this.#error(update ? "Bundled plugins update with OpenPets." : "Plugin is already installed as a bundled plugin.");
+    if (existing?.bundled) return this.#error(update ? "Bundled plugins update with NekoDrift." : "Plugin is already installed as a bundled plugin.");
     if (!update && existing) return this.#error("Plugin is already installed.");
     if (update && (!existing || existing.source !== "catalog")) return this.#error("Catalog plugin is not installed.");
     if (existing?.source === "local") return this.#error("A local plugin with this id is already loaded.");
@@ -336,7 +336,7 @@ export class PluginService {
       const entry = await getCatalogPlugin(id, { ...this.#catalogOptions, fetchImpl: this.#fetchImpl ?? this.#catalogOptions?.fetchImpl, refresh: update });
       if (isEntryDisabled(entry)) throw new Error("Plugin is disabled in the catalog.");
       if (isEntryDeprecated(entry)) throw new Error("Plugin is deprecated in the catalog.");
-      if (!isCatalogEntryCompatible(entry.minOpenPetsVersion, getMaxVersion(entry), this.#currentAppVersion)) throw new Error("Plugin is incompatible with this OpenPets version.");
+      if (!isCatalogEntryCompatible(entry.minNekoDriftVersion, getMaxVersion(entry), this.#currentAppVersion)) throw new Error("Plugin is incompatible with this NekoDrift version.");
       const zip = await downloadCatalogPluginZip(entry, this.#fetchImpl ?? this.#catalogOptions?.fetchImpl ?? fetch);
       const preview = await readCatalogPluginManifestFromZip({ catalogEntry: entry, zip, maxManifestBytes: this.#maxManifestBytes });
       const networkHosts = "network" in preview.manifest ? preview.manifest.network?.hosts : undefined;
@@ -380,7 +380,7 @@ export class PluginService {
     if (disabled && existing.enabled) await this.runtime.reloadPlugin(entry.id);
   }
 
-  #readManifest(record: PluginStateRecord): Promise<OpenPetsPluginManifest> {
+  #readManifest(record: PluginStateRecord): Promise<NekoDriftPluginManifest> {
     return readSafePluginManifest({ installPath: record.installPath, manifestPath: record.manifestPath, allowedPluginRoots: this.allowedPluginRoots, maxManifestBytes: this.#maxManifestBytes, expectedId: record.id, expectedVersion: record.version });
   }
 
@@ -395,7 +395,7 @@ export class PluginService {
   #findBundledSourceFolder(id: string): string | null {
     for (const root of this.#bundledPluginSourceDirs) {
       const candidate = join(root, id);
-      if (existsSync(join(candidate, OPENPETS_PLUGIN_MANIFEST_FILENAME))) return candidate;
+      if (existsSync(join(candidate, NEKODRIFT_PLUGIN_MANIFEST_FILENAME))) return candidate;
     }
     return null;
   }
@@ -407,19 +407,19 @@ export class PluginService {
     const root = join(this.#userDataPath, "plugins");
     await ensureRealDirectory(root);
     const installPath = join(root, source.manifest.id);
-    const manifestPath = join(installPath, OPENPETS_PLUGIN_MANIFEST_FILENAME);
+    const manifestPath = join(installPath, NEKODRIFT_PLUGIN_MANIFEST_FILENAME);
     const tempPath = join(root, `.tmp-bundled-${source.manifest.id}-${process.pid}-${Date.now()}`);
     await fs.rm(tempPath, { recursive: true, force: true });
     await fs.mkdir(tempPath, { recursive: true });
     try {
-      await fs.writeFile(join(tempPath, OPENPETS_PLUGIN_MANIFEST_FILENAME), source.manifestText, { mode: 0o600 });
+      await fs.writeFile(join(tempPath, NEKODRIFT_PLUGIN_MANIFEST_FILENAME), source.manifestText, { mode: 0o600 });
       if (source.manifest.manifestVersion === 2) {
         if (source.entryText === undefined) throw new Error("Bundled plugin entry is missing.");
         const entryPath = join(tempPath, source.manifest.entry);
         await fs.mkdir(dirname(entryPath), { recursive: true });
         await fs.writeFile(entryPath, source.entryText, { mode: 0o600 });
       }
-      await readSafePluginManifest({ installPath: tempPath, manifestPath: join(tempPath, OPENPETS_PLUGIN_MANIFEST_FILENAME), allowedPluginRoots: [root], maxManifestBytes: this.#maxManifestBytes, expectedId: source.manifest.id, expectedVersion: source.manifest.version });
+      await readSafePluginManifest({ installPath: tempPath, manifestPath: join(tempPath, NEKODRIFT_PLUGIN_MANIFEST_FILENAME), allowedPluginRoots: [root], maxManifestBytes: this.#maxManifestBytes, expectedId: source.manifest.id, expectedVersion: source.manifest.version });
       await replaceInstallDirectory(root, installPath, tempPath);
     } finally { await fs.rm(tempPath, { recursive: true, force: true }).catch(() => undefined); }
     await readSafePluginManifest({ installPath, manifestPath, allowedPluginRoots: [root], maxManifestBytes: this.#maxManifestBytes, expectedId: source.manifest.id, expectedVersion: source.manifest.version });
@@ -476,7 +476,7 @@ function safeError(error: unknown): string {
   if (/outside install/i.test(message)) return "Plugin manifest path is outside install path.";
   if (/path is invalid/i.test(message)) return "Plugin manifest path is invalid.";
   if (/id\/version/i.test(message)) return "Plugin manifest id/version does not match installed state.";
-  if (/newer OpenPets version|incompatible with this OpenPets version/i.test(message)) return "Plugin requires a newer OpenPets version.";
+  if (/newer NekoDrift version|incompatible with this NekoDrift version/i.test(message)) return "Plugin requires a newer NekoDrift version.";
   return "Plugin manifest is unavailable.";
 }
 
@@ -531,9 +531,9 @@ function getErrorCode(error: unknown): unknown {
   return typeof error === "object" && error !== null && "code" in error ? (error as { code?: unknown }).code : undefined;
 }
 
-function isCatalogEntryCompatible(minOpenPetsVersion: string | undefined, maxOpenPetsVersion: string | undefined, currentAppVersion: string): boolean {
-  if (minOpenPetsVersion && compareSemver(currentAppVersion, minOpenPetsVersion) < 0) return false;
-  if (maxOpenPetsVersion && compareSemver(currentAppVersion, maxOpenPetsVersion) > 0) return false;
+function isCatalogEntryCompatible(minNekoDriftVersion: string | undefined, maxNekoDriftVersion: string | undefined, currentAppVersion: string): boolean {
+  if (minNekoDriftVersion && compareSemver(currentAppVersion, minNekoDriftVersion) < 0) return false;
+  if (maxNekoDriftVersion && compareSemver(currentAppVersion, maxNekoDriftVersion) > 0) return false;
   return true;
 }
 
@@ -541,7 +541,7 @@ function isEntryDisabled(entry: object): boolean { return "disabled" in entry &&
 function isEntryDeprecated(entry: object): boolean { return "deprecated" in entry && entry.deprecated === true; }
 function getStatusReason(entry: object): string | undefined { return "statusReason" in entry && typeof entry.statusReason === "string" ? entry.statusReason : undefined; }
 function getSdkVersion(entry: object): string | undefined { return "sdkVersion" in entry && typeof entry.sdkVersion === "string" ? entry.sdkVersion : undefined; }
-function getMaxVersion(entry: object): string | undefined { return "maxOpenPetsVersion" in entry && typeof entry.maxOpenPetsVersion === "string" ? entry.maxOpenPetsVersion : undefined; }
+function getMaxVersion(entry: object): string | undefined { return "maxNekoDriftVersion" in entry && typeof entry.maxNekoDriftVersion === "string" ? entry.maxNekoDriftVersion : undefined; }
 function getNetworkHosts(entry: object): readonly string[] | undefined { return "network" in entry && entry.network && typeof entry.network === "object" && "hosts" in entry.network && Array.isArray(entry.network.hosts) ? entry.network.hosts : undefined; }
 
 function compareSemver(a: string, b: string): number {
@@ -560,9 +560,9 @@ async function defaultOpenDialog(): Promise<{ canceled: boolean; filePaths: stri
   return dialog.showOpenDialog({ properties: ["openDirectory"] });
 }
 
-async function defaultConfirmPermissions(manifest: OpenPetsPluginManifest): Promise<boolean> {
+async function defaultConfirmPermissions(manifest: NekoDriftPluginManifest): Promise<boolean> {
   const { dialog } = await import("electron");
   const permissions = manifest.permissions.length === 0 ? "No permissions" : manifest.permissions.join(", ");
-  const result = await dialog.showMessageBox({ type: "question", buttons: ["Load plugin", "Cancel"], defaultId: 0, cancelId: 1, title: "Load local OpenPets plugin?", message: `Load ${manifest.name}?`, detail: `Permissions: ${permissions}` });
+  const result = await dialog.showMessageBox({ type: "question", buttons: ["Load plugin", "Cancel"], defaultId: 0, cancelId: 1, title: "Load local NekoDrift plugin?", message: `Load ${manifest.name}?`, detail: `Permissions: ${permissions}` });
   return result.response === 0;
 }

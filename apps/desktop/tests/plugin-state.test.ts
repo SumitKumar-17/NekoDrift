@@ -132,7 +132,7 @@ assert.deepEqual(orderingStore.getRecord("order-b")?.approvedPermissions, ["pet:
 console.error("Plugin state validation passed.");
 
 function tempDir(): string {
-  return mkdtempSync(join(tmpdir(), "openpets-plugin-state-"));
+  return mkdtempSync(join(tmpdir(), "nekodrift-plugin-state-"));
 }
 
 function makeRecord(patch: Partial<PluginStateRecord> = {}): PluginStateRecord {
@@ -140,7 +140,7 @@ function makeRecord(patch: Partial<PluginStateRecord> = {}): PluginStateRecord {
   return Object.fromEntries(Object.entries({
     id,
     version: patch.version ?? "1.0.0",
-    manifestPath: patch.manifestPath ?? `/tmp/${id}/openpets.plugin.json`,
+    manifestPath: patch.manifestPath ?? `/tmp/${id}/nekodrift.plugin.json`,
     installPath: patch.installPath ?? `/tmp/${id}`,
     source: patch.source ?? "catalog",
     enabled: patch.enabled ?? true,

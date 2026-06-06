@@ -2,20 +2,20 @@ import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readF
 import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
-export interface ClaudeOpenPetsMemoryResult {
+export interface ClaudeNekoDriftMemoryResult {
   readonly changed: boolean;
   readonly claudeMdPath: string;
   readonly openPetsMemoryPath: string;
 }
 
-export interface ClaudeOpenPetsMemoryStatus {
+export interface ClaudeNekoDriftMemoryStatus {
   readonly status: "installed" | "not_installed" | "error";
   readonly message: string;
   readonly claudeMdPath: string;
   readonly openPetsMemoryPath: string;
 }
 
-export const openPetsClaudeImportLine = "@~/.claude/openpets.md";
+export const openPetsClaudeImportLine = "@~/.claude/nekodrift.md";
 
 const openPetsImportStart = "<!-- OPENPETS:IMPORT:START -->";
 const openPetsImportEnd = "<!-- OPENPETS:IMPORT:END -->";
@@ -23,16 +23,16 @@ const openPetsMemoryStart = "<!-- OPENPETS:START -->";
 const openPetsMemoryEnd = "<!-- OPENPETS:END -->";
 const maxClaudeMemoryBytes = 1024 * 1024;
 
-export function installClaudeOpenPetsMemory(homeDir: string): ClaudeOpenPetsMemoryResult {
+export function installClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDriftMemoryResult {
   const paths = getClaudeMemoryPaths(homeDir);
   assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
   mkdirSync(paths.claudeDir, { recursive: true, mode: 0o700 });
   assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
 
-  const currentOpenPetsMemory = readTextFile(paths.openPetsMemoryPath);
-  const nextOpenPetsMemory = upsertOpenPetsMemoryBlock(currentOpenPetsMemory, createOpenPetsMemoryBlock());
-  const openPetsChanged = currentOpenPetsMemory !== nextOpenPetsMemory;
-  if (openPetsChanged) writePrivateTextFile(paths.openPetsMemoryPath, nextOpenPetsMemory);
+  const currentNekoDriftMemory = readTextFile(paths.openPetsMemoryPath);
+  const nextNekoDriftMemory = upsertNekoDriftMemoryBlock(currentNekoDriftMemory, createNekoDriftMemoryBlock());
+  const openPetsChanged = currentNekoDriftMemory !== nextNekoDriftMemory;
+  if (openPetsChanged) writePrivateTextFile(paths.openPetsMemoryPath, nextNekoDriftMemory);
 
   const currentClaudeMd = readTextFile(paths.claudeMdPath);
   const nextClaudeMd = ensureManagedImport(currentClaudeMd);
@@ -42,7 +42,7 @@ export function installClaudeOpenPetsMemory(homeDir: string): ClaudeOpenPetsMemo
   return { changed: openPetsChanged || claudeMdChanged, claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
 }
 
-export function uninstallClaudeOpenPetsMemory(homeDir: string): ClaudeOpenPetsMemoryResult {
+export function uninstallClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDriftMemoryResult {
   const paths = getClaudeMemoryPaths(homeDir);
   assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
 
@@ -55,18 +55,18 @@ export function uninstallClaudeOpenPetsMemory(homeDir: string): ClaudeOpenPetsMe
     changed = true;
   }
 
-  const currentOpenPetsMemory = readTextFile(paths.openPetsMemoryPath);
-  if (currentOpenPetsMemory) {
-    const nextOpenPetsMemory = removeOpenPetsMemoryBlock(currentOpenPetsMemory);
-    if (nextOpenPetsMemory.trim().length === 0) {
+  const currentNekoDriftMemory = readTextFile(paths.openPetsMemoryPath);
+  if (currentNekoDriftMemory) {
+    const nextNekoDriftMemory = removeNekoDriftMemoryBlock(currentNekoDriftMemory);
+    if (nextNekoDriftMemory.trim().length === 0) {
       if (hasUserOwnedImport) {
         writePrivateTextFile(paths.openPetsMemoryPath, "");
       } else {
         rmSync(paths.openPetsMemoryPath, { force: true });
       }
       changed = true;
-    } else if (nextOpenPetsMemory !== currentOpenPetsMemory) {
-      writePrivateTextFile(paths.openPetsMemoryPath, nextOpenPetsMemory);
+    } else if (nextNekoDriftMemory !== currentNekoDriftMemory) {
+      writePrivateTextFile(paths.openPetsMemoryPath, nextNekoDriftMemory);
       changed = true;
     }
   }
@@ -74,26 +74,26 @@ export function uninstallClaudeOpenPetsMemory(homeDir: string): ClaudeOpenPetsMe
   return { changed, claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
 }
 
-export function doctorClaudeOpenPetsMemory(homeDir: string): ClaudeOpenPetsMemoryStatus {
+export function doctorClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDriftMemoryStatus {
   const paths = getClaudeMemoryPaths(homeDir);
   try {
     assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
     const claudeMd = readTextFile(paths.claudeMdPath);
     const openPetsMemory = readTextFile(paths.openPetsMemoryPath);
     const hasImport = hasManagedImport(claudeMd) || hasImportLineOutsideManagedBlock(claudeMd);
-    const hasInstructions = createOpenPetsBlockPattern().test(openPetsMemory) || /openpets_say|OpenPets MCP/i.test(openPetsMemory);
+    const hasInstructions = createNekoDriftBlockPattern().test(openPetsMemory) || /nekodrift_say|NekoDrift MCP/i.test(openPetsMemory);
     if (hasImport && hasInstructions) {
-      return { status: "installed", message: "Claude will load OpenPets instructions from ~/.claude/openpets.md.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+      return { status: "installed", message: "Claude will load NekoDrift instructions from ~/.claude/nekodrift.md.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
     }
     if (hasImport) {
-      return { status: "not_installed", message: "Claude imports OpenPets instructions, but the OpenPets memory file is missing or incomplete.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+      return { status: "not_installed", message: "Claude imports NekoDrift instructions, but the NekoDrift memory file is missing or incomplete.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
     }
     if (hasInstructions) {
-      return { status: "not_installed", message: "OpenPets instructions exist, but Claude is not importing them yet.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+      return { status: "not_installed", message: "NekoDrift instructions exist, but Claude is not importing them yet.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
     }
-    return { status: "not_installed", message: "Claude OpenPets instructions are not installed.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+    return { status: "not_installed", message: "Claude NekoDrift instructions are not installed.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
   } catch (error) {
-    return { status: "error", message: error instanceof Error ? error.message : "Claude OpenPets instruction status is unavailable.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+    return { status: "error", message: error instanceof Error ? error.message : "Claude NekoDrift instruction status is unavailable.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
   }
 }
 
@@ -102,12 +102,12 @@ export function getClaudeMemoryPaths(homeDir: string): { readonly claudeDir: str
   return {
     claudeDir,
     claudeMdPath: join(claudeDir, "CLAUDE.md"),
-    openPetsMemoryPath: join(claudeDir, "openpets.md"),
+    openPetsMemoryPath: join(claudeDir, "nekodrift.md"),
   };
 }
 
-export function createOpenPetsMemoryBlock(): string {
-  return `${openPetsMemoryStart}\n## OpenPets\n\nOpenPets MCP tools may be available.\n\nUse OpenPets as a short visible status channel for meaningful coding progress:\n- Use \`openpets_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`openpets_react\` for small visual or emotional feedback.\n- Use \`openpets_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${openPetsMemoryEnd}\n`;
+export function createNekoDriftMemoryBlock(): string {
+  return `${openPetsMemoryStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${openPetsMemoryEnd}\n`;
 }
 
 export function ensureImportLine(source: string, importLine: string): string {
@@ -139,17 +139,17 @@ export function removeImportLine(source: string, importLine: string): string {
     .replace(/\s*$/u, (match) => (match.includes("\n") ? "\n" : ""));
 }
 
-export function upsertOpenPetsMemoryBlock(source: string, block: string): string {
-  const withoutBlocks = source.replace(createOpenPetsBlockPattern(), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
+export function upsertNekoDriftMemoryBlock(source: string, block: string): string {
+  const withoutBlocks = source.replace(createNekoDriftBlockPattern(), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
   return withoutBlocks ? `${withoutBlocks}\n\n${block}` : block;
 }
 
-export function removeOpenPetsMemoryBlock(source: string): string {
-  const withoutBlock = source.replace(createOpenPetsBlockPattern(), "").replace(/\n{3,}/g, "\n\n").trim();
+export function removeNekoDriftMemoryBlock(source: string): string {
+  const withoutBlock = source.replace(createNekoDriftBlockPattern(), "").replace(/\n{3,}/g, "\n\n").trim();
   return withoutBlock ? `${withoutBlock}\n` : "";
 }
 
-function createOpenPetsBlockPattern(): RegExp {
+function createNekoDriftBlockPattern(): RegExp {
   return new RegExp(`${escapeRegExp(openPetsMemoryStart)}[\\s\\S]*?${escapeRegExp(openPetsMemoryEnd)}\\n?`, "g");
 }
 
@@ -174,7 +174,7 @@ function assertSafeClaudeMemoryPaths(claudeDir: string, claudeMdPath: string, op
     if (!existsSync(path)) continue;
     const stat = lstatSync(path);
     if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("Claude memory file is not a safe regular file.");
-    if (stat.size > maxClaudeMemoryBytes) throw new Error("Claude memory file is too large for OpenPets to update safely.");
+    if (stat.size > maxClaudeMemoryBytes) throw new Error("Claude memory file is too large for NekoDrift to update safely.");
   }
 }
 
@@ -202,7 +202,7 @@ function assertSafeWriteTarget(path: string): void {
   if (!existsSync(path)) return;
   const stat = lstatSync(path);
   if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("Claude memory file is not a safe regular file.");
-  if (stat.size > maxClaudeMemoryBytes) throw new Error("Claude memory file is too large for OpenPets to update safely.");
+  if (stat.size > maxClaudeMemoryBytes) throw new Error("Claude memory file is too large for NekoDrift to update safely.");
 }
 
 function escapeRegExp(value: string): string {

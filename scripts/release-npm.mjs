@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptsDir, "..");
-const repository = "alvinunreal/openpets";
+const repository = "alvinunreal/nekodrift";
 
 const publishOrder = [
   "packages/client",
@@ -168,17 +168,17 @@ function run(command, args, options) {
 function printHelp() {
   console.log(`Usage: pnpm release:npm -- --yes
 
-Publishes the public OpenPets npm packages in dependency order.
+Publishes the public NekoDrift npm packages in dependency order.
 
 Packages:
-  1. @open-pets/client
-  2. @open-pets/agent-events
-  3. @open-pets/mcp
-  4. @open-pets/claude
-  5. @open-pets/opencode
-  6. @open-pets/cursor
-  7. @open-pets/pi
-  8. @open-pets/cli
+  1. @neko-drift/client
+  2. @neko-drift/agent-events
+  3. @neko-drift/mcp
+  4. @neko-drift/claude
+  5. @neko-drift/opencode
+  6. @neko-drift/cursor
+  7. @neko-drift/pi
+  8. @neko-drift/cli
   9. install-pet
 
 Options:

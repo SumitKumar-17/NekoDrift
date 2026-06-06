@@ -1,1 +1,1 @@
-export { hookSpeechPools, pickHookSpeech, type HookSpeechCategory } from "@open-pets/agent-events";
+export { hookSpeechPools, pickHookSpeech, type HookSpeechCategory } from "@neko-drift/agent-events";

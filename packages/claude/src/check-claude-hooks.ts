@@ -4,9 +4,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { addOpenPetsHooks, claudeHookEvents, createOpenPetsHookCommand, createOpenPetsHookSettingsPreview, doctorClaudeHooks, getBundledClaudeCliPath, getLocalClaudeCliPath, installClaudeHooks, openPetsHookMarker, removeOpenPetsHooks, uninstallClaudeHooks } from "./hook-settings.js";
+import { addNekoDriftHooks, claudeHookEvents, createNekoDriftHookCommand, createNekoDriftHookSettingsPreview, doctorClaudeHooks, getBundledClaudeCliPath, getLocalClaudeCliPath, installClaudeHooks, openPetsHookMarker, removeNekoDriftHooks, uninstallClaudeHooks } from "./hook-settings.js";
 import { hookSpeechPools } from "./hook-messages.js";
-import { handleClaudeHookPayload, hasProjectLocalOpenPetsHook, mapClaudeHookEvent, validateHookSpeech } from "./hooks.js";
+import { handleClaudeHookPayload, hasProjectLocalNekoDriftHook, mapClaudeHookEvent, validateHookSpeech } from "./hooks.js";
 
 assert.equal(mapClaudeHookEvent({ hook_event_name: "UserPromptSubmit" })?.reaction, "thinking");
 assert.equal(mapClaudeHookEvent({ hook_event_name: "UserPromptSubmit" })?.speechCategory, undefined);
@@ -47,7 +47,7 @@ const client = {
   react: async (reaction: string, options?: { readonly leaseId?: string }) => { calls.push({ kind: "react", value: reaction, leaseId: options?.leaseId }); },
   say: async (message: string, options?: { readonly leaseId?: string }) => { calls.push({ kind: "say", value: message, leaseId: options?.leaseId }); },
 };
-const dir = mkdtempSync(join(tmpdir(), "openpets-hooks-"));
+const dir = mkdtempSync(join(tmpdir(), "nekodrift-hooks-"));
 try {
 await handleClaudeHookPayload(JSON.stringify({ hook_event_name: "UserPromptSubmit", prompt: "never shown" }), { client, configuredPetId: "fixer", throttlePath: join(dir, "throttle.json"), now: () => 100_000, random: () => 0 });
 assert.deepEqual(calls[0], { kind: "lease", value: "acquire", requestedPetId: "fixer" });
@@ -63,8 +63,8 @@ await handleClaudeHookPayload("not json", { client, throttlePath: join(dir, "thr
 
 const projectDir = join(dir, "project-with-local-hook");
 mkdirSync(join(projectDir, ".claude"), { recursive: true });
-writeFileSync(join(projectDir, ".claude", "settings.local.json"), JSON.stringify({ hooks: { UserPromptSubmit: [{ hooks: [{ type: "command", command: "openpets hook --openpets-managed --project-local --pet fixer" }] }] } }), "utf8");
-assert.equal(hasProjectLocalOpenPetsHook(projectDir), true);
+writeFileSync(join(projectDir, ".claude", "settings.local.json"), JSON.stringify({ hooks: { UserPromptSubmit: [{ hooks: [{ type: "command", command: "nekodrift hook --nekodrift-managed --project-local --pet fixer" }] }] } }), "utf8");
+assert.equal(hasProjectLocalNekoDriftHook(projectDir), true);
 const beforeSkippedGlobal = calls.length;
 const previousProjectDir = process.env.CLAUDE_PROJECT_DIR;
 process.env.CLAUDE_PROJECT_DIR = projectDir;
@@ -79,7 +79,7 @@ try {
   else process.env.CLAUDE_PROJECT_DIR = previousProjectDir;
 }
 
-const preview = createOpenPetsHookSettingsPreview();
+const preview = createNekoDriftHookSettingsPreview();
 const hooks = (preview.hooks ?? {}) as Record<string, unknown>;
 for (const event of claudeHookEvents) {
   const entries = hooks[event] as Array<{ hooks: Array<{ command: string; timeout: number; async: boolean; asyncRewake: boolean }> }>;
@@ -89,37 +89,37 @@ for (const event of claudeHookEvents) {
   assert.equal(hook.async, true);
   assert.equal(hook.asyncRewake, false);
 }
-const localPreview = createOpenPetsHookSettingsPreview("local");
+const localPreview = createNekoDriftHookSettingsPreview("local");
 const localHook = (((localPreview.hooks as Record<string, unknown>).Stop as Array<{ hooks: Array<{ command: string }> }>)[0]?.hooks[0]);
 assert.ok(localHook?.command.includes(getLocalClaudeCliPath()));
 assert.ok(localHook?.command.includes(openPetsHookMarker));
-const bundledPreview = createOpenPetsHookSettingsPreview("bundled");
+const bundledPreview = createNekoDriftHookSettingsPreview("bundled");
 const bundledHook = (((bundledPreview.hooks as Record<string, unknown>).Stop as Array<{ hooks: Array<{ command: string }> }>)[0]?.hooks[0]);
 assert.ok(bundledHook?.command.includes(getBundledClaudeCliPath()));
 assert.ok(bundledHook?.command.includes(openPetsHookMarker));
-const customNodeHookCommand = createOpenPetsHookCommand("bundled", "fixer", "/Users/test/Library/Application Support/Herd/config/nvm/versions/node/v22.22.2/bin/node");
+const customNodeHookCommand = createNekoDriftHookCommand("bundled", "fixer", "/Users/test/Library/Application Support/Herd/config/nvm/versions/node/v22.22.2/bin/node");
 assert.ok(customNodeHookCommand.startsWith('"/Users/test/Library/Application Support/Herd/config/nvm/versions/node/v22.22.2/bin/node"'));
 assert.ok(customNodeHookCommand.includes("--pet fixer"));
-assert.ok(createOpenPetsHookCommand("published", "fixer").endsWith("--openpets-managed --pet fixer"));
-const petPreview = createOpenPetsHookSettingsPreview("published", "fixer");
+assert.ok(createNekoDriftHookCommand("published", "fixer").endsWith("--nekodrift-managed --pet fixer"));
+const petPreview = createNekoDriftHookSettingsPreview("published", "fixer");
 const petHook = (((petPreview.hooks as Record<string, unknown>).UserPromptSubmit as Array<{ hooks: Array<{ command: string }> }>)[0]?.hooks[0]);
 assert.ok(petHook?.command.includes("--pet fixer"));
 
 const settings = { theme: "dark", hooks: { PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "echo safe" }] }] } };
-const installed = addOpenPetsHooks(settings);
+const installed = addNekoDriftHooks(settings);
 assert.equal(doctorStatus(installed), "installed");
-const installedForFixer = addOpenPetsHooks(settings, "published", "fixer");
+const installedForFixer = addNekoDriftHooks(settings, "published", "fixer");
 assert.equal(doctorStatus(installedForFixer, "fixer"), "installed");
 assert.equal(doctorStatus(installedForFixer), "needs_update");
 assert.ok(doctorClaudeHooks(doctorStatusPath(installedForFixer), "published", "fixer").message.includes("Hook events target fixer."));
-const reinstalled = addOpenPetsHooks(removeOpenPetsHooks(installed));
+const reinstalled = addNekoDriftHooks(removeNekoDriftHooks(installed));
 assert.deepEqual(reinstalled, installed);
-const uninstalled = removeOpenPetsHooks(installed);
+const uninstalled = removeNekoDriftHooks(installed);
 assert.deepEqual(uninstalled, settings);
-assert.throws(() => addOpenPetsHooks({ hooks: { UserPromptSubmit: { bad: true } } }));
+assert.throws(() => addNekoDriftHooks({ hooks: { UserPromptSubmit: { bad: true } } }));
 
-const stale = addOpenPetsHooks({});
-((stale.hooks as Record<string, unknown>).Stop as unknown[]).push({ hooks: [{ type: "command", command: "npx -y @open-pets/claude hook --openpets-managed --old" }] });
+const stale = addNekoDriftHooks({});
+((stale.hooks as Record<string, unknown>).Stop as unknown[]).push({ hooks: [{ type: "command", command: "npx -y @neko-drift/claude hook --nekodrift-managed --old" }] });
 const stalePath = join(dir, "stale-settings.json");
 writeFileSync(stalePath, JSON.stringify(stale), "utf8");
 assert.equal(doctorClaudeHooks(stalePath).status, "needs_update");
@@ -141,25 +141,25 @@ const symlinkPath = join(dir, "settings-link.json");
 symlinkSync(settingsPath, symlinkPath);
 assert.equal(doctorClaudeHooks(symlinkPath).status, "error");
 
-process.env.OPENPETS_DISABLE_CLAUDE_ASYNC_HOOKS = "1";
+process.env.NEKODRIFT_DISABLE_CLAUDE_ASYNC_HOOKS = "1";
 assert.throws(() => installClaudeHooks(join(dir, "async-disabled.json")));
-delete process.env.OPENPETS_DISABLE_CLAUDE_ASYNC_HOOKS;
+delete process.env.NEKODRIFT_DISABLE_CLAUDE_ASYNC_HOOKS;
 
-const isolatedEnv = { ...process.env, OPENPETS_DISCOVERY_FILE: join(dir, "missing-ipc.json") };
-const normalHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--openpets-managed"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
+const isolatedEnv = { ...process.env, NEKODRIFT_DISCOVERY_FILE: join(dir, "missing-ipc.json") };
+const normalHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--nekodrift-managed"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
 assert.equal(normalHook.status, 0);
 assert.equal(normalHook.stdout, "");
 
-const petHookRun = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--openpets-managed", "--pet", "fixer"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
+const petHookRun = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--nekodrift-managed", "--pet", "fixer"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
 assert.equal(petHookRun.status, 0);
 assert.equal(petHookRun.stdout, "");
 
-const invalidPetHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--openpets-managed", "--pet", "bad/pet"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
+const invalidPetHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--nekodrift-managed", "--pet", "bad/pet"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
 assert.equal(invalidPetHook.status, 1);
-const missingPetHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--openpets-managed", "--pet"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
+const missingPetHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--nekodrift-managed", "--pet"], { input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }), encoding: "utf8", env: isolatedEnv });
 assert.equal(missingPetHook.status, 1);
 
-const malformedHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--openpets-managed"], { input: "not json", encoding: "utf8", env: isolatedEnv });
+const malformedHook = spawnSync(process.execPath, [new URL("./cli.js", import.meta.url).pathname, "hook", "--nekodrift-managed"], { input: "not json", encoding: "utf8", env: isolatedEnv });
 assert.equal(malformedHook.status, 0);
 assert.equal(malformedHook.stdout, "");
 

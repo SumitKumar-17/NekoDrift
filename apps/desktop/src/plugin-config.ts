@@ -1,4 +1,4 @@
-import type { OpenPetsPluginManifest, PluginConfigField } from "./plugin-manifest.js";
+import type { NekoDriftPluginManifest, PluginConfigField } from "./plugin-manifest.js";
 
 export type PluginConfigValue = string | number | boolean | string[] | Array<Record<string, unknown>>;
 export type PluginConfig = Record<string, PluginConfigValue>;
@@ -6,7 +6,7 @@ export type PluginConfig = Record<string, PluginConfigValue>;
 export type PluginConfigValidationError = { path: string; code: string; message: string };
 export type PluginConfigValidationResult = { ok: true; config: PluginConfig; errors: [] } | { ok: false; errors: PluginConfigValidationError[] };
 
-export function getPluginDefaultConfig(manifest: OpenPetsPluginManifest): PluginConfig {
+export function getPluginDefaultConfig(manifest: NekoDriftPluginManifest): PluginConfig {
   const config: PluginConfig = {};
   for (const [key, field] of configSchemaEntries(manifest)) {
     if (isValidDefault(field)) config[key] = field.default;
@@ -14,15 +14,15 @@ export function getPluginDefaultConfig(manifest: OpenPetsPluginManifest): Plugin
   return config;
 }
 
-export function validatePluginConfigReplacement(manifest: OpenPetsPluginManifest, value: unknown): PluginConfigValidationResult {
+export function validatePluginConfigReplacement(manifest: NekoDriftPluginManifest, value: unknown): PluginConfigValidationResult {
   return validateConfigObject(manifest, value, { rejectUnknown: true, applyDefaults: false });
 }
 
-export function getEffectivePluginConfig(manifest: OpenPetsPluginManifest, persisted: unknown): PluginConfigValidationResult {
+export function getEffectivePluginConfig(manifest: NekoDriftPluginManifest, persisted: unknown): PluginConfigValidationResult {
   return validateConfigObject(manifest, persisted, { rejectUnknown: false, applyDefaults: true });
 }
 
-export function resolvePluginNumericConfig(manifest: OpenPetsPluginManifest, persisted: unknown, fieldName: string, options: { min?: number } = {}): number {
+export function resolvePluginNumericConfig(manifest: NekoDriftPluginManifest, persisted: unknown, fieldName: string, options: { min?: number } = {}): number {
   const schema = manifest.configSchema;
   const field = schema && Object.prototype.hasOwnProperty.call(schema, fieldName) ? schema[fieldName] : undefined;
   if (!field || field.type !== "number") throw new Error(`Plugin numeric config ${fieldName} must reference a number config field.`);
@@ -35,7 +35,7 @@ export function resolvePluginNumericConfig(manifest: OpenPetsPluginManifest, per
   return value;
 }
 
-export function resolvePluginStringConfig(manifest: OpenPetsPluginManifest, persisted: unknown, fieldName: string, allowedType: "text" | "select"): string {
+export function resolvePluginStringConfig(manifest: NekoDriftPluginManifest, persisted: unknown, fieldName: string, allowedType: "text" | "select"): string {
   const schema = manifest.configSchema;
   const field = schema && Object.prototype.hasOwnProperty.call(schema, fieldName) ? schema[fieldName] : undefined;
   if (!field || field.type !== allowedType) throw new Error(`Plugin string config reference must point to a ${allowedType} config field.`);
@@ -47,7 +47,7 @@ export function resolvePluginStringConfig(manifest: OpenPetsPluginManifest, pers
   return value;
 }
 
-function validateConfigObject(manifest: OpenPetsPluginManifest, value: unknown, options: { rejectUnknown: boolean; applyDefaults: boolean }): PluginConfigValidationResult {
+function validateConfigObject(manifest: NekoDriftPluginManifest, value: unknown, options: { rejectUnknown: boolean; applyDefaults: boolean }): PluginConfigValidationResult {
   const errors: PluginConfigValidationError[] = [];
   if (!isPlainRecord(value)) return { ok: false, errors: [{ path: "$", code: "invalid_config", message: "Plugin config must be a plain object." }] };
   const config: PluginConfig = options.applyDefaults ? getPluginDefaultConfig(manifest) : {};
@@ -97,7 +97,7 @@ function validateFieldValue(value: unknown, field: PluginConfigField, path: stri
 
 function isValidTime(value: string): boolean { const m = /^(\d{2}):(\d{2})$/.exec(value); return !!m && Number(m[1]) <= 23 && Number(m[2]) <= 59; }
 
-function configSchemaEntries(manifest: OpenPetsPluginManifest): Array<[string, PluginConfigField]> {
+function configSchemaEntries(manifest: NekoDriftPluginManifest): Array<[string, PluginConfigField]> {
   return Object.entries(manifest.configSchema ?? {}).sort(([a], [b]) => a.localeCompare(b));
 }
 

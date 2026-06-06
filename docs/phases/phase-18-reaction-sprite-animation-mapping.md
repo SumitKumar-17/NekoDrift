@@ -2,9 +2,9 @@
 
 ## Goal
 
-Make OpenPets reactions actually drive the pet spritesheet animation state, not just temporary reaction bubble text.
+Make NekoDrift reactions actually drive the pet spritesheet animation state, not just temporary reaction bubble text.
 
-OpenPets currently uses the universal Codex/OpenPets spritesheet layout for `idle`, `run-right`, and `run-left` only. The missing piece is mapping **all** universal spritesheet rows to reachable reaction/emotion states so no available Codex animation row is unused.
+NekoDrift currently uses the universal Codex/NekoDrift spritesheet layout for `idle`, `run-right`, and `run-left` only. The missing piece is mapping **all** universal spritesheet rows to reachable reaction/emotion states so no available Codex animation row is unused.
 
 This phase should make hooks like `thinking`, `editing`, `testing`, `waiting`, `success`, `error`, and `notification/attention` visibly animate the pet using the correct spritesheet rows for all built-in, installed catalog, and imported Codex pets that use the shared spritesheet format.
 
@@ -39,7 +39,7 @@ Speech bubbles still work, but they are no longer the only visible feedback.
   - 1536×1872 WebP,
   - 8 columns × 9 rows,
   - 192×208 frames,
-  - rows matching the Codex/OpenPets state layout below.
+  - rows matching the Codex/NekoDrift state layout below.
 - The desktop renderer supports these universal rows:
 
   | Universal row | Codex state | Frames | Duration | Intended use |
@@ -72,7 +72,7 @@ Speech bubbles still work, but they are no longer the only visible feedback.
   - add `waving` so row 3 is directly usable,
   - keep `warning` out of this phase because it maps to `failed` and does not unlock a new row,
   - do not add `sleeping` in this phase because the universal sheet has no unique sleeping row and v1 maps it to `idle`.
-- Current and new OpenPets reactions map to universal spritesheet states:
+- Current and new NekoDrift reactions map to universal spritesheet states:
 
   | Reaction | Spritesheet state |
   | --- | --- |
@@ -109,9 +109,9 @@ Speech bubbles still work, but they are no longer the only visible feedback.
 - `prefers-reduced-motion` still disables sprite animation loops where practical.
 - Tests/contract checks cover:
   - universal row constants,
-  - exhaustive `reactionToSpriteState satisfies Record<OpenPetsReaction, UniversalSpriteState>` mapping,
+  - exhaustive `reactionToSpriteState satisfies Record<NekoDriftReaction, UniversalSpriteState>` mapping,
   - every universal row has at least one reachable trigger,
-  - `waving` is accepted by desktop IPC, the client protocol, and MCP `openpets_react`,
+  - `waving` is accepted by desktop IPC, the client protocol, and MCP `nekodrift_react`,
   - Claude `Notification` maps to `waving`,
   - built-in hook speech pools use consistent sentence-style capitalization, with every phrase matching at least `^[A-Z]`,
   - derived universal spritesheet dimensions equal `frameWidth * columns = 1536` and `frameHeight * rows = 1872`,
@@ -151,21 +151,21 @@ Speech bubbles still work, but they are no longer the only visible feedback.
 ## Technical approach
 
 1. **Make the spritesheet contract explicit in code.**
-   - Replace the current partial `defaultPetSprite.states` with a universal constant matching the Codex/OpenPets v1 mapping.
+   - Replace the current partial `defaultPetSprite.states` with a universal constant matching the Codex/NekoDrift v1 mapping.
    - Use clear names: `idle`, `running-right`, `running-left`, `waving`, `jumping`, `failed`, `waiting`, `running`, `review`.
    - Keep frame sizes/columns/rows unchanged.
    - This phase assumes all installed catalog/Codex pets are known-good universal-format spritesheets; it does **not** add WebP dimension parsing/validation. Future arbitrary pet formats should add strict metadata/dimension validation in a separate phase.
 
 2. **Separate sprite state from bubble text.**
    - `PetTransientDisplay` already has `reaction?: string` and `message?: string`.
-   - Narrow `PetTransientDisplay.reaction` to `OpenPetsReaction` if practical; otherwise validate/fallback unknown strings to `idle` before mapping.
+   - Narrow `PetTransientDisplay.reaction` to `NekoDriftReaction` if practical; otherwise validate/fallback unknown strings to `idle` before mapping.
    - Continue showing explicit `message` text when provided.
    - For reaction-only events, show a stable randomized short status line from a dedicated reaction message pool instead of the raw lowercase reaction id.
    - Additionally derive a sprite state from `reaction`.
    - If no reaction is active, sprite state is `idle` unless drag motion overrides it.
 
 3. **Make all rows reachable.**
-   - Add `waving` as an allowed reaction so row 3 is available through `openpets_react` and hook notifications.
+   - Add `waving` as an allowed reaction so row 3 is available through `nekodrift_react` and hook notifications.
    - Remap Claude `Notification` from `waiting` to `waving`, document it in `docs/mapping.md`, and update Claude hook tests.
    - Do not add fake use of `sleeping`; it has no unique universal row.
    - Do not add `warning`; it does not unlock a new sprite row.
@@ -206,7 +206,7 @@ Speech bubbles still work, but they are no longer the only visible feedback.
 
 ## Risks and tradeoffs
 
-- The universal mapping assumes all current catalog/Codex pets share the Codex/OpenPets 8×9 layout. This is a product decision for now; arbitrary future pet formats need metadata and validation in a later phase.
+- The universal mapping assumes all current catalog/Codex pets share the Codex/NekoDrift 8×9 layout. This is a product decision for now; arbitrary future pet formats need metadata and validation in a later phase.
 - Because this phase does not parse WebP dimensions, a malformed manually-installed spritesheet can still render incorrectly; existing missing/oversized-file protections remain the safety boundary.
 - `testing -> waiting` is imperfect but follows the existing v1 universal mapping. We can later add distinct test art only if the spritesheet contract changes.
 - Success/error animations are temporary and will clear after 4 seconds. This is consistent with current transient display behavior, but if users expect success/error to persist longer, that should be a separate product decision.
@@ -226,10 +226,10 @@ Speech bubbles still work, but they are no longer the only visible feedback.
 Run focused checks during implementation:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
-pnpm --filter @open-pets/claude test
-pnpm --filter @open-pets/mcp test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
+pnpm --filter @neko-drift/claude test
+pnpm --filter @neko-drift/mcp test
 ```
 
 If shared reaction constants move or are added to a shared package, also run affected package build/tests.
@@ -237,8 +237,8 @@ If shared reaction constants move or are added to a shared package, also run aff
 Before implementation review, run at least:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 ## Manual verification guide
@@ -247,7 +247,7 @@ After implementation:
 
 1. Run `pnpm dev:desktop`.
 2. Show the default pet.
-3. Trigger each MCP reaction and confirm animation row changes visibly. Use available smoke commands if present, for example `pnpm --filter @open-pets/client smoke:react thinking`; otherwise trigger through Claude MCP tools:
+3. Trigger each MCP reaction and confirm animation row changes visibly. Use available smoke commands if present, for example `pnpm --filter @neko-drift/client smoke:react thinking`; otherwise trigger through Claude MCP tools:
    - `thinking` -> review/thinking row,
    - `working` -> active running/work row,
    - `editing` -> active running/work row,
@@ -259,7 +259,7 @@ After implementation:
    - `error` -> failed row,
    - `celebrating` -> jumping row.
 4. Trigger Claude `Notification`; confirm the pet waves on both default and project/agent pets, and confirm any generated text is properly capitalized.
-5. Trigger `openpets_say` with both a message and reaction; confirm bubble shows the message while sprite uses the reaction animation. Also trigger message-only speech and confirm the bubble appears while the sprite stays idle.
+5. Trigger `nekodrift_say` with both a message and reaction; confirm bubble shows the message while sprite uses the reaction animation. Also trigger message-only speech and confirm the bubble appears while the sprite stays idle.
 6. Drag the pet left/right while a reaction is active; confirm drag overrides to `running-left`/`running-right`, then returns to the active reaction until it clears.
 7. Set an installed/Codex pet as default and repeat representative reactions (`thinking`, `success`, `error`, `waving`).
 8. Configure a project pet and confirm explicit/non-default pet reactions animate too.
@@ -304,7 +304,7 @@ Nice-to-have feedback:
 Fixed:
 
 - Added explicit naming guidance: motion IPC remains `run-left`/`run-right`, mapped to universal rows `running-left`/`running-right`.
-- Added exhaustive typed mapping acceptance criterion using `Record<OpenPetsReaction, UniversalSpriteState>`.
+- Added exhaustive typed mapping acceptance criterion using `Record<NekoDriftReaction, UniversalSpriteState>`.
 - Clarified validation scope: no WebP dimension parsing in this phase; known-good universal catalog/Codex format is assumed.
 - Required concrete desktop contract check wiring if a new check file is added.
 - Required generated CSS/source checks for both `.sprite` and `.installed-sprite`.
@@ -323,7 +323,7 @@ Accepted:
 - Implementation should factor constants/CSS generation where practical to avoid drift.
 - Manual verification now includes concrete `smoke:react` examples where available.
 - Future WebP dimension validation remains deferred.
-- `waving` is now explicitly used by `Notification` and by public `openpets_react`.
+- `waving` is now explicitly used by `Notification` and by public `nekodrift_react`.
 
 ## Oracle implementation review
 
@@ -336,7 +336,7 @@ Blocking feedback:
 Non-blocking feedback:
 
 - Fix docs wording that still implied `waiting` covers notification.
-- Clarify `openpets_react` docs so it says reactions drive animation, not only bubbles.
+- Clarify `nekodrift_react` docs so it says reactions drive animation, not only bubbles.
 - Add base `background-position: 0 var(--sprite-row-y)` so reduced-motion still shows the selected reaction row instead of always showing idle.
 
 Verdict: safe to commit after including docs and fixing the small docs/reduced-motion issues.
@@ -347,6 +347,6 @@ Fixed:
 
 - `docs/mapping.md` is part of this phase output and must be committed.
 - Updated `waiting` wording in `docs/mapping.md` so notification maps to `waving` only.
-- Updated `openpets_react` wording to say it drives animation and may show reaction text.
+- Updated `nekodrift_react` wording to say it drives animation and may show reaction text.
 - Added base sprite `background-position` for built-in and installed sprite elements.
 - Reran desktop build/test after fixes.

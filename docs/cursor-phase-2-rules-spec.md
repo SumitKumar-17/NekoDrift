@@ -1,17 +1,17 @@
 # Cursor Phase 2 Implementation Spec: Project Rules Guidance
 
-This spec covers the next Cursor integration phase after MCP-only setup. Phase 2 adds optional project-local Cursor rules so Cursor knows when and how to use the OpenPets MCP tools.
+This spec covers the next Cursor integration phase after MCP-only setup. Phase 2 adds optional project-local Cursor rules so Cursor knows when and how to use the NekoDrift MCP tools.
 
 ## Status
 
 - **Scope:** Cursor project rules only.
-- **Target UX:** CLI-managed project rules in `.cursor/rules/openpets.mdc`, with desktop preview/copy support only unless a separate project-picker UX is designed.
+- **Target UX:** CLI-managed project rules in `.cursor/rules/nekodrift.mdc`, with desktop preview/copy support only unless a separate project-picker UX is designed.
 - **Required before implementation ships:** validate current Cursor rule format behavior and record results in this document.
 - **Oracle approval:** approved before implementation; helper, CLI, and desktop phases reviewed between phases.
 
 ## Goals
 
-1. Give Cursor concise guidance for using OpenPets MCP tools during coding sessions.
+1. Give Cursor concise guidance for using NekoDrift MCP tools during coding sessions.
 2. Keep MCP setup and rules setup separable, explicit, and reversible.
 3. Preserve all unrelated Cursor rules and project files safely.
 4. Avoid editing user/global Cursor settings because no safe editable user rules path is assumed.
@@ -31,13 +31,13 @@ This spec covers the next Cursor integration phase after MCP-only setup. Phase 2
 Default managed file:
 
 ```text
-<project>/.cursor/rules/openpets.mdc
+<project>/.cursor/rules/nekodrift.mdc
 ```
 
 Rationale:
 
 - Cursor documents project rules under `.cursor/rules`.
-- A dedicated `openpets.mdc` file avoids modifying user-authored rules.
+- A dedicated `nekodrift.mdc` file avoids modifying user-authored rules.
 - Project-local rules can be committed or ignored according to the user's project policy.
 - A dedicated file makes ownership, preview, replace, and remove semantics straightforward.
 
@@ -45,26 +45,26 @@ Do not write legacy `.cursorrules` in Phase 2 unless validation proves it is nec
 
 ## Proposed rule content
 
-The rule should be short and tool-oriented. It should teach Cursor to use OpenPets as lightweight status feedback, not as a required step for every task.
+The rule should be short and tool-oriented. It should teach Cursor to use NekoDrift as lightweight status feedback, not as a required step for every task.
 
 Proposed managed file:
 
 ```mdc
 ---
-description: Use OpenPets MCP tools for lightweight coding-status feedback.
+description: Use NekoDrift MCP tools for lightweight coding-status feedback.
 ---
 
 <!-- OPENPETS:CURSOR_RULES:START -->
-# OpenPets status feedback
+# NekoDrift status feedback
 
-You may use the OpenPets MCP tools as a brief, safe status channel during meaningful coding work.
+You may use the NekoDrift MCP tools as a brief, safe status channel during meaningful coding work.
 
-- Use `openpets_say` sparingly for major milestones, blocking states, completion, or when review is needed.
-- Prefer `openpets_react` over speech for lightweight progress such as thinking, working, testing, success, or error.
+- Use `nekodrift_say` sparingly for major milestones, blocking states, completion, or when review is needed.
+- Prefer `nekodrift_react` over speech for lightweight progress such as thinking, working, testing, success, or error.
 - Keep messages short, user-facing, and safe.
-- Do not send prompts, tool input/output, code, logs, stack traces, credentials, private file contents, URLs, file paths, or other sensitive content through OpenPets.
-- Do not spam every internal step; use OpenPets only for meaningful progress changes and continue normally if a status update is unnecessary.
-- If OpenPets is unavailable, continue the coding task without failing.
+- Do not send prompts, tool input/output, code, logs, stack traces, credentials, private file contents, URLs, file paths, or other sensitive content through NekoDrift.
+- Do not spam every internal step; use NekoDrift only for meaningful progress changes and continue normally if a status update is unnecessary.
+- If NekoDrift is unavailable, continue the coding task without failing.
 <!-- OPENPETS:CURSOR_RULES:END -->
 ```
 
@@ -72,7 +72,7 @@ Validation must confirm whether the frontmatter keys above are supported in curr
 
 ## Ownership model
 
-Phase 2 should treat the whole `openpets.mdc` file as OpenPets-managed only when the managed markers are present:
+Phase 2 should treat the whole `nekodrift.mdc` file as NekoDrift-managed only when the managed markers are present:
 
 - `<!-- OPENPETS:CURSOR_RULES:START -->`
 - `<!-- OPENPETS:CURSOR_RULES:END -->`
@@ -81,16 +81,16 @@ Exact managed-file rules:
 
 - exactly one start marker and one end marker;
 - start marker must appear before the end marker;
-- content outside the marker block must be only recognized OpenPets frontmatter and whitespace;
-- recognized OpenPets frontmatter is only the frontmatter generated by `buildCursorOpenPetsRule()` for the current supported format;
+- content outside the marker block must be only recognized NekoDrift frontmatter and whitespace;
+- recognized NekoDrift frontmatter is only the frontmatter generated by `buildCursorNekoDriftRule()` for the current supported format;
 - any duplicate markers, reversed markers, user-authored text outside the managed shape, or unknown frontmatter fields must classify as `conflict`, not `needs-update`.
 
 Classification:
 
-- `missing`: `.cursor/rules/openpets.mdc` does not exist.
+- `missing`: `.cursor/rules/nekodrift.mdc` does not exist.
 - `installed`: managed file exists and matches expected content.
 - `needs-update`: managed file has the exact managed shape but generated content differs from expected content.
-- `conflict`: file exists but lacks managed markers, has malformed managed markers, has duplicate markers, has unknown frontmatter, or contains non-OpenPets content outside the expected managed shape.
+- `conflict`: file exists but lacks managed markers, has malformed managed markers, has duplicate markers, has unknown frontmatter, or contains non-NekoDrift content outside the expected managed shape.
 - `invalid`: unsafe path, symlinked file/parent, non-regular file, oversized file, unreadable file, or invalid parent structure.
 - `error`: unexpected I/O or classification failure.
 
@@ -98,8 +98,8 @@ Classification:
 
 | Status | canInstall | canReplace | canRemove | Write behavior |
 | --- | --- | --- | --- | --- |
-| `missing` | yes | no | no | Create `.cursor/rules/openpets.mdc`. |
-| `installed` | no | no | yes | Remove only the managed `openpets.mdc` file. |
+| `missing` | yes | no | no | Create `.cursor/rules/nekodrift.mdc`. |
+| `installed` | no | no | yes | Remove only the managed `nekodrift.mdc` file. |
 | `needs-update` | yes | yes | yes | Update/replace the managed file. |
 | `conflict` | no | yes | no | Replace only after explicit user confirmation. |
 | `invalid` | no | no | no | No writes; user must fix manually. |
@@ -111,7 +111,7 @@ If removal leaves `.cursor/rules` empty, Phase 2 may leave the empty directory i
 
 - Accept explicit `projectDir` inputs for production callers.
 - If an explicit `rulesPath` exists for tests, mark it internal/test-only and still enforce containment under the test project root.
-- Resolve the final path and ensure it remains under `<project>/.cursor/rules/openpets.mdc`.
+- Resolve the final path and ensure it remains under `<project>/.cursor/rules/nekodrift.mdc`.
 - Reject symlinks for the rule file and relevant parent directories before writing.
 - Reject non-regular files.
 - Use an upper size limit for existing rule files before reading. Suggested max: 64 KiB.
@@ -119,11 +119,11 @@ If removal leaves `.cursor/rules` empty, Phase 2 may leave the empty directory i
 - Write atomically via temp file + rename.
 - Create backups before replacing/removing existing managed files.
 - Never print unrelated project rule file contents.
-- Preview only the OpenPets managed rule content.
+- Preview only the NekoDrift managed rule content.
 
 ## Package/API design
 
-Extend `@open-pets/cursor` with rule helpers rather than duplicating logic in CLI or desktop.
+Extend `@neko-drift/cursor` with rule helpers rather than duplicating logic in CLI or desktop.
 
 Suggested new file:
 
@@ -132,8 +132,8 @@ Suggested new file:
 Suggested exports:
 
 - `getCursorProjectRulesPath(projectDir)`
-- `buildCursorOpenPetsRule(options)`
-- `readCursorOpenPetsRules(path)`
+- `buildCursorNekoDriftRule(options)`
+- `readCursorNekoDriftRules(path)`
 - `classifyCursorRulesStatus(result, path, expected)`
 - `planCursorRulesInstall(path, options, allowReplace?)`
 - `planCursorRulesReplace(path, options)`
@@ -150,26 +150,26 @@ Phase 2 should add explicit rules commands/flags without changing the meaning of
 Recommended commands:
 
 ```bash
-openpets configure --agent cursor --pet PET_ID --with-rules
-openpets configure --agent cursor --rules-only
-openpets configure --agent cursor --remove-rules
-openpets configure --agent cursor --rules-only --force
+nekodrift configure --agent cursor --pet PET_ID --with-rules
+nekodrift configure --agent cursor --rules-only
+nekodrift configure --agent cursor --remove-rules
+nekodrift configure --agent cursor --rules-only --force
 ```
 
 Semantics:
 
-- Existing `openpets configure --agent cursor` remains MCP setup.
+- Existing `nekodrift configure --agent cursor` remains MCP setup.
 - `--with-rules` performs MCP setup and project rules setup.
 - `--rules-only` writes only the project rules file.
 - `--remove-rules` removes only the managed project rules file.
-- `--force` is required to replace a conflicting `openpets.mdc`.
-- `--cwd` keeps existing project-local behavior and points rules at `<cwd>/.cursor/rules/openpets.mdc`.
+- `--force` is required to replace a conflicting `nekodrift.mdc`.
+- `--cwd` keeps existing project-local behavior and points rules at `<cwd>/.cursor/rules/nekodrift.mdc`.
 - No global rules CLI behavior in Phase 2.
 
 Flag interaction rules:
 
 - `--with-rules`, `--rules-only`, and `--remove-rules` are mutually exclusive.
-- `--rules-only` and `--remove-rules` do not require `--pet` and must not require OpenPets desktop connectivity.
+- `--rules-only` and `--remove-rules` do not require `--pet` and must not require NekoDrift desktop connectivity.
 - `--with-rules` continues to require the same inputs as MCP setup, including pet selection where currently required.
 - `--with-rules` must preflight both the MCP write plan and the rules write plan before writing either file, so a conflict or invalid state does not create surprising partial setup.
 
@@ -177,7 +177,7 @@ The CLI should print:
 
 - target rule path;
 - rules status;
-- OpenPets-only rule preview;
+- NekoDrift-only rule preview;
 - backup path when a write removes or replaces an existing file;
 - note that Cursor may need reload/restart or a new chat for rule changes to apply.
 
@@ -190,7 +190,7 @@ Desktop Agent Setup Phase 2 should not write project-local rules by default beca
 Allowed desktop Phase 2 UX:
 
 - show a Cursor rules preview;
-- copy the recommended `.cursor/rules/openpets.mdc` content;
+- copy the recommended `.cursor/rules/nekodrift.mdc` content;
 - explain where to save it in a project;
 - link or route users to the CLI command for project-local install.
 
@@ -200,14 +200,14 @@ Do not add desktop project writes unless a separate project-directory picker, pa
 
 Record results here before enabling writes:
 
-- [x] Confirm current Cursor stable accepts `.cursor/rules/openpets.mdc`. Official docs document project rules under `.cursor/rules` and support `.mdc`.
+- [x] Confirm current Cursor stable accepts `.cursor/rules/nekodrift.mdc`. Official docs document project rules under `.cursor/rules` and support `.mdc`.
 - [x] Confirm whether `.mdc` frontmatter keys `description` and `alwaysApply` are accepted and produce the intended always-on guidance behavior. Official docs document `description`, `globs`, and `alwaysApply`; Phase 2 intentionally omits `alwaysApply: true` by default.
 - [x] Confirm whether a plain Markdown body without frontmatter is accepted as a fallback. Official docs document both `.md` and `.mdc`; `.mdc` is retained for frontmatter control.
 - [x] Confirm whether Cursor requires reload/restart/new chat before rule changes apply. Official docs do not require reload; UX says Cursor may use changed rules in a new or refreshed chat.
-- [x] Confirm whether `.cursor/rules/openpets.md` is equally supported or if `.mdc` is preferred. Official docs support `.md` and `.mdc`; OpenPets uses `.mdc` for explicit frontmatter.
+- [x] Confirm whether `.cursor/rules/nekodrift.md` is equally supported or if `.mdc` is preferred. Official docs support `.md` and `.mdc`; NekoDrift uses `.mdc` for explicit frontmatter.
 - [x] Confirm that project rules do not require permissions file edits. Official docs do not require permissions file edits for project rules.
-- [ ] Smoke test that Cursor sees the OpenPets rule and still connects to the Phase 1 MCP server.
-- [ ] Smoke test that the rule does not cause excessive OpenPets tool calls during ordinary coding tasks.
+- [ ] Smoke test that Cursor sees the NekoDrift rule and still connects to the Phase 1 MCP server.
+- [ ] Smoke test that the rule does not cause excessive NekoDrift tool calls during ordinary coding tasks.
 
 Official docs checked:
 
@@ -223,14 +223,14 @@ Official docs checked:
 
 ## Tests/checks
 
-Add `@open-pets/cursor` checks for:
+Add `@neko-drift/cursor` checks for:
 
 - valid rule content generation;
 - project rule path resolution;
 - missing/installed/needs-update/conflict/invalid/error classification;
 - managed marker detection;
 - duplicate, reversed, and missing marker classification;
-- unmanaged `openpets.mdc` conflict behavior;
+- unmanaged `nekodrift.mdc` conflict behavior;
 - user text before/after markers and unknown/modified frontmatter conflict behavior;
 - no writes on invalid/error/conflict without force;
 - explicit replace preserving backups;
@@ -244,9 +244,9 @@ Add `@open-pets/cursor` checks for:
 Run at minimum:
 
 ```bash
-pnpm --filter @open-pets/cursor check # passed during implementation
-pnpm --filter @open-pets/cli check # passed during implementation
-pnpm --filter @open-pets/desktop check # passed during implementation
+pnpm --filter @neko-drift/cursor check # passed during implementation
+pnpm --filter @neko-drift/cli check # passed during implementation
+pnpm --filter @neko-drift/desktop check # passed during implementation
 pnpm check # passed during implementation
 ```
 

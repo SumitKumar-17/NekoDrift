@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 import { createHelpText, parseMcpArgs } from "./args.js";
-import { createOpenPetsMcpServer } from "./server.js";
+import { createNekoDriftMcpServer } from "./server.js";
 import { createToolContext, type LeaseContext } from "./tools.js";
 
 async function main(): Promise<void> {
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   const lease: LeaseContext = {};
   const context = createToolContext(options.petId);
   const leaseReady = acquireStartupLease(context.client, lease, options.petId);
-  const server = createOpenPetsMcpServer({ ...context, lease, leaseReady });
+  const server = createNekoDriftMcpServer({ ...context, lease, leaseReady });
   let heartbeatTimer: NodeJS.Timeout | null = null;
   let retryTimer: NodeJS.Timeout | null = null;
   let retryDelayMs = 5_000;
@@ -101,15 +101,15 @@ async function acquireStartupLease(client: ReturnType<typeof createToolContext>[
 }
 
 function sanitizeMcpRuntimeError(error: unknown): string {
-  const message = error instanceof Error ? error.message : "OpenPets lease operation failed.";
+  const message = error instanceof Error ? error.message : "NekoDrift lease operation failed.";
   if (/\/|\\|\.sock|pipe|token|ipc\.json|ENOENT|ECONNREFUSED|EACCES/i.test(message)) {
-    return "OpenPets desktop app or local IPC is unavailable.";
+    return "NekoDrift desktop app or local IPC is unavailable.";
   }
   return message.slice(0, 160);
 }
 
 main().catch((error: unknown) => {
-  process.stderr.write(`OpenPets MCP server failed: ${error instanceof Error ? error.message : String(error)}\n`);
+  process.stderr.write(`NekoDrift MCP server failed: ${error instanceof Error ? error.message : String(error)}\n`);
   process.exit(1);
 });
 

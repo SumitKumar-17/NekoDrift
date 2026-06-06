@@ -3,10 +3,10 @@ import { lookup } from "node:dns/promises";
 import * as net from "node:net";
 import { join } from "node:path";
 
-import type { OpenPetsReaction } from "./local-ipc-protocol.js";
+import type { NekoDriftReaction } from "./local-ipc-protocol.js";
 import { validateReaction, validateSayMessage } from "./local-ipc-protocol.js";
 import type { PluginConfig } from "./plugin-config.js";
-import type { OpenPetsJavascriptPluginManifest, PluginPermission } from "./plugin-manifest.js";
+import type { NekoDriftJavascriptPluginManifest, PluginPermission } from "./plugin-manifest.js";
 import type { PluginPetApi } from "./plugin-pet-api.js";
 import type { PluginRuntimeScheduler, PluginTimerHandle } from "./plugin-runtime.js";
 import type { PluginStateRecord, PluginStateStore } from "./plugin-state.js";
@@ -56,7 +56,7 @@ export class PluginSdkBridge {
     this.#stateStore = options.stateStore; this.#petApi = options.petApi; this.#scheduler = options.scheduler; this.#storage = options.storage ?? new MemoryPluginStorageStore(); this.#onError = options.onError ?? (() => undefined); this.#logger = options.logger ?? (() => undefined);
   }
 
-  createApi(record: PluginStateRecord, manifest: OpenPetsJavascriptPluginManifest) {
+  createApi(record: PluginStateRecord, manifest: NekoDriftJavascriptPluginManifest) {
     const approved = new Set(record.approvedPermissions); const state = this.#pluginState(record.id);
     const requirePermission = (permission: PluginPermission) => { if (!approved.has(permission)) throw new Error(`Plugin permission is not approved: ${permission}`); };
     const scheduleOnce = (id: string, delayMs: number, callback: () => unknown) => { validateSchedule(id, delayMs, 1); check(state.schedules.size < quotas.schedules || state.schedules.has(id), "Plugin schedule quota exceeded."); state.schedules.get(id)?.cancel(); state.schedules.set(id, this.#scheduler.setTimeout(() => runScheduled(record.id, callback).finally(() => state.schedules.delete(id)), delayMs)); };
@@ -66,7 +66,7 @@ export class PluginSdkBridge {
     return {
       pet: {
         speak: async (message: string) => { requirePermission("pet:speak"); state.petWindow.tick(quotas.petActionsPerMinute, "pet action"); await this.#petApi.speak(validateSayMessage(message)); },
-        react: async (reaction: OpenPetsReaction) => { requirePermission("pet:reaction"); state.petWindow.tick(quotas.petActionsPerMinute, "pet action"); await this.#petApi.react(validateReaction(reaction)); },
+        react: async (reaction: NekoDriftReaction) => { requirePermission("pet:reaction"); state.petWindow.tick(quotas.petActionsPerMinute, "pet action"); await this.#petApi.react(validateReaction(reaction)); },
         moveBy: async (options: unknown) => { requirePermission("pet:move"); state.petWindow.tick(quotas.petActionsPerMinute, "pet action"); await this.#petApi.moveBy(validateMoveBy(options)); },
         wander: async (options: unknown) => { requirePermission("pet:move"); state.petWindow.tick(quotas.petActionsPerMinute, "pet action"); await this.#petApi.wander(validateWander(options)); },
         moveToHome: async () => { requirePermission("pet:move"); state.petWindow.tick(quotas.petActionsPerMinute, "pet action"); await this.#petApi.moveToHome(); },
@@ -102,7 +102,7 @@ export class PluginSdkBridge {
 }
 
 type SimpleHttpResponse = { status: number; ok: boolean; headers: Record<string, string>; text: string; json?: unknown };
-function allowedNetworkHosts(record: PluginStateRecord, manifest: OpenPetsJavascriptPluginManifest): Set<string> { const manifestHosts = new Set((manifest.network?.hosts ?? []).map((h) => h.toLowerCase())); const approved = record.approvedNetworkHosts?.map((h) => h.toLowerCase()) ?? []; return new Set(approved.filter((h) => manifestHosts.has(h))); }
+function allowedNetworkHosts(record: PluginStateRecord, manifest: NekoDriftJavascriptPluginManifest): Set<string> { const manifestHosts = new Set((manifest.network?.hosts ?? []).map((h) => h.toLowerCase())); const approved = record.approvedNetworkHosts?.map((h) => h.toLowerCase()) ?? []; return new Set(approved.filter((h) => manifestHosts.has(h))); }
 async function safeHttpFetch(urlText: string, options: unknown, allowedHosts: Set<string>): Promise<SimpleHttpResponse> {
   const url = new URL(urlText); if (url.protocol !== "https:") throw new Error("Plugin HTTP fetch requires HTTPS."); if (url.username || url.password) throw new Error("Plugin HTTP fetch credentials are not allowed.");
   const host = url.hostname.toLowerCase(); if (!allowedHosts.has(host)) throw new Error("Plugin HTTP host is not approved."); await assertPublicHost(host);

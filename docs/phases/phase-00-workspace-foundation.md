@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create the fresh OpenPets 2.0 workspace foundation with excellent developer experience and Node/npm-compatible runtime behavior.
+Create the fresh NekoDrift 2.0 workspace foundation with excellent developer experience and Node/npm-compatible runtime behavior.
 
 This phase should establish the project skeleton and basic commands needed for later implementation phases, without building real product features yet.
 
@@ -43,7 +43,7 @@ I can install dependencies, inspect the v2 workspace structure, and run basic ch
 - Workspace boundaries exclude v1 and web app code from v2 workspace commands.
 - Initial packages are protected from accidental publishing while they are skeletons.
 - Basic workspace scripts exist for checking/building the initial skeleton.
-- Package names align with the agreed `@open-pets/*` organization.
+- Package names align with the agreed `@neko-drift/*` organization.
 - The initial package/app structure supports later phases without overbuilding empty abstractions.
 - The repo clearly distinguishes current v2 code from v1 reference code.
 
@@ -127,8 +127,8 @@ This means:
 - Contributors may run `pnpm install` and `pnpm check` during development.
 - Contributors should use Corepack or an explicitly documented pnpm version from the root `packageManager` field.
 - Published packages must be usable through normal Node/npm/npx flows.
-- `@open-pets/mcp` should eventually support `npx -y @open-pets/mcp`.
-- `@open-pets/cli` should eventually support `npx -y @open-pets/cli ...`.
+- `@neko-drift/mcp` should eventually support `npx -y @neko-drift/mcp`.
+- `@neko-drift/cli` should eventually support `npx -y @neko-drift/cli ...`.
 - No v2 package should rely on Bun runtime APIs.
 
 Workspace inclusion rule:

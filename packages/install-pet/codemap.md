@@ -1,19 +1,19 @@
 # packages/install-pet/
 
-Standalone pet installer from OpenPets gallery catalog.
+Standalone pet installer from NekoDrift gallery catalog.
 
 ## Responsibility
 
-Provides a standalone CLI tool for installing pets from the OpenPets gallery catalog. Can operate through the running desktop app (preferred) or directly download and extract pet ZIP files.
+Provides a standalone CLI tool for installing pets from the NekoDrift gallery catalog. Can operate through the running desktop app (preferred) or directly download and extract pet ZIP files.
 
 ## Design
 
 **Dual Install Modes**:
-1. **Via Running App**: Uses `@open-pets/client` to request installation through the desktop app
+1. **Via Running App**: Uses `@neko-drift/client` to request installation through the desktop app
 2. **Direct Install**: Downloads from catalog, validates, extracts to user data directory
 
 **Catalog Integration**:
-- URL: `https://openpets.dev/pets/catalog.v2.json`
+- URL: `https://nekodrift.app/pets/catalog.v2.json`
 - Validation: Schema version, unique IDs, URL host/path allowlisting
 - Pet structure: `{ id, displayName, description, preview, zip }`
 
@@ -25,8 +25,8 @@ Provides a standalone CLI tool for installing pets from the OpenPets gallery cat
 - Extraction: Atomic (temp dir → rename), permission 0o600/0o700
 
 **State Management**:
-- User data path: Platform-specific (macOS: `~/Library/Application Support/OpenPets`, Windows: `%APPDATA%/OpenPets`, Linux: `~/.config/OpenPets`)
-- State file: `openpets-state.json`
+- User data path: Platform-specific (macOS: `~/Library/Application Support/NekoDrift`, Windows: `%APPDATA%/NekoDrift`, Linux: `~/.config/NekoDrift`)
+- State file: `nekodrift-state.json`
 - Lock file: `.install-pet.lock` (prevents concurrent installs, 10min stale timeout)
 - Pet directory: `pets/<petId>/`
 
@@ -40,13 +40,13 @@ Provides a standalone CLI tool for installing pets from the OpenPets gallery cat
 ```
 installPet({ petId, preferRunningApp })
     ↓
-tryInstallThroughRunningApp() → createOpenPetsClient().installPet()
+tryInstallThroughRunningApp() → createNekoDriftClient().installPet()
     ↓ (fallback on unavailable/timeout)
 installPetDirectly()
     ↓
 acquireDirectInstallLock() → mkdir lock, write owner.json
     ↓
-fetchCatalog() → GET https://openpets.dev/pets/catalog.v2.json
+fetchCatalog() → GET https://nekodrift.app/pets/catalog.v2.json
     ↓
 getCatalogPet(petId) → Validate exists in catalog
     ↓
@@ -58,7 +58,7 @@ validateExtractedPet() → Check pet.json, spritesheet.webp exist
     ↓
 rename(tempDir, finalDir) → Atomic move
     ↓
-writeInstalledPetState() → Update openpets-state.json
+writeInstalledPetState() → Update nekodrift-state.json
     ↓
 releaseLock() → rm lock directory
 ```
@@ -66,12 +66,12 @@ releaseLock() → rm lock directory
 ## Integration Points
 
 **Dependencies**:
-- `@open-pets/client` - Fallback IPC to running app
+- `@neko-drift/client` - Fallback IPC to running app
 - `yauzl` - ZIP file handling
 
 **External Services**:
-- `openpets.dev` - Catalog JSON and pet metadata
-- `zip.openpets.dev` - ZIP file downloads
+- `nekodrift.app` - Catalog JSON and pet metadata
+- `zip.nekodrift.app` - ZIP file downloads
 
 **CLI Usage**:
 - Binary: `install-pet <pet-id>`
@@ -80,5 +80,5 @@ releaseLock() → rm lock directory
 **Exports**:
 - `installPet()` - Main install function
 - `parseArgs()` - CLI argument parsing
-- `getOpenPetsUserDataPath()` - Platform-specific path resolution
+- `getNekoDriftUserDataPath()` - Platform-specific path resolution
 - `validatePetId()` - ID format validation

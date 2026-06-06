@@ -1,12 +1,12 @@
 {
-  "name": "openpets-v2-workspace",
+  "name": "nekodrift-v2-workspace",
   "version": "2.1.1",
   "private": true,
-  "description": "OpenPets 2.0 workspace",
+  "description": "NekoDrift 2.0 workspace",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git"
+    "url": "git+https://github.com/alvinunreal/nekodrift.git"
   },
   "type": "module",
   "packageManager": "pnpm@11.0.8",
@@ -14,11 +14,11 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev:desktop": "pnpm --filter @open-pets/desktop dev",
-    "dev:desktop:control-center": "pnpm --filter @open-pets/desktop dev:control-center",
-    "dev:desktop:plugins": "pnpm --filter @open-pets/desktop dev:plugins",
-    "package:desktop:dir": "pnpm build && pnpm --filter @open-pets/desktop package:dir",
-    "package:desktop": "pnpm build && pnpm --filter @open-pets/desktop package",
+    "dev:desktop": "pnpm --filter @neko-drift/desktop dev",
+    "dev:desktop:control-center": "pnpm --filter @neko-drift/desktop dev:control-center",
+    "dev:desktop:plugins": "pnpm --filter @neko-drift/desktop dev:plugins",
+    "package:desktop:dir": "pnpm build && pnpm --filter @neko-drift/desktop package:dir",
+    "package:desktop": "pnpm build && pnpm --filter @neko-drift/desktop package",
     "release:desktop": "node apps/desktop/scripts/release-local.mjs",
     "release:npm": "node scripts/release-npm.mjs",
     "plugins:test": "node scripts/test-plugins.mjs",

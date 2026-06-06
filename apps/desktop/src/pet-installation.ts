@@ -7,7 +7,7 @@ import { Transform } from "node:stream";
 import yauzl from "yauzl";
 import type { Entry, ZipFile } from "yauzl";
 
-import { getAppStateSnapshot, installPetState, removePetState, setDefaultPet, type OpenPetsStateV1 } from "./app-state.js";
+import { getAppStateSnapshot, installPetState, removePetState, setDefaultPet, type NekoDriftStateV1 } from "./app-state.js";
 import { getCatalogPet } from "./catalog.js";
 import { maxCodexPetJsonBytes, maxCodexSpritesheetBytes, validateCodexPetMetadata, type CodexPetMetadata } from "./codex-pets-core.js";
 import { builtInPet } from "./built-in-pet.js";
@@ -22,7 +22,7 @@ const downloadTimeoutMs = 30_000;
 
 const operations = new Set<string>();
 
-export async function installPet(petId: string): Promise<OpenPetsStateV1> {
+export async function installPet(petId: string): Promise<NekoDriftStateV1> {
   return withPetOperation(petId, async () => {
     assertSafePetId(petId);
 
@@ -70,7 +70,7 @@ export async function installPet(petId: string): Promise<OpenPetsStateV1> {
   });
 }
 
-export async function installPetFromZipFile(zipPath: string): Promise<OpenPetsStateV1> {
+export async function installPetFromZipFile(zipPath: string): Promise<NekoDriftStateV1> {
   return withPetOperation("local-import", async () => {
     const zip = await readRegularFile(zipPath, maxZipDownloadBytes, "pet zip");
     validateZipMagic(zip);
@@ -90,7 +90,7 @@ export async function installPetFromZipFile(zipPath: string): Promise<OpenPetsSt
   });
 }
 
-export async function installPetFromFolder(folderPath: string): Promise<OpenPetsStateV1> {
+export async function installPetFromFolder(folderPath: string): Promise<NekoDriftStateV1> {
   return withPetOperation("local-import", async () => {
     const sourceDir = resolve(folderPath);
     const sourceStats = await lstat(sourceDir);
@@ -119,7 +119,7 @@ export async function installPetFromFolder(folderPath: string): Promise<OpenPets
   });
 }
 
-export async function removePet(petId: string): Promise<OpenPetsStateV1> {
+export async function removePet(petId: string): Promise<NekoDriftStateV1> {
   return withPetOperation(petId, async () => {
     if (petId === builtInPet.id) {
       throw new Error("Built-in pet cannot be removed.");
@@ -130,13 +130,13 @@ export async function removePet(petId: string): Promise<OpenPetsStateV1> {
     try {
       await rm(dir, { recursive: true, force: true });
     } catch (error) {
-      throw new Error(`Pet was removed from OpenPets state, but local files could not be deleted from ${dir}. You may need to remove them manually. ${error instanceof Error ? error.message : ""}`.trim());
+      throw new Error(`Pet was removed from NekoDrift state, but local files could not be deleted from ${dir}. You may need to remove them manually. ${error instanceof Error ? error.message : ""}`.trim());
     }
     return state;
   });
 }
 
-export async function setDefaultInstalledPet(petId: string): Promise<OpenPetsStateV1> {
+export async function setDefaultInstalledPet(petId: string): Promise<NekoDriftStateV1> {
   return withPetOperation(petId, async () => {
     if (petId !== builtInPet.id) {
       assertSafePetId(petId);
@@ -185,7 +185,7 @@ async function downloadPetZip(zipUrl: string): Promise<Buffer> {
 function validateZipUrl(value: string): void {
   const url = new URL(value);
   if (url.protocol !== "https:") throw new Error("Zip URL must use https.");
-  if (url.hostname !== "zip.openpets.dev") throw new Error("Zip URL host is not allowed.");
+  if (url.hostname !== "zip.nekodrift.app") throw new Error("Zip URL host is not allowed.");
   if (!url.pathname.startsWith("/pets/")) throw new Error("Zip URL path is not allowed.");
   if (url.username || url.password) throw new Error("Zip URL cannot include credentials.");
   if (url.port) throw new Error("Zip URL cannot include a custom port.");
@@ -430,7 +430,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-async function installLocalPetState(metadata: CodexPetMetadata): Promise<OpenPetsStateV1> {
+async function installLocalPetState(metadata: CodexPetMetadata): Promise<NekoDriftStateV1> {
   try {
     return installPetState({ id: metadata.id, displayName: metadata.displayName, description: metadata.description });
   } catch (error) {

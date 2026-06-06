@@ -15,7 +15,7 @@ import { createAppTray, refreshTrayMenu } from "./tray.js";
 import { checkForGitHubReleaseUpdate } from "./update-checker.js";
 import { installInternalUiHandlers, installInternalUiProtocol } from "./windows.js";
 
-// OpenPets does not store browser passwords, cookies, or encrypted app secrets.
+// NekoDrift does not store browser passwords, cookies, or encrypted app secrets.
 // Keep Chromium/Electron from prompting for macOS Keychain or Linux keyring access
 // during startup/profile initialization.
 app.commandLine.appendSwitch("use-mock-keychain");
@@ -39,9 +39,9 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(async () => {
     initializeLogger();
-    app.setName("OpenPets");
+    app.setName("NekoDrift");
     if (process.platform === "win32") {
-      app.setAppUserModelId("dev.openpets.app");
+      app.setAppUserModelId("dev.nekodrift.app");
     }
     info("app", "startup begin", { version: app.getVersion(), platform: process.platform, arch: process.arch, packaged: app.isPackaged, pid: process.pid, ozonePlatform: app.commandLine.getSwitchValue("ozone-platform") || null });
 
@@ -57,10 +57,10 @@ if (!gotSingleInstanceLock) {
     installDefaultPetDisplayHandlers();
     await startLocalIpcServer();
     releaseStartupInstallLock();
-    const roots = parseDevPluginEnv(process.env.OPENPETS_DEV_PLUGIN_ROOTS);
-    const paths = parseDevPluginEnv(process.env.OPENPETS_DEV_PLUGIN_PATHS);
+    const roots = parseDevPluginEnv(process.env.NEKODRIFT_DEV_PLUGIN_ROOTS);
+    const paths = parseDevPluginEnv(process.env.NEKODRIFT_DEV_PLUGIN_PATHS);
     const devPluginMode = roots.length > 0 || paths.length > 0;
-    const pluginService = initializePluginService(app.getPath("userData"), defaultPluginPetApi, app.getVersion(), new ElectronPluginJsHost(), writePluginRuntimeLog, process.env.OPENPETS_DISABLE_PLUGIN_CATALOG === "1" || devPluginMode, resolveBundledOfficialPluginRoots(), !devPluginMode);
+    const pluginService = initializePluginService(app.getPath("userData"), defaultPluginPetApi, app.getVersion(), new ElectronPluginJsHost(), writePluginRuntimeLog, process.env.NEKODRIFT_DISABLE_PLUGIN_CATALOG === "1" || devPluginMode, resolveBundledOfficialPluginRoots(), !devPluginMode);
     if (shouldOpenDefaultPetOnLaunch()) {
       showDefaultPet();
     }
@@ -79,11 +79,11 @@ if (!gotSingleInstanceLock) {
     })().catch((error) => logError("app", "plugin service startup failed", error));
     void checkForGitHubReleaseUpdate().then(() => refreshTrayMenu());
     info("app", "startup complete", { logFile: getLogFilePath(), openDefaultPetOnLaunch: shouldOpenDefaultPetOnLaunch() });
-    console.log("OpenPets desktop shell ready.");
+    console.log("NekoDrift desktop shell ready.");
   }).catch((error: unknown) => {
     releaseStartupInstallLock();
     logError("app", "startup failed", error);
-    console.error("Failed to start OpenPets desktop shell.", error);
+    console.error("Failed to start NekoDrift desktop shell.", error);
     app.quit();
   });
 }

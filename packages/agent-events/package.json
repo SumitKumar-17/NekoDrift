@@ -1,10 +1,10 @@
 {
-  "name": "@open-pets/agent-events",
+  "name": "@neko-drift/agent-events",
   "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/agent-events"
   },
   "type": "module",

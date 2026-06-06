@@ -3,8 +3,8 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { randomUUID } from "node:crypto";
 
 import { executePlannedWrite, getProjectOpenCodeConfigPaths, parseOpenCodeConfig, planOpenCodeConfigWrite, readOpenCodeConfigFile, updateOpenCodeConfigText, type PlannedWrite } from "./opencode-config.js";
-import { buildOpenCodeInstructionPath, buildOpenCodeMcpEntry, buildOpenCodePluginPreview, validateOpenPetsPetArg, type OpenCodeCommandMode } from "./opencode-previews.js";
-import { classifyOpenCodeInstructionsStatus, classifyOpenCodeMcpStatus, classifyOpenCodePluginStatus, isManagedOpenPetsMcpEntry, isManagedOpenPetsPluginEntry } from "./opencode-status.js";
+import { buildOpenCodeInstructionPath, buildOpenCodeMcpEntry, buildOpenCodePluginPreview, validateNekoDriftPetArg, type OpenCodeCommandMode } from "./opencode-previews.js";
+import { classifyOpenCodeInstructionsStatus, classifyOpenCodeMcpStatus, classifyOpenCodePluginStatus, isManagedNekoDriftMcpEntry, isManagedNekoDriftPluginEntry } from "./opencode-status.js";
 
 export interface PrepareOpenCodeProjectSetupOptions {
   readonly projectDir: string;
@@ -35,7 +35,7 @@ const openPetsStart = "<!-- OPENPETS:START -->";
 const openPetsEnd = "<!-- OPENPETS:END -->";
 
 export function prepareOpenCodeProjectSetup(options: PrepareOpenCodeProjectSetupOptions): PreparedOpenCodeProjectSetup {
-  const petId = validateOpenPetsPetArg(options.petId);
+  const petId = validateNekoDriftPetArg(options.petId);
   const paths = getProjectOpenCodeConfigPaths(options.projectDir);
   const existingConfigs = paths.candidates.flatMap((path) => {
     if (!existsSync(path)) return [];
@@ -53,7 +53,7 @@ export function prepareOpenCodeProjectSetup(options: PrepareOpenCodeProjectSetup
   const instructionStatus = classifyOpenCodeInstructionsStatus(configs, "project", undefined, { [instructionRelPath]: instructionContent });
   const pluginStatus = classifyOpenCodePluginStatus(configs, petId, options.cliVersion);
   for (const status of [mcpStatus, instructionStatus, pluginStatus]) {
-    if (status.status === "custom" || status.status === "conflict" || status.status === "error") throw new Error(`${status.message} Edit or remove the custom OpenPets OpenCode entry, then rerun setup.`);
+    if (status.status === "custom" || status.status === "conflict" || status.status === "error") throw new Error(`${status.message} Edit or remove the custom NekoDrift OpenCode entry, then rerun setup.`);
   }
 
   const selectedPath = selectWriteTarget(paths.candidates, existingConfigs, paths.defaultCreatePath);
@@ -69,7 +69,7 @@ export function prepareOpenCodeProjectSetup(options: PrepareOpenCodeProjectSetup
   if (typeof nextText !== "string") throw new Error(nextText.message);
   const configWrite = planOpenCodeConfigWrite(options.projectDir, selectedPath, nextText);
   if ("ok" in configWrite) throw new Error(configWrite.message);
-  const instructionWrite = planInstructionWrite(options.projectDir, instructionPath, upsertOpenPetsInstructionBlock(instructionContent));
+  const instructionWrite = planInstructionWrite(options.projectDir, instructionPath, upsertNekoDriftInstructionBlock(instructionContent));
   return { projectDir: options.projectDir, petId, configPath: selectedPath, instructionPath, configWrite, instructionWrite };
 }
 
@@ -78,24 +78,24 @@ export function writePreparedOpenCodeProjectSetup(prepared: PreparedOpenCodeProj
   executePlannedWrite(prepared.configWrite);
 }
 
-export function createOpenPetsInstructionBlock(): string {
-  return `${openPetsStart}\n## OpenPets\n\nOpenPets MCP tools may be available.\n\nUse OpenPets as a short visible status channel for meaningful coding progress:\n- Use \`openpets_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`openpets_react\` for small visual or emotional feedback.\n- Use \`openpets_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${openPetsEnd}\n`;
+export function createNekoDriftInstructionBlock(): string {
+  return `${openPetsStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${openPetsEnd}\n`;
 }
 
 function buildNextConfig(config: Record<string, unknown>, petId: string, options: PrepareOpenCodeProjectSetupOptions): { readonly mcp: Record<string, unknown>; readonly instructions: readonly string[]; readonly plugin: readonly unknown[] } {
   const mcp = isRecord(config.mcp) ? { ...config.mcp } : {};
-  mcp.openpets = buildOpenCodeMcpEntry({ cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
+  mcp.nekodrift = buildOpenCodeMcpEntry({ cliVersion: options.cliVersion, petId, commandMode: options.commandMode, cliEntryPath: options.cliEntryPath });
   const instructionPath = buildOpenCodeInstructionPath("project");
   const instructions = [...new Set([...(Array.isArray(config.instructions) ? config.instructions.filter((entry): entry is string => typeof entry === "string") : []), instructionPath])];
   const pluginSpec = buildOpenCodePluginPreview(petId, options.cliVersion);
-  const plugin = [...(Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedOpenPetsPluginEntry(entry)) : []), pluginSpec];
+  const plugin = [...(Array.isArray(config.plugin) ? config.plugin.filter((entry) => !isManagedNekoDriftPluginEntry(entry)) : []), pluginSpec];
   return { mcp, instructions, plugin };
 }
 
 function selectWriteTarget(candidates: readonly string[], existing: readonly { readonly path: string; readonly config: Record<string, unknown> }[], fallback: string): string {
-  const owners = existing.filter((entry) => hasManagedOpenPetsEntry(entry.config)).map((entry) => entry.path);
+  const owners = existing.filter((entry) => hasManagedNekoDriftEntry(entry.config)).map((entry) => entry.path);
   const uniqueOwners = [...new Set(owners)];
-  if (uniqueOwners.length > 1) throw new Error("OpenCode has OpenPets entries in multiple config files. Remove duplicates, then rerun setup.");
+  if (uniqueOwners.length > 1) throw new Error("OpenCode has NekoDrift entries in multiple config files. Remove duplicates, then rerun setup.");
   if (uniqueOwners.length === 1) return uniqueOwners[0] ?? fallback;
   return candidates.find((candidate) => existing.some((entry) => entry.path === candidate)) ?? fallback;
 }
@@ -113,7 +113,7 @@ function planInstructionWrite(projectDir: string, targetPath: string, content: s
     if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("OpenCode instruction directory is unsafe.");
   }
   const stamp = `${process.pid}-${Date.now()}-${randomUUID()}`;
-  return { targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.openpets-backup-${stamp}.md` : undefined, tempPath: join(parent, `.openpets-${stamp}.tmp`), content };
+  return { targetPath, backupPath: existsSync(targetPath) ? `${targetPath}.nekodrift-backup-${stamp}.md` : undefined, tempPath: join(parent, `.nekodrift-${stamp}.tmp`), content };
 }
 
 function executeTextWrite(plan: PlannedTextWrite): void {
@@ -160,16 +160,16 @@ function assertSafeProjectLocalPath(projectDir: string, targetPath: string, labe
   }
 }
 
-function upsertOpenPetsInstructionBlock(source: string): string {
+function upsertNekoDriftInstructionBlock(source: string): string {
   const withoutBlock = source.replace(new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
-  const block = createOpenPetsInstructionBlock();
+  const block = createNekoDriftInstructionBlock();
   return withoutBlock ? `${withoutBlock}\n\n${block}` : block;
 }
 
-function hasManagedOpenPetsEntry(config: Record<string, unknown>): boolean {
-  if (isRecord(config.mcp) && isManagedOpenPetsMcpEntry(config.mcp.openpets)) return true;
+function hasManagedNekoDriftEntry(config: Record<string, unknown>): boolean {
+  if (isRecord(config.mcp) && isManagedNekoDriftMcpEntry(config.mcp.nekodrift)) return true;
   if (Array.isArray(config.instructions) && config.instructions.some((entry) => entry === buildOpenCodeInstructionPath("project"))) return true;
-  if (Array.isArray(config.plugin) && config.plugin.some(isManagedOpenPetsPluginEntry)) return true;
+  if (Array.isArray(config.plugin) && config.plugin.some(isManagedNekoDriftPluginEntry)) return true;
   return false;
 }
 

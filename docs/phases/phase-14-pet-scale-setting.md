@@ -27,7 +27,7 @@ Make the existing `petScale` preference real: Settings should let users choose p
 - Persisted `preferences.petScale` accepts only supported numeric values and normalizes invalid/old values to the default.
 - `validatePreferencePatch()` accepts only supported `petScale` values from Settings IPC; unsupported/non-finite values are rejected.
 - Current and newly created state files use the new default scale.
-- Changing scale via Settings saves through existing `openpets:update-preferences` IPC.
+- Changing scale via Settings saves through existing `nekodrift:update-preferences` IPC.
 - Changing scale refreshes the default pet content immediately if it is visible.
 - Unrelated preference updates, including launch/speech toggles and tray show/hide writes, do not reset the selected scale.
 - Scale applies to built-in and installed default pet sprites.
@@ -36,8 +36,8 @@ Make the existing `petScale` preference real: Settings should let users choose p
 - Bubble vertical position is derived from scale and stays close to the pet without shifting the pet.
 - Pet and bubble do not get cropped at supported scales.
 - Existing IDs needed by Settings/preload remain stable or are intentionally updated together.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 
 ## Proposed files/directories
 
@@ -89,8 +89,8 @@ Make the existing `petScale` preference real: Settings should let users choose p
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 ## Manual verification guide
@@ -163,6 +163,6 @@ Implemented:
 Validation passed:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```

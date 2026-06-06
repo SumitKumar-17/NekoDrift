@@ -1,13 +1,13 @@
 # packages/
 
-Monorepo workspace containing all OpenPets npm packages. Each package is independently publishable with its own versioning.
+Monorepo workspace containing all NekoDrift npm packages. Each package is independently publishable with its own versioning.
 
 ## Responsibility
 
-Provides modular, reusable components for the OpenPets ecosystem:
+Provides modular, reusable components for the NekoDrift ecosystem:
 - **pet-format**: Package marker interface for type identification
 - **agent-events**: Speech pools and validation for agent feedback messages
-- **client**: Core IPC client for communicating with OpenPets desktop app
+- **client**: Core IPC client for communicating with NekoDrift desktop app
 - **cli**: Main CLI tool for configuring agents and managing pets
 - **mcp**: MCP server implementation for agent integration
 - **opencode**: OpenCode editor integration (plugin, config management)
@@ -35,27 +35,27 @@ Provides modular, reusable components for the OpenPets ecosystem:
 
 ```
 CLI Entry (packages/cli/src/index.ts)
-    ├── Configures Claude → @open-pets/claude
-    ├── Configures OpenCode → @open-pets/opencode
-    ├── Configures Cursor → @open-pets/cursor
-    ├── Spawns MCP server → @open-pets/mcp
-    └── Uses IPC client → @open-pets/client
+    ├── Configures Claude → @neko-drift/claude
+    ├── Configures OpenCode → @neko-drift/opencode
+    ├── Configures Cursor → @neko-drift/cursor
+    ├── Spawns MCP server → @neko-drift/mcp
+    └── Uses IPC client → @neko-drift/client
 
 MCP Server (packages/mcp/src/index.ts)
     ├── Registers tools (status, react, say)
-    └── Communicates via @open-pets/client
+    └── Communicates via @neko-drift/client
 
 OpenCode Plugin (packages/opencode/src/plugin.ts)
-    └── Hooks into editor events → @open-pets/client
+    └── Hooks into editor events → @neko-drift/client
 
 Claude Hooks (packages/claude/src/hooks.ts)
-    └── Processes hook events → @open-pets/client
+    └── Processes hook events → @neko-drift/client
 
 Cursor Setup (packages/cursor/src/cursor-project-setup.ts)
-    └── Writes MCP config + rules → @open-pets/client
+    └── Writes MCP config + rules → @neko-drift/client
 
 Pi Extension (packages/pi/src/extension.ts)
-    └── Registers Pi extension hooks/commands → @open-pets/client
+    └── Registers Pi extension hooks/commands → @neko-drift/client
 ```
 
 ## Integration Points
@@ -76,4 +76,4 @@ Pi Extension (packages/pi/src/extension.ts)
 - `zod` - Schema validation in MCP tools
 
 **Desktop App Communication**:
-All packages ultimately communicate with the OpenPets desktop app via the IPC protocol defined in `client/src/protocol.ts`, supporting Unix sockets, Windows named pipes, and TCP (for WSL cross-platform).
+All packages ultimately communicate with the NekoDrift desktop app via the IPC protocol defined in `client/src/protocol.ts`, supporting Unix sockets, Windows named pipes, and TCP (for WSL cross-platform).

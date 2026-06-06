@@ -16,26 +16,26 @@ const workspaceConfig = readFileSync(join(repoRoot, "pnpm-workspace.yaml"), "utf
 const builderConfigPath = join(appDir, "electron-builder.yml");
 const builderConfig = readFileSync(builderConfigPath, "utf8");
 
-assert.equal(packageJson.description, "OpenPets tray-first desktop companion app.");
-assert.equal(packageJson.author, "OpenPets");
-assert.match(packageJson.scripts?.["dev:debug"] ?? "", /OPENPETS_LOG_LEVEL=debug OPENPETS_LOG_CONSOLE=1 pnpm dev/, "desktop debug dev script must enable verbose log mirroring.");
+assert.equal(packageJson.description, "NekoDrift tray-first desktop companion app.");
+assert.equal(packageJson.author, "NekoDrift");
+assert.match(packageJson.scripts?.["dev:debug"] ?? "", /NEKODRIFT_LOG_LEVEL=debug NEKODRIFT_LOG_CONSOLE=1 pnpm dev/, "desktop debug dev script must enable verbose log mirroring.");
 assert.match(packageJson.scripts?.package ?? "", /node scripts\/clean-package-output\.cjs && electron-builder/);
 assert.match(packageJson.scripts?.["package:dir"] ?? "", /node scripts\/clean-package-output\.cjs && electron-builder --dir/);
-assert.equal(rootPackageJson.scripts?.["package:desktop:dir"], "pnpm build && pnpm --filter @open-pets/desktop package:dir");
-assert.equal(packageJson.dependencies?.["@open-pets/claude"], "workspace:*");
-assert.equal(packageJson.dependencies?.["@open-pets/cli"], "workspace:*");
-assert.equal(packageJson.dependencies?.["@open-pets/cursor"], "workspace:*");
-assert.equal(packageJson.dependencies?.["@open-pets/mcp"], "workspace:*");
-assert.equal(packageJson.dependencies?.["@open-pets/opencode"], "workspace:*");
-assert.equal(packageJson.dependencies?.["@open-pets/agent-events"], "workspace:*");
+assert.equal(rootPackageJson.scripts?.["package:desktop:dir"], "pnpm build && pnpm --filter @neko-drift/desktop package:dir");
+assert.equal(packageJson.dependencies?.["@neko-drift/claude"], "workspace:*");
+assert.equal(packageJson.dependencies?.["@neko-drift/cli"], "workspace:*");
+assert.equal(packageJson.dependencies?.["@neko-drift/cursor"], "workspace:*");
+assert.equal(packageJson.dependencies?.["@neko-drift/mcp"], "workspace:*");
+assert.equal(packageJson.dependencies?.["@neko-drift/opencode"], "workspace:*");
+assert.equal(packageJson.dependencies?.["@neko-drift/agent-events"], "workspace:*");
 assert.equal(packageJson.dependencies?.["@img/sharp-win32-x64"], undefined, "sharp platform binaries must stay optional transitive deps, not direct host-breaking dependencies.");
 assert.match(workspaceConfig, /supportedArchitectures:[\s\S]*?os:[\s\S]*?- darwin[\s\S]*?- win32[\s\S]*?- linux/, "pnpm must install optional sharp binaries for desktop release OS targets.");
 assert.match(workspaceConfig, /supportedArchitectures:[\s\S]*?cpu:[\s\S]*?- x64[\s\S]*?- arm64/, "pnpm must install optional sharp binaries for desktop release CPU targets.");
 assert.match(workspaceConfig, /supportedArchitectures:[\s\S]*?libc:[\s\S]*?- glibc/, "pnpm must install optional sharp binaries for Linux glibc release targets.");
 assert.match(packageJson.devDependencies?.["electron-builder"] ?? "", /^\^26\.(?:9|[1-9]\d)\./, "desktop AppImage packaging must use electron-builder 26.9+ for conditional Linux sandbox handling.");
-assert.match(builderConfig, /appId:\s*dev\.openpets\.app/);
-assert.match(builderConfig, /productName:\s*OpenPets/);
-assert.match(builderConfig, /executableName:\s*openpets/, "desktop packages must use a safe executable name for the stricter AppImage toolset.");
+assert.match(builderConfig, /appId:\s*dev\.nekodrift\.app/);
+assert.match(builderConfig, /productName:\s*NekoDrift/);
+assert.match(builderConfig, /executableName:\s*nekodrift/, "desktop packages must use a safe executable name for the stricter AppImage toolset.");
 assert.match(builderConfig, /output:\s*dist-electron/);
 assert.match(builderConfig, /linux:[\s\S]*?target:[\s\S]*?- AppImage[\s\S]*?- deb[\s\S]*?- rpm[\s\S]*?- tar\.gz/, "desktop Linux packaging must include AppImage, deb, rpm, and tar.gz targets.");
 assert.match(builderConfig, /publish:\s*null/);
@@ -84,19 +84,19 @@ const leaseManagerSource = readFileSync(join(appDir, "src", "lease-manager.ts"),
 const defaultPetControllerSource = readFileSync(join(appDir, "src", "default-pet-controller.ts"), "utf8");
 const agentPetControllerSourceForLogging = readFileSync(join(appDir, "src", "agent-pet-controller.ts"), "utf8");
 const mappingDoc = readFileSync(join(repoRoot, "docs", "mapping.md"), "utf8");
-assert.match(loggerSource, /openpets\.log/, "desktop logger must write a user-sendable openpets.log file.");
-assert.match(loggerSource, /openpets\.previous\.log/, "desktop logger must retain a previous log file for bug reports.");
-assert.match(loggerSource, /OPENPETS_LOG_LEVEL/, "desktop logger must support verbose dev logging via environment.");
-assert.match(loggerSource, /normalizeLogLevel\(process\.env\.OPENPETS_LOG_LEVEL\) \?\? "debug"/, "desktop production logger must default to debug for user-sendable diagnostics.");
+assert.match(loggerSource, /nekodrift\.log/, "desktop logger must write a user-sendable nekodrift.log file.");
+assert.match(loggerSource, /nekodrift\.previous\.log/, "desktop logger must retain a previous log file for bug reports.");
+assert.match(loggerSource, /NEKODRIFT_LOG_LEVEL/, "desktop logger must support verbose dev logging via environment.");
+assert.match(loggerSource, /normalizeLogLevel\(process\.env\.NEKODRIFT_LOG_LEVEL\) \?\? "debug"/, "desktop production logger must default to debug for user-sendable diagnostics.");
 assert.match(loggerSource, /redacted-token/, "desktop logger must redact token-looking values.");
 assert.match(mainSource, /initializeLogger\(\)/, "desktop startup must initialize logging before subsystem startup.");
 assert.match(mainSource, /process\.platform === "linux"[\s\S]*?appendSwitch\("ozone-platform", "x11"\)/, "Linux desktop pets must prefer X11/Xwayland because GNOME Wayland blocks always-on-top and programmatic window dragging.");
 assert.match(mainSource, /hasSwitch\("ozone-platform"\)/, "Linux X11 preference must let users override Electron's Ozone backend explicitly.");
 assert.match(traySource, /Open Logs Folder/, "desktop tray must expose user-sendable logs for bug reports.");
 assert.match(localIpcSourceForLogging, /request received/, "desktop IPC must log request methods for diagnostics.");
-assert.match(localIpcPathsSource, /OPENPETS_IPC_BIND[\s\S]*?OPENPETS_IPC_ENDPOINT[\s\S]*?validateBindHost[\s\S]*?validateAdvertisedHost/, "WSL NAT IPC must separate bind and advertised endpoints with validation.");
-assert.match(localIpcPathsSource, /OPENPETS_IPC_ENDPOINT only controls the advertised discovery endpoint[\s\S]*?OPENPETS_IPC_BIND to opt into TCP IPC listening/, "OPENPETS_IPC_ENDPOINT-only mode must not start TCP listening; OPENPETS_IPC_BIND is the explicit TCP opt-in.");
-assert.match(localIpcPathsSource, /OPENPETS_IPC_ENDPOINT must use the same port as OPENPETS_IPC_BIND unless OPENPETS_IPC_BIND uses port 0/, "WSL NAT advertised endpoint must not silently override mismatched ports.");
+assert.match(localIpcPathsSource, /NEKODRIFT_IPC_BIND[\s\S]*?NEKODRIFT_IPC_ENDPOINT[\s\S]*?validateBindHost[\s\S]*?validateAdvertisedHost/, "WSL NAT IPC must separate bind and advertised endpoints with validation.");
+assert.match(localIpcPathsSource, /NEKODRIFT_IPC_ENDPOINT only controls the advertised discovery endpoint[\s\S]*?NEKODRIFT_IPC_BIND to opt into TCP IPC listening/, "NEKODRIFT_IPC_ENDPOINT-only mode must not start TCP listening; NEKODRIFT_IPC_BIND is the explicit TCP opt-in.");
+assert.match(localIpcPathsSource, /NEKODRIFT_IPC_ENDPOINT must use the same port as NEKODRIFT_IPC_BIND unless NEKODRIFT_IPC_BIND uses port 0/, "WSL NAT advertised endpoint must not silently override mismatched ports.");
 assert.match(leaseManagerSource, /acquired/, "lease manager must log lease acquisition details.");
 assert.match(defaultPetControllerSource, /show requested/, "default pet controller must log show lifecycle events.");
 assert.match(agentPetControllerSourceForLogging, /show requested/, "agent pet controller must log show lifecycle events.");
@@ -104,7 +104,7 @@ assert.ok(petWindowSource.includes("defaultPetSprite.frameWidth * defaultPetSpri
 for (const reaction of ["idle", "thinking", "working", "editing", "running", "testing", "waiting", "waving", "success", "error", "celebrating"]) {
   assert.match(reactionMessagesSource, new RegExp(`${reaction}:\\s*\\[`), `reaction messages must define a pool for: ${reaction}`);
 }
-assert.match(reactionMessagesSource, /satisfies Record<OpenPetsReaction, readonly string\[\]>/, "reaction-only bubble message pools must be exhaustive over OpenPetsReaction.");
+assert.match(reactionMessagesSource, /satisfies Record<NekoDriftReaction, readonly string\[\]>/, "reaction-only bubble message pools must be exhaustive over NekoDriftReaction.");
 assert.match(petWindowSource, /pickReactionMessage\(display\.reaction\)/, "reaction-only bubbles must render randomized messages instead of raw lowercase reaction ids.");
 assert.match(petWindowSource, /function preparePetTransientDisplay/, "reaction-only bubbles must prepare a stable random message before rerenders.");
 assert.match(petWindowSource, /function mergePetTransientDisplay/, "reaction-only events must not replace an active explicit message bubble.");
@@ -114,8 +114,8 @@ assert.match(defaultPetControllerSource, /getTransientDisplayDurationMs\(transie
 assert.match(agentPetControllerSourceForLogging, /getTransientDisplayDurationMs\(preparedDisplay\)/, "agent pet speech bubble timeout must be length-aware.");
 assert.match(petWindowSource, /function getTransientReactionAnimationMs/, "finite reaction animations must expose their own shorter lifetime.");
 assert.match(petWindowSource, /function clearTransientReaction/, "finite reaction animations must be clearable while the bubble remains visible.");
-assert.match(petWindowSource, /webContents\.send\("openpets:pet-reaction-state"/, "finite reaction animations must clear sprite state without reloading the bubble.");
-assert.match(petPreloadSource, /openpets:pet-reaction-state/, "pet preload must accept in-place reaction state updates.");
+assert.match(petWindowSource, /webContents\.send\("nekodrift:pet-reaction-state"/, "finite reaction animations must clear sprite state without reloading the bubble.");
+assert.match(petPreloadSource, /nekodrift:pet-reaction-state/, "pet preload must accept in-place reaction state updates.");
 assert.match(petWindowSource, /const webContents = window\.webContents[\s\S]*?const removeListeners = \(\): void => \{[\s\S]*?if \(!webContents\.isDestroyed\(\)\)/, "pet window cleanup must capture webContents and avoid touching destroyed BrowserWindow objects.");
 assert.match(petWindowSource, /window\.on\("close", removeListeners\);\s*window\.once\("closed", removeListeners\);/, "pet window cleanup must run before and after close so agent lease release and Cmd/Ctrl+W are idempotent.");
 assert.match(displaySource, /width:\s*220/, "pet windows must stay tightly bounded around pet and bubble.");
@@ -127,29 +127,29 @@ assert.match(petWindowSource, /body \{ -webkit-app-region: no-drag; pointer-even
 assert.match(petWindowSource, /function installMousePassthroughAndDrag/, "pet windows must install real mouse passthrough and controlled drag behavior.");
 assert.match(petWindowSource, /setIgnoreMouseEvents\(true, \{ forward: true \}\)/, "transparent pet window background must use OS-level mouse passthrough.");
 assert.match(petWindowSource, /setIgnoreMouseEvents\(false\)/, "visible pet and bubble hit targets must re-enable mouse handling.");
-assert.match(petWindowSource, /openpets:pet-ready/, "pet windows must resync passthrough after each renderer reload.");
+assert.match(petWindowSource, /nekodrift:pet-ready/, "pet windows must resync passthrough after each renderer reload.");
 assert.match(petWindowSource, /function installMousePassthroughAndDrag[\s\S]*?const rearmPassthrough[\s\S]*?process\.platform !== "win32"[\s\S]*?rearmWindowsMouseForwarding\(reason\)/, "Windows pet reloads must toggle forwarded mouse passthrough to re-register hover and drag tracking.");
 assert.match(petWindowSource, /scheduleWindowsMouseForwardingRearm\(`\$\{reason\}\+75ms`, 75\);[\s\S]*?scheduleWindowsMouseForwardingRearm\(`\$\{reason\}\+175ms`, 175\);/, "Windows pet reloads must retry mouse forwarding rearm after load settles.");
-assert.match(petWindowSource, /openpets:pet-probe-hit-test/, "Windows pet reloads must probe current cursor hit target when mousemove forwarding is stale.");
+assert.match(petWindowSource, /nekodrift:pet-probe-hit-test/, "Windows pet reloads must probe current cursor hit target when mousemove forwarding is stale.");
 assert.match(petWindowSource, /export function recoverPetMouseInterop/, "pet windows must expose a controlled mouse interop recovery hook for OS display and resume events.");
 assert.match(petWindowSource, /petMouseInteropRecovery\.set\(window, scheduleMouseInteropRecovery\)/, "pet windows must register their mouse interop recovery callback.");
 assert.match(petWindowSource, /function installMousePassthroughAndDrag[\s\S]*?scheduleWindowsForwardingWatch[\s\S]*?rearmWindowsMouseForwarding\(reason, false\)[\s\S]*?scheduleWindowsForwardingWatch\(reason\)/, "Windows pet passthrough must keep rearming while idle so hover and drag recover after pet reloads without noisy logs.");
-assert.match(petPreloadSource, /openpets:pet-probe-hit-test[\s\S]*?elementFromPoint\(clientX, clientY\)[\s\S]*?reportInteractiveHit/, "pet preload must answer main-process cursor hit-test probes.");
+assert.match(petPreloadSource, /nekodrift:pet-probe-hit-test[\s\S]*?elementFromPoint\(clientX, clientY\)[\s\S]*?reportInteractiveHit/, "pet preload must answer main-process cursor hit-test probes.");
 assert.match(petWindowSource, /did-finish-load", rearmAfterLoad/, "pet windows must re-arm mouse passthrough after every content load.");
 assert.match(petWindowSource, /did-fail-load", handleLoadFailure/, "pet windows must restore passthrough after failed content loads.");
 assert.match(petWindowSource, /window\.setIgnoreMouseEvents\(false\);[\s\S]*?await window\.loadFile/, "pet reloads must reset OS mouse passthrough before navigation.");
 assert.match(petWindowSource, /function allocateWindowLoadSequence/, "pet content reloads must allocate request sequence before async rendering.");
 assert.match(petWindowSource, /tryUpdateLoadedPetContent\(window, render, "default", sequence\)/, "default pet transient updates must avoid BrowserWindow reloads when the pet document is already loaded.");
-assert.match(petPreloadSource, /openpets:pet-content-state[\s\S]*?document\.body\.innerHTML/, "pet preload must accept sanitized in-place content updates for transient bubbles and badges.");
+assert.match(petPreloadSource, /nekodrift:pet-content-state[\s\S]*?document\.body\.innerHTML/, "pet preload must accept sanitized in-place content updates for transient bubbles and badges.");
 assert.match(petWindowSource, /windowLoadChains\.set\(window, next\)/, "pet content reloads must serialize loadFile calls per BrowserWindow.");
 assert.match(petWindowSource, /next\.catch\(\(\) => \{\}\)\.finally/, "pet content reload chain cleanup must not create unhandled rejections.");
 assert.match(petWindowSource, /destroyed-after-write/, "pet content reloads must re-check destroyed windows after writing HTML.");
 assert.match(petWindowSource, /process\.platform === "win32" \? "none" : "drop-shadow/, "Windows pet windows must avoid CSS drop-shadow on transparent layered windows.");
 assert.match(petWindowSource, /process\.platform === "win32" \? "none" : "blur\(10px\)"/, "Windows pet windows must avoid backdrop-filter on transparent layered windows.");
 assert.match(petWindowSource, /\.pet-shell[\s\S]*?-webkit-app-region: no-drag; cursor: grab;/, "pet dragging must avoid Electron draggable regions so right-click context menus work.");
-assert.match(petPreloadSource, /openpets:pet-hit-test/, "pet preload must report visible pet and bubble hit testing for passthrough.");
-assert.match(petPreloadSource, /openpets:pet-ready/, "pet preload must report readiness after installing mouse handlers.");
-assert.match(petPreloadSource, /openpets:pet-drag-start/, "pet preload must start controlled pet dragging from the sprite.");
+assert.match(petPreloadSource, /nekodrift:pet-hit-test/, "pet preload must report visible pet and bubble hit testing for passthrough.");
+assert.match(petPreloadSource, /nekodrift:pet-ready/, "pet preload must report readiness after installing mouse handlers.");
+assert.match(petPreloadSource, /nekodrift:pet-drag-start/, "pet preload must start controlled pet dragging from the sprite.");
 assert.match(defaultPetControllerSource, /powerMonitor\.on\("resume", recoverDefaultPetWindowAfterResume\)/, "default pet must recover mouse interop after Windows sleep or resume.");
 assert.match(defaultPetControllerSource, /recoverDefaultPetMouseInterop\("display-change"\)/, "default pet must recover mouse interop after monitor topology changes.");
 assert.match(windowsSource, /recoverDefaultPetMouseInterop\("default-pet-changed"\)/, "changing default pet must recover mouse interop for dragging without app restart.");
@@ -166,15 +166,15 @@ assert.match(agentPetControllerSource, /function clearAgentPetLeaseState/, "agen
 assert.match(localIpcSource, /handleLastExplicitLease/, "agent pet dismissal must clear when the explicit lease group ends.");
 assert.match(localIpcSource, /clearAgentPetLeaseState\(petId\)/, "last explicit lease cleanup must reset dismissed agent pet state.");
 assert.match(localIpcSource, /reason: applied\.reason/, "IPC responses must report dismissed explicit pet events as not shown.");
-assert.match(updateCheckerSource, /alvinunreal\/openpets/, "GitHub release notice must check the public OpenPets repository.");
+assert.match(updateCheckerSource, /alvinunreal\/nekodrift/, "GitHub release notice must check the public NekoDrift repository.");
 assert.match(updateCheckerSource, /api\.github\.com\/repos\/\$\{githubRepository\}\/releases\/latest/, "update checker must use GitHub latest release API.");
 assert.match(updateCheckerSource, /shell\.openExternal\(url\)/, "update action must open the GitHub release page externally.");
 assert.match(traySource, /Update available:/, "tray menu must surface available updates.");
-assert.match(windowsSource, /openpets:check-for-updates/, "settings window must be able to trigger update checks.");
-assert.match(windowsSource, /openpets:get-reaction-animation-settings/, "settings window must be able to load reaction animation metadata.");
+assert.match(windowsSource, /nekodrift:check-for-updates/, "settings window must be able to trigger update checks.");
+assert.match(windowsSource, /nekodrift:get-reaction-animation-settings/, "settings window must be able to load reaction animation metadata.");
 assert.match(windowsSource, /reactionAnimationOverrides/, "settings window must be able to persist reaction animation overrides.");
-assert.match(windowsSource, /openpets-pet-preview/, "settings reaction preview must use a scoped internal pet preview protocol.");
-assert.match(windowsSource, /openpets:open-update-release-page/, "settings window must be able to open the release page.");
+assert.match(windowsSource, /nekodrift-pet-preview/, "settings reaction preview must use a scoped internal pet preview protocol.");
+assert.match(windowsSource, /nekodrift:open-update-release-page/, "settings window must be able to open the release page.");
 assert.match(controlCenterPreloadSource, /checkForUpdates/, "Control Center preload must expose update checks.");
 assert.match(controlCenterPreloadSource, /getReactionAnimationSettings/, "Control Center preload must expose reaction animation settings metadata.");
 assert.match(controlCenterRendererSource, /function SettingsView\(\)/, "Control Center must include the settings page.");
@@ -217,12 +217,12 @@ assert.doesNotMatch(agentSetupSource, /JSON\.parse\(prepared\.configWrite\.conte
 assert.match(windowsSource, /refreshDefaultPetContent\(\);\s*refreshAgentPetContent\(\);/, "pet scale preference changes must refresh default and agent pet windows.");
 assert.ok(existsSync(join(appDir, "scripts", "clean-package-output.cjs")), "package output cleanup helper must exist.");
 assert.ok(existsSync(join(distDir, "main.js")), "desktop main build output must exist before packaging checks run.");
-assert.ok(existsSync(join(repoRoot, "packages", "claude", "dist", "index.js")), "@open-pets/claude must be built before packaging.");
-assert.ok(existsSync(join(repoRoot, "packages", "client", "dist", "index.js")), "@open-pets/client must be built before packaging.");
-assert.ok(existsSync(join(repoRoot, "packages", "mcp", "dist", "index.js")), "@open-pets/mcp must be built before packaging.");
-assert.ok(existsSync(join(repoRoot, "packages", "cli", "dist", "index.js")), "@open-pets/cli must be built before packaging.");
-assert.ok(existsSync(join(repoRoot, "packages", "opencode", "dist", "plugin.js")), "@open-pets/opencode plugin must be built before packaging.");
-assert.ok(existsSync(join(repoRoot, "packages", "agent-events", "dist", "index.js")), "@open-pets/agent-events must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "claude", "dist", "index.js")), "@neko-drift/claude must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "client", "dist", "index.js")), "@neko-drift/client must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "mcp", "dist", "index.js")), "@neko-drift/mcp must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "cli", "dist", "index.js")), "@neko-drift/cli must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "opencode", "dist", "plugin.js")), "@neko-drift/opencode plugin must be built before packaging.");
+assert.ok(existsSync(join(repoRoot, "packages", "agent-events", "dist", "index.js")), "@neko-drift/agent-events must be built before packaging.");
 
 if (process.argv.includes("--output")) {
   checkPackageOutput();
@@ -244,19 +244,19 @@ function checkPackageOutput(): void {
   assertBundledOfficialPlugins(appResourceDir);
   const appContents = join(appResourceDir, "app.asar.unpacked");
   assert.ok(existsSync(appContents), "packaged app.asar.unpacked resources are missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "claude", "dist", "index.js")), "packaged @open-pets/claude runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "claude", "dist", "cli.js")), "packaged @open-pets/claude CLI runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "claude", "package.json")), "packaged @open-pets/claude package metadata is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "client", "dist", "index.js")), "packaged @open-pets/client runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "client", "package.json")), "packaged @open-pets/client package metadata is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "mcp", "dist", "index.js")), "packaged @open-pets/mcp runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "mcp", "package.json")), "packaged @open-pets/mcp package metadata is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "cli", "dist", "index.js")), "packaged @open-pets/cli runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "opencode", "dist", "plugin.js")), "packaged @open-pets/opencode plugin runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "opencode", "package.json")), "packaged @open-pets/opencode package metadata is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "cursor", "dist", "index.js")), "packaged @open-pets/cursor runtime is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "cursor", "package.json")), "packaged @open-pets/cursor package metadata is missing.");
-  assert.ok(existsSync(join(appContents, "node_modules", "@open-pets", "agent-events", "dist", "index.js")), "packaged @open-pets/agent-events runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "claude", "dist", "index.js")), "packaged @neko-drift/claude runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "claude", "dist", "cli.js")), "packaged @neko-drift/claude CLI runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "claude", "package.json")), "packaged @neko-drift/claude package metadata is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "client", "dist", "index.js")), "packaged @neko-drift/client runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "client", "package.json")), "packaged @neko-drift/client package metadata is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "mcp", "dist", "index.js")), "packaged @neko-drift/mcp runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "mcp", "package.json")), "packaged @neko-drift/mcp package metadata is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "cli", "dist", "index.js")), "packaged @neko-drift/cli runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js")), "packaged @neko-drift/opencode plugin runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "opencode", "package.json")), "packaged @neko-drift/opencode package metadata is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "cursor", "dist", "index.js")), "packaged @neko-drift/cursor runtime is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "cursor", "package.json")), "packaged @neko-drift/cursor package metadata is missing.");
+  assert.ok(existsSync(join(appContents, "node_modules", "@neko-drift", "agent-events", "dist", "index.js")), "packaged @neko-drift/agent-events runtime is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@modelcontextprotocol", "sdk")), "packaged MCP SDK runtime dependency is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "zod", "index.cjs")), "packaged zod runtime dependency is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "yauzl", "index.js")), "packaged yauzl runtime dependency is missing.");
@@ -267,10 +267,10 @@ function checkPackageOutput(): void {
   assert.ok(existsSync(join(appContents, "node_modules", "@img", "sharp-win32-x64", "lib", "sharp-win32-x64.node")), "packaged Windows x64 sharp native binary is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@img", "sharp-linux-x64", "lib", "sharp-linux-x64.node")), "packaged Linux x64 sharp native binary is missing.");
   assert.ok(existsSync(join(appContents, "node_modules", "@img", "sharp-darwin-x64", "lib", "sharp-darwin-x64.node")), "packaged macOS x64 sharp native binary is missing.");
-  assertRegularNonSymlink(join(appContents, "node_modules", "@open-pets", "mcp", "dist", "index.js"));
-  assertRegularNonSymlink(join(appContents, "node_modules", "@open-pets", "cli", "dist", "index.js"));
-  assertRegularNonSymlink(join(appContents, "node_modules", "@open-pets", "opencode", "dist", "plugin.js"));
-  assertRegularNonSymlink(join(appContents, "node_modules", "@open-pets", "claude", "dist", "cli.js"));
+  assertRegularNonSymlink(join(appContents, "node_modules", "@neko-drift", "mcp", "dist", "index.js"));
+  assertRegularNonSymlink(join(appContents, "node_modules", "@neko-drift", "cli", "dist", "index.js"));
+  assertRegularNonSymlink(join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js"));
+  assertRegularNonSymlink(join(appContents, "node_modules", "@neko-drift", "claude", "dist", "cli.js"));
   assertCommandSmoke(appContents);
 }
 
@@ -335,7 +335,7 @@ function isInside(parent: string, child: string): boolean {
 }
 
 function checkCleanupHelper(): void {
-  const sentinel = join(appDir, "dist-electron", ".openpets-clean-sentinel");
+  const sentinel = join(appDir, "dist-electron", ".nekodrift-clean-sentinel");
   mkdirSync(dirname(sentinel), { recursive: true });
   writeFileSync(sentinel, "stale", "utf8");
   const result = spawnSync(process.execPath, [join(appDir, "scripts", "clean-package-output.cjs")], { cwd: appDir, encoding: "utf8" });
@@ -356,9 +356,9 @@ function assertNonEmptyFile(path: string, message: string): void {
 }
 
 function assertBundledOfficialPlugins(resourceDir: string): void {
-  for (const id of ["openpets.ambient-companion", "openpets.break-buddy", "openpets.pet-pal", "openpets.focus-buddy", "openpets.wander-buddy", "openpets.quick-reminders", "openpets.github-notifications"]) {
+  for (const id of ["nekodrift.ambient-companion", "nekodrift.break-buddy", "nekodrift.pet-pal", "nekodrift.focus-buddy", "nekodrift.wander-buddy", "nekodrift.quick-reminders", "nekodrift.github-notifications"]) {
     const dir = join(resourceDir, "plugins", "official", id);
-    const manifestPath = join(dir, "openpets.plugin.json");
+    const manifestPath = join(dir, "nekodrift.plugin.json");
     assertNonEmptyFile(manifestPath, `packaged bundled plugin manifest is missing: ${id}`);
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { entry?: string };
     if (manifest.entry) assertNonEmptyFile(join(dir, manifest.entry), `packaged bundled plugin entry is missing: ${id}`);
@@ -375,20 +375,20 @@ function assertSafeBundledSvg(path: string, message: string): void {
 }
 
 function assertCommandSmoke(appContents: string): void {
-  const mcpEntry = join(appContents, "node_modules", "@open-pets", "mcp", "dist", "index.js");
+  const mcpEntry = join(appContents, "node_modules", "@neko-drift", "mcp", "dist", "index.js");
   const mcp = spawnSync(process.execPath, [mcpEntry, "--version"], { encoding: "utf8" });
   assert.equal(mcp.status, 0, `packaged MCP command smoke failed: ${mcp.stderr || mcp.stdout}`);
 
-  const hookEntry = join(appContents, "node_modules", "@open-pets", "claude", "dist", "cli.js");
-  const hook = spawnSync(process.execPath, [hookEntry, "hook", "--openpets-managed"], {
+  const hookEntry = join(appContents, "node_modules", "@neko-drift", "claude", "dist", "cli.js");
+  const hook = spawnSync(process.execPath, [hookEntry, "hook", "--nekodrift-managed"], {
     input: JSON.stringify({ hook_event_name: "Notification", message: "safe" }),
     encoding: "utf8",
-    env: { ...process.env, OPENPETS_DISCOVERY_FILE: join(appContents, "missing-ipc.json") },
+    env: { ...process.env, NEKODRIFT_DISCOVERY_FILE: join(appContents, "missing-ipc.json") },
   });
   assert.equal(hook.status, 0, `packaged Claude hook command smoke failed: ${hook.stderr || hook.stdout}`);
   assert.equal(hook.stdout, "");
 
-  const opencodePlugin = join(appContents, "node_modules", "@open-pets", "opencode", "dist", "plugin.js");
+  const opencodePlugin = join(appContents, "node_modules", "@neko-drift", "opencode", "dist", "plugin.js");
   const plugin = spawnSync(process.execPath, ["--input-type=module", "--eval", `const mod = await import(${JSON.stringify(`file://${opencodePlugin}`)}); if (!mod.default?.server || !mod.default?.id) process.exit(2);`], { encoding: "utf8" });
   assert.equal(plugin.status, 0, `packaged OpenCode plugin smoke failed: ${plugin.stderr || plugin.stdout}`);
 }

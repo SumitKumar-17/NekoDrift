@@ -2,7 +2,7 @@
 
 ## Goal
 
-Give users a clear settings screen for choosing which pet animation plays for each OpenPets reaction.
+Give users a clear settings screen for choosing which pet animation plays for each NekoDrift reaction.
 
 Today the mapping is effectively product-defined in code: a reaction such as `thinking`, `working`, or `success` maps to one universal spritesheet animation state. That default should remain, but users should be able to override the mapping without editing files or guessing what each animation looks like.
 
@@ -37,7 +37,7 @@ Add a settings section, likely named **Reaction animations**, where the user see
 
 Each row should make the relationship readable in plain language:
 
-- **Reaction**: the event OpenPets receives from an agent or MCP tool.
+- **Reaction**: the event NekoDrift receives from an agent or MCP tool.
 - **Plays animation**: the spritesheet state the pet will use.
 - **Inline preview**: shows the selected animation in that row using the configured default pet's assets, without affecting the live desktop pet.
 
@@ -146,7 +146,7 @@ Store only user overrides, not a full copy of the defaults.
 Suggested shape inside persisted desktop preferences:
 
 ```ts
-type ReactionAnimationOverrides = Partial<Record<OpenPetsReaction, UserSelectableAnimationState>>;
+type ReactionAnimationOverrides = Partial<Record<NekoDriftReaction, UserSelectableAnimationState>>;
 
 type Preferences = {
   reactionAnimationOverrides?: ReactionAnimationOverrides;
@@ -215,7 +215,7 @@ Read/write rules:
 ## Acceptance criteria
 
 - Settings includes a **Reaction animations** table.
-- Every public OpenPets reaction appears exactly once.
+- Every public NekoDrift reaction appears exactly once.
 - Each reaction can be mapped to one allowed non-drag animation target.
 - Each row's current/default pet inline preview shows the selected animation clearly.
 - Inline previews do not trigger live pet reactions, leases, speech bubbles, or status badges.

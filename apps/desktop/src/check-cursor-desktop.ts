@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 // Desktop-specific Cursor integration checks
-// These verify that the desktop app correctly uses the @open-pets/cursor package
+// These verify that the desktop app correctly uses the @neko-drift/cursor package
 
-const root = realpathSync(mkdtempSync(join(tmpdir(), "openpets-cursor-desktop-")));
+const root = realpathSync(mkdtempSync(join(tmpdir(), "nekodrift-cursor-desktop-")));
 
 try {
   // Test that desktop would use the correct global config path
@@ -29,10 +29,10 @@ try {
   const configPath = join(cursorDir, "mcp.json");
   const installedConfig = {
     mcpServers: {
-      openpets: {
+      nekodrift: {
         type: "stdio",
         command: "npx",
-        args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+        args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
       },
     },
   };
@@ -40,12 +40,12 @@ try {
   
   const content = readFileSync(configPath, "utf8");
   const parsed = JSON.parse(content);
-  assert.deepEqual(parsed.mcpServers.openpets, installedConfig.mcpServers.openpets);
+  assert.deepEqual(parsed.mcpServers.nekodrift, installedConfig.mcpServers.nekodrift);
 
   // Test that desktop would preserve unrelated servers during operations
   const multiServerConfig = {
     mcpServers: {
-      openpets: installedConfig.mcpServers.openpets,
+      nekodrift: installedConfig.mcpServers.nekodrift,
       other: { type: "stdio", command: "test", args: [] },
     },
     topLevelField: "preserve",
@@ -61,7 +61,7 @@ try {
   const publishedEntry = {
     type: "stdio",
     command: "npx",
-    args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "test"],
+    args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "test"],
   };
   assert.equal(publishedEntry.command, "npx");
   assert.ok(publishedEntry.args[1].includes("@"), "Published mode must use pinned version");
@@ -113,23 +113,23 @@ try {
   // Test that desktop would create valid MCP preview
   const preview = {
     mcpServers: {
-      openpets: {
+      nekodrift: {
         type: "stdio",
         command: "npx",
-        args: ["-y", "@open-pets/mcp@2.0.6", "--pet", "fixer"],
+        args: ["-y", "@neko-drift/mcp@2.0.6", "--pet", "fixer"],
       },
     },
   };
-  assert.equal(preview.mcpServers.openpets.type, "stdio");
-  assert.equal(preview.mcpServers.openpets.command, "npx");
-  assert.ok(Array.isArray(preview.mcpServers.openpets.args));
+  assert.equal(preview.mcpServers.nekodrift.type, "stdio");
+  assert.equal(preview.mcpServers.nekodrift.command, "npx");
+  assert.ok(Array.isArray(preview.mcpServers.nekodrift.args));
 
   // Test desktop Phase 2 rules posture: preview/copy only, no project writes
   const rulesPreview = {
-    rulesPath: ".cursor/rules/openpets.mdc",
-    rulesContent: "<!-- OPENPETS:CURSOR_RULES:START -->\nUse OpenPets sparingly.\n<!-- OPENPETS:CURSOR_RULES:END -->\n",
+    rulesPath: ".cursor/rules/nekodrift.mdc",
+    rulesContent: "<!-- OPENPETS:CURSOR_RULES:START -->\nUse NekoDrift sparingly.\n<!-- OPENPETS:CURSOR_RULES:END -->\n",
   };
-  assert.equal(rulesPreview.rulesPath, ".cursor/rules/openpets.mdc");
+  assert.equal(rulesPreview.rulesPath, ".cursor/rules/nekodrift.mdc");
   assert.match(rulesPreview.rulesContent, /OPENPETS:CURSOR_RULES:START/);
   assert.doesNotMatch(rulesPreview.rulesContent, /alwaysApply:\s*true/);
 

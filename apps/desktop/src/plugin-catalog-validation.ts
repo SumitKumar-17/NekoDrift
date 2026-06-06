@@ -1,12 +1,12 @@
 import { canonicalizePluginPermissions, type PluginIcon, type PluginPermission, type KnownPluginRuntime } from "./plugin-manifest.js";
 
-export type PluginCatalogEntry = { readonly id: string; readonly name: string; readonly version: string; readonly description: string; readonly runtime: "declarative"; readonly icon?: PluginIcon; readonly permissions: readonly PluginPermission[]; readonly downloadUrl: string; readonly sha256: string; readonly minOpenPetsVersion?: string };
-export type PluginCatalogEntryV2 = Omit<PluginCatalogEntry, "runtime"> & { readonly runtime: KnownPluginRuntime; readonly sdkVersion?: string; readonly maxOpenPetsVersion?: string; readonly disabled?: boolean; readonly deprecated?: boolean; readonly statusReason?: string; readonly network?: { readonly hosts: readonly string[] } };
+export type PluginCatalogEntry = { readonly id: string; readonly name: string; readonly version: string; readonly description: string; readonly runtime: "declarative"; readonly icon?: PluginIcon; readonly permissions: readonly PluginPermission[]; readonly downloadUrl: string; readonly sha256: string; readonly minNekoDriftVersion?: string };
+export type PluginCatalogEntryV2 = Omit<PluginCatalogEntry, "runtime"> & { readonly runtime: KnownPluginRuntime; readonly sdkVersion?: string; readonly maxNekoDriftVersion?: string; readonly disabled?: boolean; readonly deprecated?: boolean; readonly statusReason?: string; readonly network?: { readonly hosts: readonly string[] } };
 export type PluginCatalog = { readonly version: 1; readonly generatedAt: string; readonly plugins: readonly PluginCatalogEntry[] } | { readonly version: 2; readonly generatedAt: string; readonly plugins: readonly PluginCatalogEntryV2[] };
 
 const catalogFields = new Set(["version", "generatedAt", "plugins"]);
-const entryFields = new Set(["id", "name", "version", "description", "runtime", "icon", "permissions", "downloadUrl", "sha256", "minOpenPetsVersion"]);
-const entryFieldsV2 = new Set([...entryFields, "sdkVersion", "maxOpenPetsVersion", "disabled", "deprecated", "statusReason", "network"]);
+const entryFields = new Set(["id", "name", "version", "description", "runtime", "icon", "permissions", "downloadUrl", "sha256", "minNekoDriftVersion"]);
+const entryFieldsV2 = new Set([...entryFields, "sdkVersion", "maxNekoDriftVersion", "disabled", "deprecated", "statusReason", "network"]);
 const idPattern = /^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/;
 const versionPattern = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 const shaPattern = /^[0-9a-f]{64}$/;
@@ -27,14 +27,14 @@ export function validatePluginCatalog(input: unknown): PluginCatalog {
     if (seen.has(id)) throw new Error(`Duplicate plugin id: ${id}`);
     seen.add(id);
     const permissions = canonicalizePluginPermissions(entry.permissions);
-    const base = { id, name: requireString(entry.name, "name", 1, 120), version: requireString(entry.version, "version", 1, 80, versionPattern), description: requireString(entry.description, "description", 0, 1000), runtime: requireRuntime(entry.runtime, input.version), icon: normalizeIcon(entry.icon), permissions, downloadUrl: requireString(entry.downloadUrl, "downloadUrl", 1, 2048), sha256: requireString(entry.sha256, "sha256", 64, 64, shaPattern), minOpenPetsVersion: entry.minOpenPetsVersion === undefined ? undefined : requireString(entry.minOpenPetsVersion, "minOpenPetsVersion", 1, 80, versionPattern) };
+    const base = { id, name: requireString(entry.name, "name", 1, 120), version: requireString(entry.version, "version", 1, 80, versionPattern), description: requireString(entry.description, "description", 0, 1000), runtime: requireRuntime(entry.runtime, input.version), icon: normalizeIcon(entry.icon), permissions, downloadUrl: requireString(entry.downloadUrl, "downloadUrl", 1, 2048), sha256: requireString(entry.sha256, "sha256", 64, 64, shaPattern), minNekoDriftVersion: entry.minNekoDriftVersion === undefined ? undefined : requireString(entry.minNekoDriftVersion, "minNekoDriftVersion", 1, 80, versionPattern) };
     if (input.version === 1) return base;
     const hasNetworkPermission = permissions.includes("network");
     if (base.runtime === "javascript" && entry.sdkVersion === undefined) throw new Error("Invalid plugin catalog sdkVersion.");
     if (base.runtime === "javascript" && permissions.includes("timer")) throw new Error("Invalid plugin catalog permissions.");
     if (hasNetworkPermission && entry.network === undefined) throw new Error("Invalid plugin catalog network.hosts.");
     if (!hasNetworkPermission && entry.network !== undefined) throw new Error("Invalid plugin catalog network.hosts.");
-    return { ...base, sdkVersion: entry.sdkVersion === undefined ? undefined : requireString(entry.sdkVersion, "sdkVersion", 1, 80, versionPattern), maxOpenPetsVersion: entry.maxOpenPetsVersion === undefined ? undefined : requireString(entry.maxOpenPetsVersion, "maxOpenPetsVersion", 1, 80, versionPattern), disabled: entry.disabled === undefined ? undefined : requireBoolean(entry.disabled, "disabled"), deprecated: entry.deprecated === undefined ? undefined : requireBoolean(entry.deprecated, "deprecated"), statusReason: entry.statusReason === undefined ? undefined : requireString(entry.statusReason, "statusReason", 1, 500), network: normalizeNetwork(entry.network) };
+    return { ...base, sdkVersion: entry.sdkVersion === undefined ? undefined : requireString(entry.sdkVersion, "sdkVersion", 1, 80, versionPattern), maxNekoDriftVersion: entry.maxNekoDriftVersion === undefined ? undefined : requireString(entry.maxNekoDriftVersion, "maxNekoDriftVersion", 1, 80, versionPattern), disabled: entry.disabled === undefined ? undefined : requireBoolean(entry.disabled, "disabled"), deprecated: entry.deprecated === undefined ? undefined : requireBoolean(entry.deprecated, "deprecated"), statusReason: entry.statusReason === undefined ? undefined : requireString(entry.statusReason, "statusReason", 1, 500), network: normalizeNetwork(entry.network) };
   });
   return { version: input.version, generatedAt: String(input.generatedAt), plugins } as PluginCatalog;
 }

@@ -8,7 +8,7 @@ Add the non-UI foundation for OpenCode integration:
 - OpenCode MCP/instructions/plugin previews and status classification.
 - Shared speech safety utilities reusable by Claude hooks and the future OpenCode plugin.
 
-This phase should not install a working OpenCode plugin, change Desktop Integrations UI, or extend `openpets configure --agent opencode` yet. It prepares the safe primitives for those later phases.
+This phase should not install a working OpenCode plugin, change Desktop Integrations UI, or extend `nekodrift configure --agent opencode` yet. It prepares the safe primitives for those later phases.
 
 ## Non-goals
 
@@ -16,14 +16,14 @@ This phase should not install a working OpenCode plugin, change Desktop Integrat
 - No Desktop Integrations OpenCode card.
 - No CLI `--agent opencode` user-facing command yet.
 - No writes to real user OpenCode config during tests.
-- No changes to public MCP tools; they remain exactly `openpets_status`, `openpets_say`, `openpets_react`.
+- No changes to public MCP tools; they remain exactly `nekodrift_status`, `nekodrift_say`, `nekodrift_react`.
 - No fork or modification of `v1/opencode/`.
 
 ## User-visible/manual outcome
 
 No direct user-visible feature is expected yet.
 
-Developers should be able to run checks and see that OpenPets can safely build and classify OpenCode config previews in isolated temp fixtures.
+Developers should be able to run checks and see that NekoDrift can safely build and classify OpenCode config previews in isolated temp fixtures.
 
 ## Acceptance criteria
 
@@ -32,9 +32,9 @@ Developers should be able to run checks and see that OpenPets can safely build a
   - best-effort OpenCode executable detection data shape;
   - global/project OpenCode config candidate paths;
   - JSON/JSONC parsing and update planning;
-  - OpenPets MCP config preview;
-  - OpenPets instruction config preview;
-  - OpenPets plugin config preview;
+  - NekoDrift MCP config preview;
+  - NekoDrift instruction config preview;
+  - NekoDrift plugin config preview;
   - installed/missing/stale/error status classification.
 - OpenCode project config candidate order for existing files follows OpenCode's own MCP add behavior:
   1. `opencode.json`
@@ -43,7 +43,7 @@ Developers should be able to run checks and see that OpenPets can safely build a
   4. `.opencode/opencode.jsonc`
 - If no project config exists, helpers should plan creation of `.opencode/opencode.jsonc`.
 - Status helpers must scan all relevant project config files, not only the chosen write target, because OpenCode can merge top-level and `.opencode` configs.
-- Multiple or conflicting OpenPets entries must be classified explicitly instead of silently choosing one.
+- Multiple or conflicting NekoDrift entries must be classified explicitly instead of silently choosing one.
 - Global config discovery is read/status-only in 19A and must define:
   - `OPENCODE_CONFIG_DIR` override support;
   - default config directory derived from platform/XDG conventions;
@@ -54,9 +54,9 @@ Developers should be able to run checks and see that OpenPets can safely build a
 ```json
 {
   "mcp": {
-    "openpets": {
+    "nekodrift": {
       "type": "local",
-      "command": ["npx", "-y", "@open-pets/cli@0.0.0", "mcp", "--pet", "fixer"],
+      "command": ["npx", "-y", "@neko-drift/cli@0.0.0", "mcp", "--pet", "fixer"],
       "enabled": true
     }
   }
@@ -64,13 +64,13 @@ Developers should be able to run checks and see that OpenPets can safely build a
 ```
 
 - Local-dev previews may use `node <workspace>/.../cli/dist/index.js`, but project-local absolute paths must not be the default.
-- The CLI package version must be an injected parameter to preview builders. `packages/opencode` must not import `@open-pets/cli`, so the later CLI dependency on `@open-pets/opencode` does not create a cycle.
-- No-pet MCP preview is valid and means the default OpenPets MCP target:
+- The CLI package version must be an injected parameter to preview builders. `packages/opencode` must not import `@neko-drift/cli`, so the later CLI dependency on `@neko-drift/opencode` does not create a cycle.
+- No-pet MCP preview is valid and means the default NekoDrift MCP target:
 
 ```json
 {
   "type": "local",
-  "command": ["npx", "-y", "@open-pets/cli@0.0.0", "mcp"],
+  "command": ["npx", "-y", "@neko-drift/cli@0.0.0", "mcp"],
   "enabled": true
 }
 ```
@@ -87,16 +87,16 @@ Developers should be able to run checks and see that OpenPets can safely build a
 - Backup and temp paths must use unique names, avoid overwrite, use exclusive temp-file creation, and keep temp files in the same directory as the target.
 - File mode should be private where meaningful on the current platform.
 - Existing unrelated OpenCode config keys are preserved by update helpers.
-- Existing non-OpenPets MCP/plugin/instruction entries are preserved.
+- Existing non-NekoDrift MCP/plugin/instruction entries are preserved.
 - Managed ownership rules must be explicit:
-  - current managed MCP entry = exact expected OpenPets command shape for the selected mode/pet;
-  - stale managed MCP entry = recognizable OpenPets package/path/command but outdated;
-  - custom/foreign `mcp.openpets` = present but not managed; classify separately and do not overwrite/remove by default;
-  - current managed instruction entry = expected OpenPets instruction path plus managed file block;
-  - stale managed instruction entry = recognizable OpenPets path/block but outdated;
-  - custom/foreign OpenPets-like instruction/plugin entries = classify separately and do not overwrite/remove by default.
-- Existing OpenPets-managed entries are idempotently recognized.
-- Stale OpenPets-managed entries can be classified as `needs_update` without overwriting in this phase's public surface.
+  - current managed MCP entry = exact expected NekoDrift command shape for the selected mode/pet;
+  - stale managed MCP entry = recognizable NekoDrift package/path/command but outdated;
+  - custom/foreign `mcp.nekodrift` = present but not managed; classify separately and do not overwrite/remove by default;
+  - current managed instruction entry = expected NekoDrift instruction path plus managed file block;
+  - stale managed instruction entry = recognizable NekoDrift path/block but outdated;
+  - custom/foreign NekoDrift-like instruction/plugin entries = classify separately and do not overwrite/remove by default.
+- Existing NekoDrift-managed entries are idempotently recognized.
+- Stale NekoDrift-managed entries can be classified as `needs_update` without overwriting in this phase's public surface.
 - Shared speech utilities are extracted or introduced so Claude and OpenCode can share:
   - speech categories;
   - message picking;
@@ -110,7 +110,7 @@ Developers should be able to run checks and see that OpenPets can safely build a
   - URLs;
   - path-like content;
   - secret-looking assignments.
-- Tests must not mutate real Claude settings, real OpenCode config, or real OpenPets user data.
+- Tests must not mutate real Claude settings, real OpenCode config, or real NekoDrift user data.
 
 ## Proposed files/directories
 
@@ -163,17 +163,17 @@ MCP preview should produce:
 ```ts
 {
   type: "local",
-  command: ["npx", "-y", "@open-pets/cli@<version>", "mcp", "--pet", petId],
+  command: ["npx", "-y", "@neko-drift/cli@<version>", "mcp", "--pet", petId],
   enabled: true,
 }
 ```
 
 Instructions preview should plan:
 
-- project: `.opencode/openpets.md` plus `instructions: [".opencode/openpets.md"]`;
+- project: `.opencode/nekodrift.md` plus `instructions: [".opencode/nekodrift.md"]`;
 - global: a safe OpenCode config dir path decided in later desktop phase.
 
-Plugin preview should be intentionally minimal in 19A because the runtime contract is finalized in Phase 19B. It may build the planned config slot and preserve existing entries, but installed/stale plugin classification should be limited to exact/recognizable OpenPets specs already known. Ambiguous plugin entries must be classified as custom/foreign and left untouched.
+Plugin preview should be intentionally minimal in 19A because the runtime contract is finalized in Phase 19B. It may build the planned config slot and preserve existing entries, but installed/stale plugin classification should be limited to exact/recognizable NekoDrift specs already known. Ambiguous plugin entries must be classified as custom/foreign and left untouched.
 
 ### Safe write model
 
@@ -216,24 +216,24 @@ If throttling is moved in this phase, throttle storage must remain namespaced by
 
 ## Test/check plan
 
-- `pnpm --filter @open-pets/opencode check`
-- `pnpm --filter @open-pets/claude check`
-- `pnpm --filter @open-pets/desktop check` if packaging/check contracts are touched.
+- `pnpm --filter @neko-drift/opencode check`
+- `pnpm --filter @neko-drift/claude check`
+- `pnpm --filter @neko-drift/desktop check` if packaging/check contracts are touched.
 
 Specific tests/checks:
 
 - Project candidate selection with each possible existing config file.
 - No existing config plans `.opencode/opencode.jsonc`.
-- Status scanning sees duplicate/conflicting OpenPets entries across top-level and `.opencode` configs.
+- Status scanning sees duplicate/conflicting NekoDrift entries across top-level and `.opencode` configs.
 - Global discovery covers `OPENCODE_CONFIG_DIR`, platform/XDG default path, `config.json`, `opencode.json`, and `opencode.jsonc`.
 - MCP preview with and without selected pet.
 - Local-dev preview uses `node` command only when explicitly requested.
 - JSONC update preserves unrelated fields and comments where practical.
 - Invalid known field types return error and no write plan: `mcp: []`, `instructions: "x"`, `plugin: {}`.
-- Existing matching OpenPets entries classify as installed.
-- Existing stale OpenPets entries classify as needs update.
-- Custom/foreign `mcp.openpets` classifies separately and is not treated as managed.
-- Non-OpenPets entries are preserved.
+- Existing matching NekoDrift entries classify as installed.
+- Existing stale NekoDrift entries classify as needs update.
+- Custom/foreign `mcp.nekodrift` classifies separately and is not treated as managed.
+- Non-NekoDrift entries are preserved.
 - Invalid JSONC returns error and no write plan.
 - Oversized config returns error.
 - Symlinked config, symlinked top-level parent, symlinked `.opencode`, or symlinked/escaping project root returns error.
@@ -249,12 +249,12 @@ Specific tests/checks:
 
 After implementation, manually verify:
 
-1. Run `pnpm --filter @open-pets/opencode check`.
-2. Run `pnpm --filter @open-pets/claude check`.
-3. If desktop/package files changed, run `pnpm --filter @open-pets/desktop check`.
+1. Run `pnpm --filter @neko-drift/opencode check`.
+2. Run `pnpm --filter @neko-drift/claude check`.
+3. If desktop/package files changed, run `pnpm --filter @neko-drift/desktop check`.
 4. Run any fixture/manual check with temp `HOME`, `XDG_CONFIG_HOME`, and `OPENCODE_CONFIG_DIR`.
 5. Inspect generated fixture outputs from tests, if any, and confirm OpenCode config shape matches the expected MCP/instructions/plugin previews.
-6. Confirm no real `~/.config/opencode`, `~/.claude`, or OpenPets user state changed.
+6. Confirm no real `~/.config/opencode`, `~/.claude`, or NekoDrift user state changed.
 
 ## Oracle plan review
 
@@ -277,7 +277,7 @@ Blockers raised:
 - **Fixed:** Required status helpers to scan all relevant project config files and classify multiple/conflicting entries.
 - **Fixed:** Added explicit managed/current/stale/custom ownership rules for MCP, instructions, and plugin-like entries.
 - **Fixed:** Added invalid known field type errors, project-root checks, parent symlink rejection, unique backups/temp files, exclusive same-directory temp writes, and private mode requirement where meaningful.
-- **Fixed:** Defined no-pet MCP preview as default OpenPets MCP target without `--pet`.
-- **Fixed:** Required package version injection so `packages/opencode` does not import `@open-pets/cli`.
+- **Fixed:** Defined no-pet MCP preview as default NekoDrift MCP target without `--pet`.
+- **Fixed:** Required package version injection so `packages/opencode` does not import `@neko-drift/cli`.
 - **Fixed:** Narrowed shared speech extraction to categories/messages/validation; throttling is optional only with parity tests, otherwise deferred.
 - **Fixed:** Limited plugin preview/status to minimal exact/recognizable specs and custom/foreign preservation until Phase 19B finalizes runtime contract.

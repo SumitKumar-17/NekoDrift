@@ -1,12 +1,12 @@
 # packages/client/src/
 
-Core IPC client implementation for OpenPets desktop app communication.
+Core IPC client implementation for NekoDrift desktop app communication.
 
 ## Files
 
 ### index.ts
 
-Main client implementation (193 lines). `createOpenPetsClient()` factory, all client methods, result parsers, and `sendRequest()` for low-level IPC.
+Main client implementation (193 lines). `createNekoDriftClient()` factory, all client methods, result parsers, and `sendRequest()` for low-level IPC.
 
 **Client Methods:**
 - `hello()` - Protocol handshake
@@ -32,7 +32,7 @@ Main client implementation (193 lines). `createOpenPetsClient()` factory, all cl
 
 ### protocol.ts
 
-IPC protocol constants, request/response types, `parseIpcResponse()`, `validateReaction()`, `OpenPetsClientError` class.
+IPC protocol constants, request/response types, `parseIpcResponse()`, `validateReaction()`, `NekoDriftClientError` class.
 
 **Protocol Constants:**
 - Version: v1
@@ -56,13 +56,13 @@ IPC protocol constants, request/response types, `parseIpcResponse()`, `validateR
 Discovery file handling (226 lines). `getDiscoveryFilePath()`, `readDiscoveryFile()`, `validateDiscovery()`, `validateEndpoint()`, platform-specific path logic, XDG security checks.
 
 **Platform Paths:**
-- macOS: `~/Library/Application Support/OpenPets/runtime/ipc.json`
-- Windows: `%APPDATA%/OpenPets/runtime/ipc.json`
-- Linux: `$XDG_RUNTIME_DIR/openpets/ipc.json` (preferred) or `~/.config/OpenPets/runtime/ipc.json`
+- macOS: `~/Library/Application Support/NekoDrift/runtime/ipc.json`
+- Windows: `%APPDATA%/NekoDrift/runtime/ipc.json`
+- Linux: `$XDG_RUNTIME_DIR/nekodrift/ipc.json` (preferred) or `~/.config/NekoDrift/runtime/ipc.json`
 
 **Endpoint Types:**
-- Unix sockets: `/tmp/openpets-*/openpets-*.sock` or `$XDG_RUNTIME_DIR/openpets/*.sock`
-- Windows named pipes: `\\.\pipe\openpets-*`
+- Unix sockets: `/tmp/nekodrift-*/nekodrift-*.sock` or `$XDG_RUNTIME_DIR/nekodrift/*.sock`
+- Windows named pipes: `\\.\pipe\nekodrift-*`
 - TCP: `tcp://<host>:<port>` (IPv4 only, private/local addresses)
 
 **TCP/WSL Support:**

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Redesign the Agent Setup window into a polished **Integrations** hub that matches the new OpenPets visual direction while preserving all existing Claude MCP and hook behavior.
+Redesign the Agent Setup window into a polished **Integrations** hub that matches the new NekoDrift visual direction while preserving all existing Claude MCP and hook behavior.
 
 The first screen is a grid of integrations. Claude is the only functional integration in this phase; future integrations are visible but inert/disabled. Claude can be quickly installed when safe, or opened into a Claude detail/configuration view.
 
@@ -54,14 +54,14 @@ Opening **Configure Agents** shows a polished integrations grid:
 - Exact CSP/asset policy is explicit:
   - if no images are used, keep the current restrictive CSP without `img-src`,
   - if bundled logos/icons are used, allow only `img-src data:`,
-  - do not allow `https://openpets.dev`, broad `https:`, `file:`, `*`, remote fonts, or remote assets in Agent Setup.
+  - do not allow `https://nekodrift.app`, broad `https:`, `file:`, `*`, remote fonts, or remote assets in Agent Setup.
 - Replace, Remove, Hook Install/Update, and Hook Uninstall keep visible risk copy and require an explicit user click.
 - The global Claude hooks warning remains visible near hook actions because hooks modify user-level Claude settings.
 - Command-mode behavior is preserved: packaged builds remain forced to bundled mode by existing validation, and UI polish must not allow packaged users to switch to local/published mode or bypass mode validation.
 - Inline SVG icons are created through static markup or DOM `createElementNS`; no `innerHTML` for icons or dynamic labels.
 - Action result/status copy is exposed in a visible status region so busy/result changes are understandable.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 - Designer review is completed for visual polish.
 - Oracle implementation review is completed and feedback is dispositioned.
 
@@ -69,7 +69,7 @@ Opening **Configure Agents** shows a polished integrations grid:
 
 - `apps/desktop/src/windows.ts`
   - Replace Agent Setup markup with integrations hub plus Claude detail structure.
-  - Add scoped Agent Setup CSS under `body[data-openpets-view="agent-setup"]`.
+  - Add scoped Agent Setup CSS under `body[data-nekodrift-view="agent-setup"]`.
 - `apps/desktop/preload.cjs`
   - Render status classes, mode controls, button icons, and preview copy into the new structure.
   - Preserve existing IPC calls and action binding behavior.
@@ -117,8 +117,8 @@ Opening **Configure Agents** shows a polished integrations grid:
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 If Agent Setup CSP/assets/package contracts change, also run:
@@ -224,8 +224,8 @@ Reviewed by Designer and Oracle after implementation.
 Validation passed:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 pnpm package:desktop:dir
 ```
 
@@ -266,7 +266,7 @@ Accepted:
 
 ## Claude detail redesign update
 
-User feedback after manual review: the Claude detail page was too dense and confusing, and mismatched/custom `openpets` MCP entries should not appear as scary errors by default.
+User feedback after manual review: the Claude detail page was too dense and confusing, and mismatched/custom `nekodrift` MCP entries should not appear as scary errors by default.
 
 Updated UX direction:
 
@@ -274,14 +274,14 @@ Updated UX direction:
   - **Connection**: status, pet routing, and only the actions that apply now.
   - **Optional Claude hooks**: hook status/actions with a global-settings warning.
   - **Advanced details**: collapsed command/MCP JSON/hooks JSON previews for inspection/manual fallback.
-- Existing/custom `openpets` MCP entries are treated as installed-but-custom/installed-but-unverified in the UI.
+- Existing/custom `nekodrift` MCP entries are treated as installed-but-custom/installed-but-unverified in the UI.
 - `configure` still refuses to overwrite existing custom/unverified entries; `replace` remains explicit and separate.
 - Remove and hook actions stay visible only in the Claude detail view, never from the grid quick action.
 
 Review results:
 
 - Designer approved the simplified single-column detail flow with no blockers or should-fix issues.
-- Oracle approved safety/correctness with one should-fix: bundled-mode custom-entry warning must mention that Remove deletes the `openpets` MCP entry.
+- Oracle approved safety/correctness with one should-fix: bundled-mode custom-entry warning must mention that Remove deletes the `nekodrift` MCP entry.
 
 Disposition:
 
@@ -291,8 +291,8 @@ Disposition:
 Validation passed after fixes:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 ## Claude detail loading/action refinement

@@ -1,11 +1,11 @@
 {
-  "name": "@open-pets/pet-format",
+  "name": "@neko-drift/pet-format",
   "version": "2.1.1",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alvinunreal/openpets.git",
+    "url": "git+https://github.com/alvinunreal/nekodrift.git",
     "directory": "packages/pet-format"
   },
   "type": "module",

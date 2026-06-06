@@ -19,7 +19,7 @@ Phase 13B polished only the first welcome/greeting step. This phase polishes the
 
 On first launch, onboarding should feel complete:
 
-- Step 0 remains the polished OpenPets welcome.
+- Step 0 remains the polished NekoDrift welcome.
 - Step 1 explains choosing/managing pets and makes **Open Pet Manager** the primary action.
 - Step 2 explains connecting coding agents and makes **Open Integrations** the primary action.
 - Step 3 clearly explains that setup is done and where to reopen Pet Manager/Integrations later.
@@ -38,7 +38,7 @@ On first launch, onboarding should feel complete:
 - Manual buttons remain available:
   - Open Pet Manager / Continue,
   - Open Integrations / Continue,
-  - Start using OpenPets,
+  - Start using NekoDrift,
   - optional Ready-step shortcuts.
 - Step labels/copy/buttons use current product naming: “Integrations” rather than “Agent Setup” everywhere user-facing. Internal IPC/function names may remain unchanged.
 - Onboarding completion behavior remains unchanged: Finish marks onboarding completed and closes the onboarding window.
@@ -49,8 +49,8 @@ On first launch, onboarding should feel complete:
 - Dynamic text/status updates use DOM APIs/textContent, not `innerHTML`.
 - Keyboard/tab access still reaches all actions.
 - Window remains usable at 900×760 and 720×520 with scrolling if needed.
-- `pnpm --filter @open-pets/desktop build` passes.
-- `pnpm --filter @open-pets/desktop test` passes.
+- `pnpm --filter @neko-drift/desktop build` passes.
+- `pnpm --filter @neko-drift/desktop test` passes.
 - Designer review is completed for the polished later-step UX.
 - Oracle implementation review is completed and feedback is dispositioned.
 
@@ -98,8 +98,8 @@ On first launch, onboarding should feel complete:
 Run:
 
 ```bash
-pnpm --filter @open-pets/desktop build
-pnpm --filter @open-pets/desktop test
+pnpm --filter @neko-drift/desktop build
+pnpm --filter @neko-drift/desktop test
 ```
 
 If onboarding CSP/assets/package contracts change, also run:
@@ -111,7 +111,7 @@ pnpm package:desktop:dir
 ## Manual verification guide
 
 1. Run `pnpm dev:desktop`.
-2. Reset onboarding state if needed by deleting the OpenPets app data directory.
+2. Reset onboarding state if needed by deleting the NekoDrift app data directory.
 3. Confirm Welcome still looks polished.
 4. Click Next and confirm Pet Manager does not auto-open.
 5. Confirm the Pets step visually matches the welcome screen direction and has Open Pet Manager as the primary action with Continue secondary beside it.
@@ -121,7 +121,7 @@ pnpm package:desktop:dir
 9. Click Open Integrations and confirm it opens/focuses Integrations and updates the status line.
 10. Confirm neither auto-open action installs pets, configures Claude, installs hooks, or removes anything.
 11. Confirm Ready step copy and shortcuts are clear.
-12. Click Start using OpenPets and confirm onboarding closes and does not reopen on next launch.
+12. Click Start using NekoDrift and confirm onboarding closes and does not reopen on next launch.
 13. Confirm closing before Finish keeps onboarding incomplete.
 14. Resize to 720×520 and confirm all steps remain usable.
 

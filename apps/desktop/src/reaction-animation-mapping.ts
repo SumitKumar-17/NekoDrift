@@ -1,9 +1,9 @@
-import { allowedReactions, type OpenPetsReaction } from "./local-ipc-protocol.js";
+import { allowedReactions, type NekoDriftReaction } from "./local-ipc-protocol.js";
 
 export type PetMotionState = "idle" | "run-left" | "run-right";
 export type UniversalSpriteState = "idle" | "running-right" | "running-left" | "waving" | "jumping" | "failed" | "waiting" | "running" | "review";
 export type UserSelectableAnimationState = Exclude<UniversalSpriteState, "running-left" | "running-right">;
-export type ReactionAnimationOverrides = Partial<Record<OpenPetsReaction, UserSelectableAnimationState>>;
+export type ReactionAnimationOverrides = Partial<Record<NekoDriftReaction, UserSelectableAnimationState>>;
 
 export interface SpriteStateDefinition {
   readonly row: number;
@@ -30,7 +30,7 @@ export const defaultReactionToSpriteState = {
   success: "jumping",
   error: "failed",
   celebrating: "jumping",
-} as const satisfies Record<OpenPetsReaction, UserSelectableAnimationState>;
+} as const satisfies Record<NekoDriftReaction, UserSelectableAnimationState>;
 
 export const defaultPetSprite = {
   fileName: "default-pet-spritesheet.webp",
@@ -73,9 +73,9 @@ export const reactionAnimationMetadata = [
   { id: "success", label: "Success", description: "Task completed successfully.", defaultAnimation: defaultReactionToSpriteState.success },
   { id: "error", label: "Error", description: "Something failed.", defaultAnimation: defaultReactionToSpriteState.error },
   { id: "celebrating", label: "Celebrating", description: "Positive manual reaction.", defaultAnimation: defaultReactionToSpriteState.celebrating },
-] as const satisfies readonly { readonly id: OpenPetsReaction; readonly label: string; readonly description: string; readonly defaultAnimation: UserSelectableAnimationState }[];
+] as const satisfies readonly { readonly id: NekoDriftReaction; readonly label: string; readonly description: string; readonly defaultAnimation: UserSelectableAnimationState }[];
 
-const allowedReactionSet = new Set<OpenPetsReaction>(allowedReactions);
+const allowedReactionSet = new Set<NekoDriftReaction>(allowedReactions);
 const selectableAnimationSet = new Set<UserSelectableAnimationState>(selectableAnimationMetadata.map((animation) => animation.id));
 
 export function isUserSelectableAnimationState(value: unknown): value is UserSelectableAnimationState {
@@ -86,8 +86,8 @@ export function normalizeReactionAnimationOverrides(value: unknown): ReactionAni
   if (!isRecord(value)) return undefined;
   const overrides: ReactionAnimationOverrides = {};
   for (const [reaction, animation] of Object.entries(value)) {
-    if (!allowedReactionSet.has(reaction as OpenPetsReaction) || !isUserSelectableAnimationState(animation)) continue;
-    if (defaultReactionToSpriteState[reaction as OpenPetsReaction] !== animation) overrides[reaction as OpenPetsReaction] = animation;
+    if (!allowedReactionSet.has(reaction as NekoDriftReaction) || !isUserSelectableAnimationState(animation)) continue;
+    if (defaultReactionToSpriteState[reaction as NekoDriftReaction] !== animation) overrides[reaction as NekoDriftReaction] = animation;
   }
   return Object.keys(overrides).length > 0 ? overrides : undefined;
 }
@@ -96,13 +96,13 @@ export function validateReactionAnimationOverrides(value: unknown): ReactionAnim
   if (value === undefined) return undefined;
   if (!isRecord(value)) throw new Error("Invalid reaction animation overrides.");
   for (const [reaction, animation] of Object.entries(value)) {
-    if (!allowedReactionSet.has(reaction as OpenPetsReaction)) throw new Error("Invalid reaction animation reaction.");
+    if (!allowedReactionSet.has(reaction as NekoDriftReaction)) throw new Error("Invalid reaction animation reaction.");
     if (!isUserSelectableAnimationState(animation)) throw new Error("Invalid reaction animation state.");
   }
   return normalizeReactionAnimationOverrides(value);
 }
 
-export function resolveReactionSpriteState(reaction: OpenPetsReaction | undefined, overrides: ReactionAnimationOverrides | undefined): UserSelectableAnimationState {
+export function resolveReactionSpriteState(reaction: NekoDriftReaction | undefined, overrides: ReactionAnimationOverrides | undefined): UserSelectableAnimationState {
   if (!reaction) return "idle";
   return overrides?.[reaction] ?? defaultReactionToSpriteState[reaction] ?? "idle";
 }

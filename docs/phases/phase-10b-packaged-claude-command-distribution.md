@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make the packaged OpenPets desktop app capable of configuring Claude Code without relying on unpublished `npx @open-pets/*` packages.
+Make the packaged NekoDrift desktop app capable of configuring Claude Code without relying on unpublished `npx @neko-drift/*` packages.
 
 Phase 10B should add a packaged/bundled command mode that points Claude MCP and Claude hooks at JavaScript entry points shipped inside the packaged app resources.
 
@@ -24,30 +24,30 @@ In the packaged app, Agent Setup no longer asks users to configure private/unpub
 Instead, packaged Agent Setup previews and installs commands like:
 
 ```text
-node <packaged-app-resource>/app/node_modules/@open-pets/mcp/dist/index.js
-node <packaged-app-resource>/app/node_modules/@open-pets/claude/dist/cli.js hook --openpets-managed
+node <packaged-app-resource>/app/node_modules/@neko-drift/mcp/dist/index.js
+node <packaged-app-resource>/app/node_modules/@neko-drift/claude/dist/cli.js hook --nekodrift-managed
 ```
 
 The exact path is platform-specific, but it must be inside the packaged app output/resources and must be a regular file.
 
 In dev/unpackaged mode, the existing behavior remains:
 
-- published mode: `npx -y @open-pets/...`
+- published mode: `npx -y @neko-drift/...`
 - local dev mode: built checkout `dist` paths
 
 ## Acceptance criteria
 
-- `@open-pets/desktop` packages the runtime packages required for bundled Claude commands:
-  - `@open-pets/mcp`,
-  - `@open-pets/claude`,
-  - `@open-pets/client`,
+- `@neko-drift/desktop` packages the runtime packages required for bundled Claude commands:
+  - `@neko-drift/mcp`,
+  - `@neko-drift/claude`,
+  - `@neko-drift/client`,
   - required third-party runtime dependencies.
 - Agent Setup chooses command mode by environment:
   - packaged app: bundled packaged mode,
   - dev app: published/local dev toggle remains available.
 - The Agent Setup renderer/preload accepts and renders bundled command mode snapshots without treating them as invalid.
 - Packaged Agent Setup checks Node availability for Claude-launched commands, or clearly disables configure/install with a warning if Node is unavailable/too old.
-- Packaged mode command previews use `node <packaged resource path>` and never `npx -y @open-pets/...` unless the user is explicitly in published mode in dev.
+- Packaged mode command previews use `node <packaged resource path>` and never `npx -y @neko-drift/...` unless the user is explicitly in published mode in dev.
 - Packaged MCP command points at a regular file shipped inside package resources.
 - Packaged hook command points at a regular file shipped inside package resources.
 - Packaged command paths are not source-checkout paths and do not use `app.getAppPath()` assumptions that fail after packaging.
@@ -60,8 +60,8 @@ In dev/unpackaged mode, the existing behavior remains:
   - command contains no newline/null/unsupported shell characters.
 - Missing bundled resources produce an actionable Agent Setup status/error, not an unhandled IPC failure.
 - Claude MCP configure/replace/remove still uses `claude mcp ...` and still requires explicit user button actions.
-- Claude hook install/update/uninstall still writes only OpenPets-managed hooks and still creates backups.
-- Doctor/preview text clearly labels packaged bundled mode and explains commands point into the installed OpenPets app.
+- Claude hook install/update/uninstall still writes only NekoDrift-managed hooks and still creates backups.
+- Doctor/preview text clearly labels packaged bundled mode and explains commands point into the installed NekoDrift app.
 - If packaged bundled command resources are missing, Agent Setup shows an actionable error and disables configure/install actions rather than falling back silently to unpublished `npx` packages.
 - Existing contract checks cover packaged bundled command files in package output.
 - Existing Claude code/hooks contract checks cover bundled command preview/matching behavior.
@@ -87,7 +87,7 @@ In dev/unpackaged mode, the existing behavior remains:
 - `apps/desktop/preload.cjs`
   - Accept/render `commandMode: "bundled"` snapshots and label bundled mode clearly.
 - `apps/desktop/package.json`
-  - Add `@open-pets/mcp` as a desktop runtime dependency so packaged output includes it.
+  - Add `@neko-drift/mcp` as a desktop runtime dependency so packaged output includes it.
 - `apps/desktop/src/check-packaging-contract.ts`
   - Require packaged MCP/Claude/client entry files and MCP runtime deps.
 - `docs/mvp-validation.md`
@@ -98,7 +98,7 @@ In dev/unpackaged mode, the existing behavior remains:
 
 ### Command mode model
 
-Extend `OpenPetsCommandMode` from:
+Extend `NekoDriftCommandMode` from:
 
 ```ts
 "published" | "local"
@@ -114,13 +114,13 @@ Semantics:
 
 - `published`: npm/npx package names.
 - `local`: checkout-relative built `dist` files for development.
-- `bundled`: package-relative files shipped in the packaged app's `node_modules/@open-pets/*/dist` directories.
+- `bundled`: package-relative files shipped in the packaged app's `node_modules/@neko-drift/*/dist` directories.
 
-For current unpacked Phase 10A packaging (`asar: false`), `bundled` paths can be resolved from `@open-pets/claude`'s own `import.meta.url` in packaged node_modules:
+For current unpacked Phase 10A packaging (`asar: false`), `bundled` paths can be resolved from `@neko-drift/claude`'s own `import.meta.url` in packaged node_modules:
 
 ```text
-.../Resources/app/node_modules/@open-pets/claude/dist
-.../Resources/app/node_modules/@open-pets/mcp/dist/index.js
+.../Resources/app/node_modules/@neko-drift/claude/dist
+.../Resources/app/node_modules/@neko-drift/mcp/dist/index.js
 ```
 
 This mirrors the current `local` sibling-package resolution, but should be named `bundled` so the UI does not imply a fragile source checkout path.
@@ -135,15 +135,15 @@ In desktop Agent Setup:
 
 ### Hook settings
 
-Bundled hook settings should still use the OpenPets marker:
+Bundled hook settings should still use the NekoDrift marker:
 
 ```text
-node "<path>/@open-pets/claude/dist/cli.js" hook --openpets-managed
+node "<path>/@neko-drift/claude/dist/cli.js" hook --nekodrift-managed
 ```
 
-Uninstall must continue to remove any OpenPets-managed hooks by marker, including old published/local commands.
+Uninstall must continue to remove any NekoDrift-managed hooks by marker, including old published/local commands.
 
-Install/update should replace old OpenPets-managed published/local commands with bundled commands when running from packaged app.
+Install/update should replace old NekoDrift-managed published/local commands with bundled commands when running from packaged app.
 
 ### MCP settings
 
@@ -153,23 +153,23 @@ Bundled MCP settings should configure Claude with:
 {
   "type": "stdio",
   "command": "node",
-  "args": ["<path>/@open-pets/mcp/dist/index.js"]
+  "args": ["<path>/@neko-drift/mcp/dist/index.js"]
 }
 ```
 
 If a pet is selected:
 
 ```json
-"args": ["<path>/@open-pets/mcp/dist/index.js", "--pet", "pet-id"]
+"args": ["<path>/@neko-drift/mcp/dist/index.js", "--pet", "pet-id"]
 ```
 
 ### Packaging contract
 
 Package output checks should assert:
 
-- `node_modules/@open-pets/mcp/dist/index.js` exists.
-- `node_modules/@open-pets/claude/dist/cli.js` exists.
-- `node_modules/@open-pets/client/dist/index.js` exists.
+- `node_modules/@neko-drift/mcp/dist/index.js` exists.
+- `node_modules/@neko-drift/claude/dist/cli.js` exists.
+- `node_modules/@neko-drift/client/dist/index.js` exists.
 - required MCP third-party dependencies exist (`@modelcontextprotocol/sdk`, `zod`, etc.) if included by builder.
 - no symlink escapes package output.
 
@@ -187,7 +187,7 @@ Do not silently fall back to `npx` in packaged app if bundled resources are miss
 
 ## Risks and tradeoffs
 
-- **Installed app path moves.** Claude settings will contain absolute paths into the installed app; if the user moves/deletes OpenPets, Agent Setup doctor should report needs update/error and the user should reinstall/update config.
+- **Installed app path moves.** Claude settings will contain absolute paths into the installed app; if the user moves/deletes NekoDrift, Agent Setup doctor should report needs update/error and the user should reinstall/update config.
 - **ASAR disabled in Phase 10A.** Bundled commands rely on regular files. If ASAR is enabled later, MCP/Claude command files must move to `asarUnpack` or `extraResources`.
 - **Node availability.** Commands use `node`, so users still need Node available for Claude to launch MCP/hooks. This matches the project's Node/npm/npx direction and avoids bundling a separate runtime in this phase.
 - **Cross-platform paths.** Windows paths with spaces must be handled through Claude MCP arg arrays and shell-quoted hook command strings.
@@ -196,10 +196,10 @@ Do not silently fall back to `npx` in packaged app if bundled resources are miss
 
 - No silent Claude configuration changes.
 - Backups remain required before Claude settings hook writes.
-- Bundled commands are local files shipped with OpenPets, not remote downloads.
+- Bundled commands are local files shipped with NekoDrift, not remote downloads.
 - No TCP/HTTP control plane is introduced.
 - Speech/privacy rules from earlier phases remain unchanged.
-- Uninstall removes only OpenPets-managed hooks by marker.
+- Uninstall removes only NekoDrift-managed hooks by marker.
 
 ## Test/check plan
 
@@ -233,8 +233,8 @@ pnpm package:desktop:dir
 
 2. Launch the packaged app.
 3. Open Agent Setup.
-4. Confirm command preview uses `node <packaged .../node_modules/@open-pets/mcp/dist/index.js>`, not `npx -y @open-pets/mcp`.
-5. Confirm hook preview uses `node <packaged .../node_modules/@open-pets/claude/dist/cli.js> hook --openpets-managed`.
+4. Confirm command preview uses `node <packaged .../node_modules/@neko-drift/mcp/dist/index.js>`, not `npx -y @neko-drift/mcp`.
+5. Confirm hook preview uses `node <packaged .../node_modules/@neko-drift/claude/dist/cli.js> hook --nekodrift-managed`.
 6. Configure Claude MCP only if you are ready to update your user Claude settings; verify backup/config behavior as in earlier phases.
 7. Install/update hooks only if you are ready to update your user Claude settings; verify backup/config behavior as in earlier phases.
 8. Run Claude Code and confirm MCP/hook behavior if desired.
@@ -254,8 +254,8 @@ Should-fix feedback:
 - Validate bundled paths with `realpath` against the packaged app root, not simple string prefix. Reject missing files, directories, symlinks, `.asar` paths unless unpacked, newline/NUL/quote/shell-dangerous chars.
 - Ensure missing bundled resources produce actionable Agent Setup status/error instead of unhandled IPC failure.
 - Add cross-platform tests for paths with spaces/backslashes, MCP args arrays, hook shell quoting, and bundled `claude mcp get` parsing.
-- Extend package contract checks to require `@open-pets/mcp/dist/index.js` plus runtime deps like `@modelcontextprotocol/sdk` and `zod`.
-- Update docs to state Claude settings contain absolute OpenPets app paths; moving/deleting/updating the app may require Agent Setup replace/update/remove.
+- Extend package contract checks to require `@neko-drift/mcp/dist/index.js` plus runtime deps like `@modelcontextprotocol/sdk` and `zod`.
+- Update docs to state Claude settings contain absolute NekoDrift app paths; moving/deleting/updating the app may require Agent Setup replace/update/remove.
 
 Nice-to-have feedback:
 
@@ -302,7 +302,7 @@ Should-fix feedback:
 
 Nice-to-have feedback:
 
-- Make bundled tests explicitly depend on built `@open-pets/mcp` or avoid relying on stale sibling `dist` state.
+- Make bundled tests explicitly depend on built `@neko-drift/mcp` or avoid relying on stale sibling `dist` state.
 - Clarify Node PATH check is best-effort because Claude's runtime environment may differ.
 - Keep ASAR/`extraResources` deferred as documented.
 

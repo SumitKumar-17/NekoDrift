@@ -42,7 +42,7 @@ After this phase, the user/developer should be able to run the app and confirm:
 Pet Manager fetches the v2 catalog, shows available pets, installs a pet, lets the user set it as default, persists it across restart, and can remove removable installed pets.
 ```
 
-If the catalog cannot be fetched, OpenPets should remain usable with the built-in pet and already-installed pets.
+If the catalog cannot be fetched, NekoDrift should remain usable with the built-in pet and already-installed pets.
 
 ## Acceptance criteria
 
@@ -50,7 +50,7 @@ If the catalog cannot be fetched, OpenPets should remain usable with the built-i
 - Pet Manager fetches catalog from:
 
   ```text
-  https://openpets.dev/pets/catalog.v2.json
+  https://nekodrift.app/pets/catalog.v2.json
   ```
 
 - Catalog fetch has loading and error states.
@@ -64,7 +64,7 @@ If the catalog cannot be fetched, OpenPets should remain usable with the built-i
 - Zip install has size and file-count limits.
 - Zip install never executes scripts from downloaded pets.
 - Failed installs clean up partial files.
-- Installed pets are stored locally under OpenPets user data.
+- Installed pets are stored locally under NekoDrift user data.
 - Installed pet metadata is persisted in app state.
 - User can set an installed non-built-in pet as default.
 - Default pet window reflects the selected default pet after setting default.
@@ -110,7 +110,7 @@ Keep this phase focused on safe catalog/install basics, not marketplace polish.
 Use the agreed v2 catalog URL:
 
 ```text
-https://openpets.dev/pets/catalog.v2.json
+https://nekodrift.app/pets/catalog.v2.json
 ```
 
 Expected minimal catalog shape:
@@ -274,9 +274,9 @@ Candidate methods:
 
 ```ts
 getCatalog(): Promise<CatalogUiState>
-installPet(petId: string): Promise<OpenPetsStateV1>
-removePet(petId: string): Promise<OpenPetsStateV1>
-setDefaultPet(petId: string): Promise<OpenPetsStateV1>
+installPet(petId: string): Promise<NekoDriftStateV1>
+removePet(petId: string): Promise<NekoDriftStateV1>
+setDefaultPet(petId: string): Promise<NekoDriftStateV1>
 ```
 
 Rules:
@@ -349,7 +349,7 @@ Security/privacy expectations:
 - No shell command execution.
 - All downloaded zip contents are treated as untrusted.
 - All catalog/download strings rendered in UI are escaped or inserted as text.
-- Pet install writes only under OpenPets user data paths.
+- Pet install writes only under NekoDrift user data paths.
 - Fail closed on validation errors.
 
 ## Test/check plan
@@ -365,7 +365,7 @@ pnpm build
 Manual app run command:
 
 ```bash
-pnpm --filter @open-pets/desktop dev
+pnpm --filter @neko-drift/desktop dev
 ```
 
 Implementation should add unit-style tests for pure validation/path-safety helpers if a lightweight test approach is practical in this phase. If no test framework is added, document why and rely on manual verification plus Oracle review.
@@ -377,7 +377,7 @@ After implementation, the user should verify:
 1. Start the desktop app:
 
    ```bash
-   pnpm --filter @open-pets/desktop dev
+   pnpm --filter @neko-drift/desktop dev
    ```
 
 2. Open `Manage Pets...`.
@@ -394,7 +394,7 @@ After implementation, the user should verify:
 13. Confirm built-in pet still cannot be removed.
 14. Temporarily disconnect network or block catalog fetch and confirm the app remains usable with installed/built-in pets.
 15. Confirm Settings and Phase 03 preferences still work.
-16. Quit OpenPets and confirm clean exit.
+16. Quit NekoDrift and confirm clean exit.
 
 Manual acceptance question:
 

@@ -1,6 +1,6 @@
-# OpenPets testing
+# NekoDrift testing
 
-OpenPets currently uses lightweight Node contract checks instead of a full test framework.
+NekoDrift currently uses lightweight Node contract checks instead of a full test framework.
 
 ## Commands
 
@@ -38,7 +38,7 @@ Tests must not require:
 - a real Claude installation
 - network access
 - writes to real `~/.claude/settings.json`
-- writes to real OpenPets user data
+- writes to real NekoDrift user data
 
 Use temp directories/files for settings and fixtures. Clean them up after the test. Do not depend on the process current working directory except for explicit repo-relative fixture paths.
 

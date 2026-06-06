@@ -5,7 +5,7 @@ import { basename, join, resolve, sep } from "node:path";
 
 import sharp from "sharp";
 
-import { getAppStateSnapshot, installPetState, type OpenPetsStateV1 } from "./app-state.js";
+import { getAppStateSnapshot, installPetState, type NekoDriftStateV1 } from "./app-state.js";
 import { maxCodexPetJsonBytes, maxCodexPets, maxCodexSpritesheetBytes, maxCodexThumbnailSourceBytes, validateCodexPetMetadata, type CodexPetMetadata } from "./codex-pets-core.js";
 import { withPetOperation } from "./pet-installation.js";
 import { assertInsideRoot, assertSafePetId, getInstalledPetDir, getPetsRoot } from "./pet-paths.js";
@@ -52,7 +52,7 @@ export async function getCodexPetsUiState(): Promise<CodexPetUiState> {
   }
 }
 
-export async function importCodexPet(petId: string): Promise<OpenPetsStateV1> {
+export async function importCodexPet(petId: string): Promise<NekoDriftStateV1> {
   return withPetOperation(petId, async () => {
     assertSafePetId(petId);
     if (getAppStateSnapshot().pets.installed.some((pet) => pet.id === petId)) {
@@ -109,7 +109,7 @@ async function tryReadCodexPet(root: string, dir: string, folderName: string): P
       displayName: metadata.displayName,
       description: metadata.description,
       preview,
-      spritesheet: `openpets-codex://spritesheet/${encodeURIComponent(metadata.id)}`,
+      spritesheet: `nekodrift-codex://spritesheet/${encodeURIComponent(metadata.id)}`,
     };
   } catch (error) {
     console.error(`Skipping invalid Codex pet at ${dir}.`, error);

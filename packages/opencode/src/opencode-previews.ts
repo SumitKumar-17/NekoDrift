@@ -1,7 +1,7 @@
 import { isAbsolute, join } from "node:path";
 
-export const openCodeMcpServerName = "openpets";
-export const openPetsCliPackageName = "@open-pets/cli";
+export const openCodeMcpServerName = "nekodrift";
+export const openPetsCliPackageName = "@neko-drift/cli";
 export type OpenCodeCommandMode = "published" | "local" | "bundled";
 
 export interface OpenCodeMcpEntry {
@@ -19,15 +19,15 @@ export interface OpenCodePreviewOptions {
   readonly environment?: Record<string, string>;
 }
 
-export function validateOpenPetsPetArg(value: string): string {
+export function validateNekoDriftPetArg(value: string): string {
   const trimmed = value.trim();
-  if (trimmed !== value || trimmed.length < 1) throw new Error("Invalid OpenPets pet id.");
-  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(trimmed)) throw new Error("Invalid OpenPets pet id.");
+  if (trimmed !== value || trimmed.length < 1) throw new Error("Invalid NekoDrift pet id.");
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(trimmed)) throw new Error("Invalid NekoDrift pet id.");
   return trimmed;
 }
 
 export function buildOpenCodeMcpEntry(options: OpenCodePreviewOptions): OpenCodeMcpEntry {
-  const petArgs = options.petId === undefined ? [] : ["--pet", validateOpenPetsPetArg(options.petId)];
+  const petArgs = options.petId === undefined ? [] : ["--pet", validateNekoDriftPetArg(options.petId)];
   const mode = options.commandMode ?? "published";
   const environment = options.environment && Object.keys(options.environment).length > 0 ? { environment: options.environment } : {};
   if (mode === "local" || mode === "bundled") {
@@ -38,16 +38,16 @@ export function buildOpenCodeMcpEntry(options: OpenCodePreviewOptions): OpenCode
 }
 
 export function buildOpenCodeInstructionPath(scope: "project" | "global", configDir?: string): string {
-  if (scope === "project") return ".opencode/openpets.md";
+  if (scope === "project") return ".opencode/nekodrift.md";
   if (!configDir) throw new Error("Global OpenCode instruction path requires config directory.");
-  return join(configDir, "openpets.md");
+  return join(configDir, "nekodrift.md");
 }
 
 export type OpenCodePluginSpec = string | readonly [string, { readonly pet?: string }];
 
 export function buildOpenCodePluginPreview(petId?: string, packageVersion?: string): OpenCodePluginSpec {
-  const spec = packageVersion ? `@open-pets/opencode@${packageVersion}` : "@open-pets/opencode";
-  return petId === undefined ? spec : [spec, { pet: validateOpenPetsPetArg(petId) }];
+  const spec = packageVersion ? `@neko-drift/opencode@${packageVersion}` : "@neko-drift/opencode";
+  return petId === undefined ? spec : [spec, { pet: validateNekoDriftPetArg(petId) }];
 }
 
 export function formatOpenCodeMcpConfig(options: OpenCodePreviewOptions): Record<string, unknown> {

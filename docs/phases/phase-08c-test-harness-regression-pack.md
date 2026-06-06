@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add a lightweight, explicit test workflow for OpenPets before Phase 09 onboarding glues together pet management, MCP routing, Claude setup, and hooks.
+Add a lightweight, explicit test workflow for NekoDrift before Phase 09 onboarding glues together pet management, MCP routing, Claude setup, and hooks.
 
 The project already has useful `check-*.ts` contract checks. This phase standardizes how those checks are run, adds a top-level `pnpm test`, and expands regression coverage around the riskiest recent features without introducing a heavy test stack prematurely.
 
@@ -24,7 +24,7 @@ pnpm test
 pnpm check
 ```
 
-and get clear regression coverage for core OpenPets behavior. `pnpm check` remains the pre-commit/phase gate; `pnpm test` becomes the focused regression test command.
+and get clear regression coverage for core NekoDrift behavior. `pnpm check` remains the pre-commit/phase gate; `pnpm test` becomes the focused regression test command.
 
 ## Acceptance criteria
 
@@ -49,7 +49,7 @@ and get clear regression coverage for core OpenPets behavior. `pnpm check` remai
   - a real Claude installation.
   - network access.
   - writes to real `~/.claude/settings.json`.
-  - writes to real OpenPets user data, except via isolated temp directories or pure in-memory checks.
+  - writes to real NekoDrift user data, except via isolated temp directories or pure in-memory checks.
 - Tests using temp directories clean them up and do not depend on the current working directory except explicit repo-relative fixture paths.
 - Claude settings install/uninstall tests must pass explicit temp settings paths; they must never call install/uninstall against the default real Claude settings path.
 - Regression coverage includes at least:
@@ -139,7 +139,7 @@ Add or strengthen tests around bugs found during manual verification:
 - Adding a framework now may slow progress. Mitigation: standardize existing checks first.
 - Pure Node checks cannot catch every Electron UI issue. Mitigation: keep manual verification for tray/windows and add UI automation later.
 - Too many duplicated scripts can become hard to maintain. Mitigation: keep `test`/`check` scripts simple and consistent.
-- Tests that touch real Claude/OpenPets state would be risky. Mitigation: temp fixtures only.
+- Tests that touch real Claude/NekoDrift state would be risky. Mitigation: temp fixtures only.
 
 ## Security/privacy notes
 

@@ -63,7 +63,7 @@ function getPetsStateSnapshot(): { preferences: { defaultPetId: string }; pets: 
 }
 
 function getSettingsStateSnapshot(): {
-  preferences: Pick<ReturnType<typeof getAppStateSnapshot>["preferences"], "openDefaultPetOnLaunch" | "petScale" | "reactionAnimationOverrides">;
+  preferences: Pick<ReturnType<typeof getAppStateSnapshot>["preferences"], "openDefaultPetOnLaunch" | "petScale" | "reactionAnimationOverrides" | "userName" | "fixedMessage" | "fixedMessageEnabled">;
   petScaleOptions: typeof petScaleOptions;
 } {
   const state = getAppStateSnapshot();
@@ -72,6 +72,9 @@ function getSettingsStateSnapshot(): {
       openDefaultPetOnLaunch: state.preferences.openDefaultPetOnLaunch,
       petScale: state.preferences.petScale,
       reactionAnimationOverrides: state.preferences.reactionAnimationOverrides,
+      userName: state.preferences.userName,
+      fixedMessage: state.preferences.fixedMessage,
+      fixedMessageEnabled: state.preferences.fixedMessageEnabled,
     },
     petScaleOptions,
   };
@@ -100,8 +103,8 @@ async function getDashboardSnapshot(): Promise<{
   return {
     defaultPet: {
       id: defaultPet?.id ?? state.preferences.defaultPetId,
-      displayName: defaultPet?.displayName ?? "OpenPets",
-      previewSpriteUrl: `openpets-pet-preview://spritesheet/default?v=${encodeURIComponent(preview.version)}`,
+      displayName: defaultPet?.displayName ?? "NekoDrift",
+      previewSpriteUrl: `nekodrift-pet-preview://spritesheet/default?v=${encodeURIComponent(preview.version)}`,
     },
     installedPetCount: state.pets.installed.length,
     catalog: {
@@ -128,123 +131,126 @@ export function installInternalUiHandlers(): void {
 
   internalUiHandlersInstalled = true;
 
-  ipcMain.handle("openpets:get-pets-state", (event) => {
+  ipcMain.handle("nekodrift:get-pets-state", (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getPetsStateSnapshot();
   });
 
-  ipcMain.handle("openpets:get-settings-state", (event) => {
+  ipcMain.handle("nekodrift:get-settings-state", (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getSettingsStateSnapshot();
   });
 
-  ipcMain.handle("openpets:get-dashboard-snapshot", async (event) => {
+  ipcMain.handle("nekodrift:get-dashboard-snapshot", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getDashboardSnapshot();
   });
 
-  ipcMain.handle("openpets:get-reaction-animation-settings", async (event) => {
+  ipcMain.handle("nekodrift:get-reaction-animation-settings", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getReactionAnimationSettingsSnapshot();
   });
 
-  ipcMain.handle("openpets:plugins-snapshot", async (event) => {
+  ipcMain.handle("nekodrift:plugins-snapshot", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getPluginService().getSnapshot();
   });
 
-  ipcMain.handle("openpets:plugins-set-enabled", async (event, id: unknown, enabled: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-set-enabled", async (event, id: unknown, enabled: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id) || typeof enabled !== "boolean") return pluginUiError("Invalid plugin enable request.");
     return getPluginService().setEnabled(id, enabled);
   });
 
-  ipcMain.handle("openpets:plugins-save-config", async (event, id: unknown, config: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-save-config", async (event, id: unknown, config: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id) || !isPlainObject(config)) return pluginUiError("Invalid plugin config request.");
     return getPluginService().saveConfig(id, config);
   });
 
-  ipcMain.handle("openpets:plugins-reload", async (event, id: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-reload", async (event, id: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id)) return pluginUiError("Invalid plugin reload request.");
     return getPluginService().reload(id);
   });
 
-  ipcMain.handle("openpets:plugins-execute-command", async (event, id: unknown, commandId: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-execute-command", async (event, id: unknown, commandId: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id) || typeof commandId !== "string" || !/^[A-Za-z0-9._:-]{1,64}$/.test(commandId)) return pluginUiError("Invalid plugin command request.");
     return getPluginService().executeCommand(id, commandId);
   });
 
-  ipcMain.handle("openpets:plugins-load-local", async (event): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-load-local", async (event): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     return getPluginService().loadLocal();
   });
 
-  ipcMain.handle("openpets:plugins-catalog-snapshot", async (event, refresh: unknown) => {
+  ipcMain.handle("nekodrift:plugins-catalog-snapshot", async (event, refresh: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     return getPluginService().getCatalogSnapshot(refresh === true);
   });
 
-  ipcMain.handle("openpets:plugins-install-catalog", async (event, id: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-install-catalog", async (event, id: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id)) return pluginUiError("Invalid plugin install request.");
     return getPluginService().installCatalog(id);
   });
 
-  ipcMain.handle("openpets:plugins-update-catalog", async (event, id: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-update-catalog", async (event, id: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id)) return pluginUiError("Invalid plugin update request.");
     return getPluginService().updateCatalog(id);
   });
 
-  ipcMain.handle("openpets:plugins-uninstall", async (event, id: unknown): Promise<PluginServiceResult> => {
+  ipcMain.handle("nekodrift:plugins-uninstall", async (event, id: unknown): Promise<PluginServiceResult> => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{1,62}[a-z0-9]$/.test(id)) return pluginUiError("Invalid plugin uninstall request.");
     return getPluginService().uninstall(id);
   });
 
-  ipcMain.handle("openpets:get-catalog", async (event) => {
+  ipcMain.handle("nekodrift:get-catalog", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getCatalogUiState();
   });
 
-  ipcMain.handle("openpets:get-catalog-page", async (event, page: unknown) => {
+  ipcMain.handle("nekodrift:get-catalog-page", async (event, page: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof page !== "number" || !Number.isInteger(page) || page < 0) throw new Error("Invalid catalog page.");
     return getCatalogPageUiState(page);
   });
 
-  ipcMain.handle("openpets:get-catalog-search", async (event) => {
+  ipcMain.handle("nekodrift:get-catalog-search", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getCatalogSearchUiState();
   });
 
-  ipcMain.handle("openpets:get-codex-pets", async (event) => {
+  ipcMain.handle("nekodrift:get-codex-pets", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getCodexPetsUiState();
   });
 
-  ipcMain.handle("openpets:update-preferences", (event, patch: unknown) => {
+  ipcMain.handle("nekodrift:update-preferences", (event, patch: unknown) => {
     assertAllowedSender(event, ["control-center"]);
-    const previousScale = getAppStateSnapshot().preferences.petScale;
-    const previousOverrides = JSON.stringify(getAppStateSnapshot().preferences.reactionAnimationOverrides ?? {});
+    const prev = getAppStateSnapshot().preferences;
+    const previousScale = prev.petScale;
+    const previousOverrides = JSON.stringify(prev.reactionAnimationOverrides ?? {});
+    const previousFixed = `${prev.fixedMessage ?? ""}:${prev.fixedMessageEnabled ?? false}`;
     const state = updatePreferences(validatePreferencePatch(patch));
     const nextOverrides = JSON.stringify(state.preferences.reactionAnimationOverrides ?? {});
-    if (state.preferences.petScale !== previousScale || nextOverrides !== previousOverrides) {
+    const nextFixed = `${state.preferences.fixedMessage ?? ""}:${state.preferences.fixedMessageEnabled ?? false}`;
+    if (state.preferences.petScale !== previousScale || nextOverrides !== previousOverrides || nextFixed !== previousFixed) {
       refreshDefaultPetContent();
       refreshAgentPetContent();
     }
     return getInternalUiWindowKindForWebContents(event.sender.id) === "control-center" ? getSettingsStateSnapshot() : state;
   });
 
-  ipcMain.handle("openpets:get-launch-at-login", (event) => {
+  ipcMain.handle("nekodrift:get-launch-at-login", (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getLaunchAtLoginState();
   });
 
-  ipcMain.handle("openpets:set-launch-at-login", (event, enabled: unknown) => {
+  ipcMain.handle("nekodrift:set-launch-at-login", (event, enabled: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof enabled !== "boolean") throw new Error("Invalid launch-at-login value.");
     if (!isLaunchAtLoginSupported()) return getLaunchAtLoginState();
@@ -252,12 +258,12 @@ export function installInternalUiHandlers(): void {
     return getLaunchAtLoginState();
   });
 
-  ipcMain.handle("openpets:get-update-status", (event) => {
+  ipcMain.handle("nekodrift:get-update-status", (event) => {
     assertAllowedSender(event, ["control-center"]);
     return getUpdateStatus();
   });
 
-  ipcMain.handle("openpets:check-for-updates", async (event) => {
+  ipcMain.handle("nekodrift:check-for-updates", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     const status = await checkForGitHubReleaseUpdate();
     const { refreshTrayMenu } = await import("./tray.js");
@@ -265,12 +271,12 @@ export function installInternalUiHandlers(): void {
     return status;
   });
 
-  ipcMain.handle("openpets:open-update-release-page", async (event) => {
+  ipcMain.handle("nekodrift:open-update-release-page", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     await openUpdateReleasePage();
   });
 
-  ipcMain.handle("openpets:set-default-pet", async (event, petId: unknown) => {
+  ipcMain.handle("nekodrift:set-default-pet", async (event, petId: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof petId !== "string") {
       throw new Error("Invalid pet id.");
@@ -283,7 +289,7 @@ export function installInternalUiHandlers(): void {
     return getInternalUiWindowKindForWebContents(event.sender.id) === "control-center" ? getPetsStateSnapshot() : state;
   });
 
-  ipcMain.handle("openpets:install-pet", async (event, petId: unknown) => {
+  ipcMain.handle("nekodrift:install-pet", async (event, petId: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof petId !== "string") {
       throw new Error("Invalid pet id.");
@@ -293,7 +299,7 @@ export function installInternalUiHandlers(): void {
     return getInternalUiWindowKindForWebContents(event.sender.id) === "control-center" ? getPetsStateSnapshot() : state;
   });
 
-  ipcMain.handle("openpets:install-local-pet", async (event) => {
+  ipcMain.handle("nekodrift:install-local-pet", async (event) => {
     assertAllowedSender(event, ["control-center"]);
     const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;
     const importKind = await chooseLocalPetImportKind(owner);
@@ -302,7 +308,7 @@ export function installInternalUiHandlers(): void {
       title: "Install pet from ZIP",
       buttonLabel: "Install Pet",
       properties: ["openFile"],
-      filters: [{ name: "OpenPets ZIP", extensions: ["zip"] }],
+      filters: [{ name: "NekoDrift ZIP", extensions: ["zip"] }],
     } : {
       title: "Install pet from folder",
       buttonLabel: "Install Pet",
@@ -323,12 +329,12 @@ export function installInternalUiHandlers(): void {
     }
   });
 
-  ipcMain.handle("openpets:open-gallery", async (event) => {
+  ipcMain.handle("nekodrift:open-gallery", async (event) => {
     assertAllowedSender(event, ["control-center"]);
-    await shell.openExternal("https://openpets.dev/gallery");
+    await shell.openExternal("https://nekodrift.app/gallery");
   });
 
-  ipcMain.handle("openpets:import-codex-pet", async (event, petId: unknown) => {
+  ipcMain.handle("nekodrift:import-codex-pet", async (event, petId: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof petId !== "string") {
       throw new Error("Invalid pet id.");
@@ -338,7 +344,7 @@ export function installInternalUiHandlers(): void {
     return getInternalUiWindowKindForWebContents(event.sender.id) === "control-center" ? getPetsStateSnapshot() : state;
   });
 
-  ipcMain.handle("openpets:remove-pet", async (event, petId: unknown) => {
+  ipcMain.handle("nekodrift:remove-pet", async (event, petId: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (typeof petId !== "string") {
       throw new Error("Invalid pet id.");
@@ -349,18 +355,18 @@ export function installInternalUiHandlers(): void {
     return getInternalUiWindowKindForWebContents(event.sender.id) === "control-center" ? getPetsStateSnapshot() : state;
   });
 
-  ipcMain.handle("openpets:reset-default-pet-position", (event) => {
+  ipcMain.handle("nekodrift:reset-default-pet-position", (event) => {
     assertAllowedSender(event, ["control-center"]);
     resetDefaultPetToInitialPosition();
     return getInternalUiWindowKindForWebContents(event.sender.id) === "control-center" ? getSettingsStateSnapshot() : getAppStateSnapshot();
   });
 
-  ipcMain.handle("openpets:agent-setup-snapshot", async (event, selectedPetId: unknown, commandMode: unknown) => {
+  ipcMain.handle("nekodrift:agent-setup-snapshot", async (event, selectedPetId: unknown, commandMode: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     return getAgentSetupSnapshot(selectedPetId, commandMode);
   });
 
-  ipcMain.handle("openpets:agent-setup-action", async (event, action: unknown, selectedPetId: unknown, commandMode: unknown) => {
+  ipcMain.handle("nekodrift:agent-setup-action", async (event, action: unknown, selectedPetId: unknown, commandMode: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     if (action !== "configure" && action !== "replace" && action !== "remove" && action !== "install-memory" && action !== "doctor-hooks" && action !== "install-hooks" && action !== "uninstall-hooks" && action !== "opencode-install" && action !== "opencode-remove" && action !== "cursor-install" && action !== "cursor-replace" && action !== "cursor-remove") {
       throw new Error("Invalid agent setup action.");
@@ -369,7 +375,7 @@ export function installInternalUiHandlers(): void {
     return runAgentSetupAction(action, selectedPetId, commandMode);
   });
 
-  ipcMain.handle("openpets:agent-setup-command-paths", (event, patch: unknown) => {
+  ipcMain.handle("nekodrift:agent-setup-command-paths", (event, patch: unknown) => {
     assertAllowedSender(event, ["control-center"]);
     return updateAgentSetupCommandPaths(patch);
   });
@@ -393,7 +399,7 @@ async function chooseLocalPetImportKind(owner: BrowserWindow | undefined): Promi
 }
 
 export function installInternalUiProtocol(): void {
-  protocol.handle("openpets-codex", async (request) => {
+  protocol.handle("nekodrift-codex", async (request) => {
     try {
       if (request.method !== "GET" && request.method !== "HEAD") return new Response(null, { status: 405 });
       const url = new URL(request.url);
@@ -411,7 +417,7 @@ export function installInternalUiProtocol(): void {
     }
   });
 
-  protocol.handle("openpets-installed", async (request) => {
+  protocol.handle("nekodrift-installed", async (request) => {
     try {
       if (request.method !== "GET" && request.method !== "HEAD") return new Response(null, { status: 405 });
       const url = new URL(request.url);
@@ -434,7 +440,7 @@ export function installInternalUiProtocol(): void {
     }
   });
 
-  protocol.handle("openpets-pet-preview", async (request) => {
+  protocol.handle("nekodrift-pet-preview", async (request) => {
     try {
       if (request.method !== "GET" && request.method !== "HEAD") return new Response(null, { status: 405 });
       const url = new URL(request.url);
@@ -468,7 +474,7 @@ export function openControlCenterWindow(route: ControlCenterRoute = "dashboard")
   }
 
   const window = new BrowserWindow({
-    title: "OpenPets — Control Center",
+    title: "NekoDrift — Control Center",
     width: 1180,
     height: 820,
     minWidth: 820,
@@ -529,7 +535,7 @@ function normalizeControlCenterRoute(route: unknown): ControlCenterRoute {
 
 function sendControlCenterRoute(window: BrowserWindow, route: ControlCenterRoute): void {
   if (window.isDestroyed()) return;
-  window.webContents.send("openpets:control-center-route", route);
+  window.webContents.send("nekodrift:control-center-route", route);
 }
 
 function routeControlCenterWindow(window: BrowserWindow, route: ControlCenterRoute): void {
@@ -567,7 +573,7 @@ function getControlCenterPreloadPath(): string {
 
 function getSafeControlCenterDevUrl(): string | null {
   if (app.isPackaged) return null;
-  const raw = process.env.OPENPETS_RENDERER_URL;
+  const raw = process.env.NEKODRIFT_RENDERER_URL;
   if (!raw) return null;
   try {
     const url = new URL(raw);
@@ -584,7 +590,7 @@ function assertAllowedSender(event: IpcMainInvokeEvent, allowedKinds: readonly I
   const actualKind = getInternalUiWindowKindForWebContents(event.sender.id);
 
   if (!actualKind || !allowedKinds.includes(actualKind)) {
-    throw new Error("OpenPets internal UI request came from an unexpected window.");
+    throw new Error("NekoDrift internal UI request came from an unexpected window.");
   }
 }
 
@@ -603,7 +609,7 @@ async function getReactionAnimationSettingsSnapshot(): Promise<unknown> {
     animations: selectableAnimationMetadata,
     sprite: defaultPetSprite,
     overrides: state.preferences.reactionAnimationOverrides ?? {},
-    previewSpriteUrl: `openpets-pet-preview://spritesheet/default?v=${encodeURIComponent(preview.version)}`,
+    previewSpriteUrl: `nekodrift-pet-preview://spritesheet/default?v=${encodeURIComponent(preview.version)}`,
   };
 }
 
@@ -626,12 +632,12 @@ async function getDefaultPetPreviewSpriteInfo(): Promise<{ readonly path: string
   return { path: builtInPath, version: `builtin-${Math.round(fallback.mtimeMs)}-${fallback.size}` };
 }
 
-function validatePreferencePatch(value: unknown): { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides> } {
+function validatePreferencePatch(value: unknown): { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides>; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean } {
   if (!isRecord(value)) {
     throw new Error("Invalid preferences patch.");
   }
 
-  const patch: { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides> } = {};
+  const patch: { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides>; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean } = {};
 
   if ("openDefaultPetOnLaunch" in value) {
     if (typeof value.openDefaultPetOnLaunch !== "boolean") throw new Error("Invalid open-on-launch value.");
@@ -646,6 +652,21 @@ function validatePreferencePatch(value: unknown): { openDefaultPetOnLaunch?: boo
 
   if ("reactionAnimationOverrides" in value) {
     patch.reactionAnimationOverrides = validateReactionAnimationOverrides(value.reactionAnimationOverrides);
+  }
+
+  if ("userName" in value) {
+    if (value.userName !== undefined && (typeof value.userName !== "string" || value.userName.length > 64)) throw new Error("Invalid user name.");
+    patch.userName = typeof value.userName === "string" ? value.userName.trim().slice(0, 64) || undefined : undefined;
+  }
+
+  if ("fixedMessage" in value) {
+    if (value.fixedMessage !== undefined && (typeof value.fixedMessage !== "string" || value.fixedMessage.length > 200)) throw new Error("Invalid fixed message.");
+    patch.fixedMessage = typeof value.fixedMessage === "string" ? value.fixedMessage.trim().slice(0, 200) || undefined : undefined;
+  }
+
+  if ("fixedMessageEnabled" in value) {
+    if (typeof value.fixedMessageEnabled !== "boolean") throw new Error("Invalid fixed message enabled value.");
+    patch.fixedMessageEnabled = value.fixedMessageEnabled;
   }
 
   return patch;

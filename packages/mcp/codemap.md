@@ -1,16 +1,16 @@
 # packages/mcp/
 
-MCP (Model Context Protocol) server for OpenPets integration.
+MCP (Model Context Protocol) server for NekoDrift integration.
 
 ## Responsibility
 
-Implements an MCP server exposing OpenPets functionality to AI agents via the Model Context Protocol. Provides tools for checking status, setting reactions, and displaying messages on the desktop pet.
+Implements an MCP server exposing NekoDrift functionality to AI agents via the Model Context Protocol. Provides tools for checking status, setting reactions, and displaying messages on the desktop pet.
 
 ## Design
 
 **MCP Server Setup** (`server.ts`):
 - `McpServer` from `@modelcontextprotocol/sdk`
-- Three registered tools: `openpets_status`, `openpets_react`, `openpets_say`
+- Three registered tools: `nekodrift_status`, `nekodrift_react`, `nekodrift_say`
 - Tool annotations for read-only/idempotent hints
 - Instructions for AI agents (safety guidelines)
 
@@ -45,7 +45,7 @@ createToolContext() → { client, configuredPetId }
     ↓
 acquireStartupLease() → lease.lease set on success
     ↓
-createOpenPetsMcpServer() → Register 3 tools
+createNekoDriftMcpServer() → Register 3 tools
     ↓
 server.connect(StdioServerTransport)
     ↓
@@ -57,12 +57,12 @@ server.connect(StdioServerTransport)
 ## Integration Points
 
 **Dependencies**:
-- `@open-pets/client` - IPC communication
+- `@neko-drift/client` - IPC communication
 - `@modelcontextprotocol/sdk` - MCP protocol implementation
 - `zod` - Schema validation
 
-**CLI Integration**: Spawned by `@open-pets/cli` via `runMcp()` which forwards stdio and signals.
+**CLI Integration**: Spawned by `@neko-drift/cli` via `runMcp()` which forwards stdio and signals.
 
 **Exports**:
-- Binary: `open-pets-mcp` (stdio MCP server)
+- Binary: `neko-drift-mcp` (stdio MCP server)
 - No programmatic exports (MCP server is standalone)

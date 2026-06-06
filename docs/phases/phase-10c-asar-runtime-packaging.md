@@ -28,8 +28,8 @@ The generated app uses ASAR for the Electron app contents, but still includes un
 
 ```text
 app.asar
-app.asar.unpacked/node_modules/@open-pets/mcp/dist/index.js
-app.asar.unpacked/node_modules/@open-pets/claude/dist/cli.js
+app.asar.unpacked/node_modules/@neko-drift/mcp/dist/index.js
+app.asar.unpacked/node_modules/@neko-drift/claude/dist/cli.js
 ```
 
 Agent Setup packaged previews should point at `app.asar.unpacked/...` paths, not `app.asar/...` paths and not source checkout paths.
@@ -38,8 +38,8 @@ Agent Setup packaged previews should point at `app.asar.unpacked/...` paths, not
 
 - `electron-builder` ASAR packaging is enabled.
 - Externally executed bundled command files are unpacked:
-  - `@open-pets/mcp/dist/index.js`,
-  - `@open-pets/claude/dist/cli.js`,
+  - `@neko-drift/mcp/dist/index.js`,
+  - `@neko-drift/claude/dist/cli.js`,
   - package metadata (`package.json`) needed for ESM/package resolution,
   - all runtime files and transitive dependencies those commands need when launched by external `node`.
 - Packaged Agent Setup bundled MCP preview points at a regular file outside `app.asar`, preferably under `app.asar.unpacked`.
@@ -63,7 +63,7 @@ Agent Setup packaged previews should point at `app.asar.unpacked/...` paths, not
 ## Proposed files/directories
 
 - `apps/desktop/electron-builder.yml`
-  - Enable ASAR and configure unpacking for externally executed OpenPets command resources.
+  - Enable ASAR and configure unpacking for externally executed NekoDrift command resources.
 - `packages/claude/src/claude-code.ts`
   - Resolve bundled MCP path to ASAR-unpacked location when running from ASAR.
 - `packages/claude/src/hook-settings.ts`
@@ -92,9 +92,9 @@ Use `asarUnpack` for externally executed command resources and their module meta
 
 ```yaml
 asarUnpack:
-  - node_modules/@open-pets/mcp/**
-  - node_modules/@open-pets/claude/**
-  - node_modules/@open-pets/client/**
+  - node_modules/@neko-drift/mcp/**
+  - node_modules/@neko-drift/claude/**
+  - node_modules/@neko-drift/client/**
   - node_modules/@modelcontextprotocol/**
   - node_modules/zod/**
 ```
@@ -103,15 +103,15 @@ If runtime smoke testing shows additional MCP SDK transitive dependencies are re
 
 ### Path mapping
 
-When `@open-pets/claude` runs inside Electron from `app.asar`, its `import.meta.url` may include `app.asar`. Bundled command paths for Claude must map to `app.asar.unpacked`.
+When `@neko-drift/claude` runs inside Electron from `app.asar`, its `import.meta.url` may include `app.asar`. Bundled command paths for Claude must map to `app.asar.unpacked`.
 
 Add a pure, tested path mapper with behavior:
 
 ```text
-.../Resources/app.asar/node_modules/@open-pets/claude/dist/index.js
+.../Resources/app.asar/node_modules/@neko-drift/claude/dist/index.js
 =>
-.../Resources/app.asar.unpacked/node_modules/@open-pets/claude/dist/cli.js
-.../Resources/app.asar.unpacked/node_modules/@open-pets/mcp/dist/index.js
+.../Resources/app.asar.unpacked/node_modules/@neko-drift/claude/dist/cli.js
+.../Resources/app.asar.unpacked/node_modules/@neko-drift/mcp/dist/index.js
 ```
 
 In dev/non-ASAR mode, continue resolving sibling workspace package paths as today.
@@ -131,8 +131,8 @@ Because forbidden-file checks cannot simply walk inside `app.asar` as a director
 Post-package smoke checks should execute:
 
 ```bash
-node <app.asar.unpacked>/node_modules/@open-pets/mcp/dist/index.js --version
-node <app.asar.unpacked>/node_modules/@open-pets/claude/dist/cli.js hook --openpets-managed
+node <app.asar.unpacked>/node_modules/@neko-drift/mcp/dist/index.js --version
+node <app.asar.unpacked>/node_modules/@neko-drift/claude/dist/cli.js hook --nekodrift-managed
 ```
 
 The hook smoke must use isolated/missing discovery input so it does not contact a real desktop app.
@@ -149,7 +149,7 @@ The hook smoke must use isolated/missing discovery input so it does not contact 
 - Do not weaken renderer sandbox/context isolation/CSP.
 - Do not include user data, Claude settings, backups, or secrets in package output.
 - Claude config changes remain explicit/backup-protected.
-- Externally executed command files must be shipped by OpenPets, not downloaded dynamically.
+- Externally executed command files must be shipped by NekoDrift, not downloaded dynamically.
 
 ## Test/check plan
 

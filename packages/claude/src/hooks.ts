@@ -2,8 +2,8 @@ import { lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync,
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { homedir, tmpdir, userInfo } from "node:os";
 
-import { createOpenPetsClient, type OpenPetsClient, type OpenPetsReaction, OpenPetsClientError } from "@open-pets/client";
-import { validateHookSpeech as validateSharedHookSpeech } from "@open-pets/agent-events";
+import { createNekoDriftClient, type NekoDriftClient, type NekoDriftReaction, NekoDriftClientError } from "@neko-drift/client";
+import { validateHookSpeech as validateSharedHookSpeech } from "@neko-drift/agent-events";
 
 import { pickHookSpeech, type HookSpeechCategory } from "./hook-messages.js";
 
@@ -11,12 +11,12 @@ export type ClaudeHookEventName = "UserPromptSubmit" | "PreToolUse" | "Permissio
 
 export interface ClaudeHookDecision {
   readonly eventName?: string;
-  readonly reaction?: OpenPetsReaction;
+  readonly reaction?: NekoDriftReaction;
   readonly speechCategory?: HookSpeechCategory;
 }
 
 export interface ClaudeHookOptions {
-  readonly client?: OpenPetsClient;
+  readonly client?: NekoDriftClient;
   readonly configuredPetId?: string;
   readonly projectLocal?: boolean;
   readonly now?: () => number;
@@ -37,8 +37,8 @@ export async function runClaudeHookFromStdin(stdin: NodeJS.ReadStream = process.
     await handleClaudeHookPayload(raw, options);
     return 0;
   } catch (error) {
-    if (options.debug || process.env.OPENPETS_DEBUG === "1") {
-      process.stderr.write(`OpenPets Claude hook ignored error: ${sanitizeDebugError(error)}\n`);
+    if (options.debug || process.env.NEKODRIFT_DEBUG === "1") {
+      process.stderr.write(`NekoDrift Claude hook ignored error: ${sanitizeDebugError(error)}\n`);
     }
     return 0;
   }
@@ -53,13 +53,13 @@ export async function handleClaudeHookPayload(raw: string, options: ClaudeHookOp
   }
   const decision = mapClaudeHookEvent(parsed);
   if (!decision?.reaction) return decision;
-  if (!options.projectLocal && hasProjectLocalOpenPetsHook()) return decision;
+  if (!options.projectLocal && hasProjectLocalNekoDriftHook()) return decision;
 
   const shouldSpeak = decision.speechCategory ? shouldSendSpeech(decision.speechCategory, options) : false;
   const shouldReact = shouldSendReaction(decision.reaction, options);
   if (!shouldSpeak && !shouldReact) return decision;
 
-  const client = options.client ?? createOpenPetsClient({ connectTimeoutMs: 500, responseTimeoutMs: 500 });
+  const client = options.client ?? createNekoDriftClient({ connectTimeoutMs: 500, responseTimeoutMs: 500 });
   const lease = options.configuredPetId ? await acquireHookLease(client, options.configuredPetId, options.debug) : undefined;
   try {
     if (decision.speechCategory && shouldSpeak) {
@@ -69,14 +69,14 @@ export async function handleClaudeHookPayload(raw: string, options: ClaudeHookOp
       await client.react(decision.reaction, { leaseId: lease?.leaseId });
     }
   } catch (error) {
-    if (!(error instanceof OpenPetsClientError) && options.debug) {
-      process.stderr.write(`OpenPets Claude hook client error: ${sanitizeDebugError(error)}\n`);
+    if (!(error instanceof NekoDriftClientError) && options.debug) {
+      process.stderr.write(`NekoDrift Claude hook client error: ${sanitizeDebugError(error)}\n`);
     }
   }
   return decision;
 }
 
-export function hasProjectLocalOpenPetsHook(projectDir = process.env.CLAUDE_PROJECT_DIR): boolean {
+export function hasProjectLocalNekoDriftHook(projectDir = process.env.CLAUDE_PROJECT_DIR): boolean {
   if (!projectDir || /[\0\r\n]/.test(projectDir)) return false;
   try {
     const projectReal = realpathSync(projectDir);
@@ -89,24 +89,24 @@ export function hasProjectLocalOpenPetsHook(projectDir = process.env.CLAUDE_PROJ
     const settingsStat = statSync(settingsPath);
     if (!settingsStat.isFile() || settingsStat.size <= 0 || settingsStat.size > maxProjectLocalSettingsBytes) return false;
     const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as unknown;
-    return containsProjectLocalOpenPetsHook(settings);
+    return containsProjectLocalNekoDriftHook(settings);
   } catch {
     return false;
   }
 }
 
-function containsProjectLocalOpenPetsHook(value: unknown): boolean {
-  if (typeof value === "string") return value.includes("--openpets-managed") && value.includes("--project-local");
-  if (Array.isArray(value)) return value.some(containsProjectLocalOpenPetsHook);
-  if (isRecord(value)) return Object.values(value).some(containsProjectLocalOpenPetsHook);
+function containsProjectLocalNekoDriftHook(value: unknown): boolean {
+  if (typeof value === "string") return value.includes("--nekodrift-managed") && value.includes("--project-local");
+  if (Array.isArray(value)) return value.some(containsProjectLocalNekoDriftHook);
+  if (isRecord(value)) return Object.values(value).some(containsProjectLocalNekoDriftHook);
   return false;
 }
 
-async function acquireHookLease(client: OpenPetsClient, requestedPetId: string, debug = false): Promise<{ readonly leaseId: string } | undefined> {
+async function acquireHookLease(client: NekoDriftClient, requestedPetId: string, debug = false): Promise<{ readonly leaseId: string } | undefined> {
   try {
     return await client.acquireLease({ requestedPetId });
   } catch (error) {
-    if (debug) process.stderr.write(`OpenPets Claude hook lease unavailable: ${sanitizeDebugError(error)}\n`);
+    if (debug) process.stderr.write(`NekoDrift Claude hook lease unavailable: ${sanitizeDebugError(error)}\n`);
     return undefined;
   }
 }
@@ -135,15 +135,15 @@ export function validateHookSpeech(message: string): string {
 export function getDefaultThrottlePath(): string {
   if (process.platform === "win32") {
     const base = process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local");
-    return join(base, "OpenPets", "claude-hook-throttle.json");
+    return join(base, "NekoDrift", "claude-hook-throttle.json");
   }
   const stateHome = process.env.XDG_STATE_HOME || join(homedir(), ".local", "state");
-  if (stateHome) return join(stateHome, "openpets", "claude-hook-throttle.json");
+  if (stateHome) return join(stateHome, "nekodrift", "claude-hook-throttle.json");
   const uid = safeUid();
-  return join(tmpdir(), `openpets-${uid}`, "claude-hook-throttle.json");
+  return join(tmpdir(), `nekodrift-${uid}`, "claude-hook-throttle.json");
 }
 
-function classifyToolReaction(payload: Record<string, unknown>): OpenPetsReaction | undefined {
+function classifyToolReaction(payload: Record<string, unknown>): NekoDriftReaction | undefined {
   const toolName = typeof payload.tool_name === "string" ? payload.tool_name : "";
   if (toolName === "Edit" || toolName === "Write" || toolName === "MultiEdit") return "editing";
   if (toolName === "Bash") {
@@ -163,7 +163,7 @@ function shouldSendSpeech(category: HookSpeechCategory, options: ClaudeHookOptio
   return shouldSendThrottleKey(category, cooldown, now, options.throttlePath ?? getDefaultThrottlePath());
 }
 
-function shouldSendReaction(reaction: OpenPetsReaction, options: ClaudeHookOptions): boolean {
+function shouldSendReaction(reaction: NekoDriftReaction, options: ClaudeHookOptions): boolean {
   const now = options.now?.() ?? Date.now();
   return shouldSendThrottleKey(`reaction:${reaction}`, reactionCooldownMs, now, options.throttlePath ?? getDefaultThrottlePath());
 }

@@ -352,6 +352,71 @@ async function init() {
       showToast();
     });
   });
+
+  // ── Sprites tab (in settings) ────────────────────────────────
+  initSpritesSection();
+}
+
+const SPRITE_META: Record<string, { emoji: string; name: string }> = {
+  cat:     { emoji: '🐱', name: 'Cat' },
+  pikachu: { emoji: '⚡', name: 'Pikachu' },
+  eevee:   { emoji: '🦊', name: 'Eevee' },
+  gengar:  { emoji: '👻', name: 'Gengar' },
+  snorlax: { emoji: '😴', name: 'Snorlax' },
+};
+
+function initSpritesSection(): void {
+  const api = window.nekodrift as any;
+  const listEl = document.getElementById('settings-sprites-list');
+  const grid   = document.getElementById('settings-sprites-grid');
+  if (!listEl || !grid) return;
+
+  async function refresh(): Promise<void> {
+    const sprites = await api.listSprites();
+    listEl!.innerHTML = '';
+    if (!sprites.length) {
+      listEl!.innerHTML = '<div style="padding:12px;color:#888;font-size:12px;text-align:center;">No sprites active</div>';
+      return;
+    }
+    for (const s of sprites) {
+      const meta = SPRITE_META[s.type] ?? { emoji: '?', name: s.type };
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="row-left" style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:18px;">${meta.emoji}</span>
+          <div>
+            <div class="row-label">${meta.name}</div>
+            <div class="row-sub" style="font-family:monospace;">${s.id}</div>
+          </div>
+        </div>
+        <button class="text-btn" data-id="${s.id}" style="color:#ff6b6b;border-color:rgba(255,107,107,0.3)">Remove</button>`;
+      row.querySelector('button')!.addEventListener('click', async () => {
+        await api.removeSprite(s.id);
+        await refresh();
+      });
+      listEl!.appendChild(row);
+    }
+  }
+
+  grid.innerHTML = '';
+  for (const [type, meta] of Object.entries(SPRITE_META)) {
+    const btn = document.createElement('button');
+    btn.className = 'breed-btn';
+    btn.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;';
+    btn.innerHTML = `<span style="font-size:24px;">${meta.emoji}</span><span class="breed-label">${meta.name}</span>`;
+    btn.addEventListener('click', async () => {
+      await api.addSprite(type);
+      await refresh();
+    });
+    grid.appendChild(btn);
+  }
+
+  document.getElementById('btn-open-manager')?.addEventListener('click', () => {
+    api.openManager?.();
+  });
+
+  refresh();
 }
 
 init();

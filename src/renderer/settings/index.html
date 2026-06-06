@@ -328,6 +328,9 @@
     <div class="nav-item" data-page="system">
       <span class="nav-icon">⚙️</span> System
     </div>
+    <div class="nav-item" data-page="sprites">
+      <span class="nav-icon">🐾</span> Sprites
+    </div>
   </nav>
 
   <!-- ── Main content ────────────────────────────────────────── -->
@@ -663,6 +666,24 @@
 
       <div class="btn-row">
         <button class="btn-save" id="btn-save-sys">Save</button>
+      </div>
+    </section>
+
+    <!-- Sprites -->
+    <section class="page" id="page-sprites">
+      <div class="page-title">Sprites</div>
+      <div class="card">
+        <div class="card-title">Active Sprites</div>
+        <div id="settings-sprites-list" style="padding:8px;display:flex;flex-direction:column;gap:6px;min-height:48px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add Sprite</div>
+        <div id="settings-sprites-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-save" id="btn-open-manager" style="background:var(--accent);">
+          Open Full Sprite Manager →
+        </button>
       </div>
     </section>
 

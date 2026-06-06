@@ -2,16 +2,17 @@ name: Build & Release
 
 on:
   push:
-    branches: [main]
+    branches: [master, main]
     tags: ['v*.*.*']
   pull_request:
-    branches: [main]
+    branches: [master, main]
+  workflow_dispatch: {}
 
 permissions:
   contents: write
 
 # ── Step 1: Create/refresh the nightly release slot ─────────────
-# Runs only on main-branch pushes (not tags). Tagged releases are
+# Runs only on branch pushes (not tags). Tagged releases are
 # created by electron-builder --publish always in the build job.
 jobs:
   prepare:
@@ -41,7 +42,7 @@ jobs:
             --notes "$(cat <<'NOTES'
           ## Nightly Build
 
-          Automatically built from `main`.
+          Automatically built from `master`.
 
           | | |
           |---|---|
@@ -49,7 +50,7 @@ jobs:
           | **Commit** | [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |
           | **Triggered by** | ${{ github.actor }} |
 
-          > This release is overwritten on every push to `main`.
+          > This release is overwritten on every push to `master`.
           > For a stable release, use a versioned tag.
 
           ### Download
@@ -64,7 +65,7 @@ jobs:
 
   # ── Step 2: Build on every matrix ─────────────────────────────
   build:
-    # For main-branch pushes, wait for prepare to finish first.
+    # For branch pushes, wait for prepare to finish first.
     # For tags and PRs, run independently (no release slot needed).
     needs: [prepare]
     if: always()

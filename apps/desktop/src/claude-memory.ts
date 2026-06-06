@@ -5,46 +5,46 @@ import { randomUUID } from "node:crypto";
 export interface ClaudeNekoDriftMemoryResult {
   readonly changed: boolean;
   readonly claudeMdPath: string;
-  readonly openPetsMemoryPath: string;
+  readonly nekoDriftMemoryPath: string;
 }
 
 export interface ClaudeNekoDriftMemoryStatus {
   readonly status: "installed" | "not_installed" | "error";
   readonly message: string;
   readonly claudeMdPath: string;
-  readonly openPetsMemoryPath: string;
+  readonly nekoDriftMemoryPath: string;
 }
 
-export const openPetsClaudeImportLine = "@~/.claude/nekodrift.md";
+export const nekoDriftClaudeImportLine = "@~/.claude/nekodrift.md";
 
-const openPetsImportStart = "<!-- OPENPETS:IMPORT:START -->";
-const openPetsImportEnd = "<!-- OPENPETS:IMPORT:END -->";
-const openPetsMemoryStart = "<!-- OPENPETS:START -->";
-const openPetsMemoryEnd = "<!-- OPENPETS:END -->";
+const nekoDriftImportStart = "<!-- NEKODRIFT:IMPORT:START -->";
+const nekoDriftImportEnd = "<!-- NEKODRIFT:IMPORT:END -->";
+const nekoDriftMemoryStart = "<!-- NEKODRIFT:START -->";
+const nekoDriftMemoryEnd = "<!-- NEKODRIFT:END -->";
 const maxClaudeMemoryBytes = 1024 * 1024;
 
 export function installClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDriftMemoryResult {
   const paths = getClaudeMemoryPaths(homeDir);
-  assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
+  assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.nekoDriftMemoryPath);
   mkdirSync(paths.claudeDir, { recursive: true, mode: 0o700 });
-  assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
+  assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.nekoDriftMemoryPath);
 
-  const currentNekoDriftMemory = readTextFile(paths.openPetsMemoryPath);
+  const currentNekoDriftMemory = readTextFile(paths.nekoDriftMemoryPath);
   const nextNekoDriftMemory = upsertNekoDriftMemoryBlock(currentNekoDriftMemory, createNekoDriftMemoryBlock());
   const openPetsChanged = currentNekoDriftMemory !== nextNekoDriftMemory;
-  if (openPetsChanged) writePrivateTextFile(paths.openPetsMemoryPath, nextNekoDriftMemory);
+  if (openPetsChanged) writePrivateTextFile(paths.nekoDriftMemoryPath, nextNekoDriftMemory);
 
   const currentClaudeMd = readTextFile(paths.claudeMdPath);
   const nextClaudeMd = ensureManagedImport(currentClaudeMd);
   const claudeMdChanged = currentClaudeMd !== nextClaudeMd;
   if (claudeMdChanged) writePrivateTextFile(paths.claudeMdPath, nextClaudeMd);
 
-  return { changed: openPetsChanged || claudeMdChanged, claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+  return { changed: openPetsChanged || claudeMdChanged, claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
 }
 
 export function uninstallClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDriftMemoryResult {
   const paths = getClaudeMemoryPaths(homeDir);
-  assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
+  assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.nekoDriftMemoryPath);
 
   let changed = false;
   const currentClaudeMd = readTextFile(paths.claudeMdPath);
@@ -55,59 +55,59 @@ export function uninstallClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDrift
     changed = true;
   }
 
-  const currentNekoDriftMemory = readTextFile(paths.openPetsMemoryPath);
+  const currentNekoDriftMemory = readTextFile(paths.nekoDriftMemoryPath);
   if (currentNekoDriftMemory) {
     const nextNekoDriftMemory = removeNekoDriftMemoryBlock(currentNekoDriftMemory);
     if (nextNekoDriftMemory.trim().length === 0) {
       if (hasUserOwnedImport) {
-        writePrivateTextFile(paths.openPetsMemoryPath, "");
+        writePrivateTextFile(paths.nekoDriftMemoryPath, "");
       } else {
-        rmSync(paths.openPetsMemoryPath, { force: true });
+        rmSync(paths.nekoDriftMemoryPath, { force: true });
       }
       changed = true;
     } else if (nextNekoDriftMemory !== currentNekoDriftMemory) {
-      writePrivateTextFile(paths.openPetsMemoryPath, nextNekoDriftMemory);
+      writePrivateTextFile(paths.nekoDriftMemoryPath, nextNekoDriftMemory);
       changed = true;
     }
   }
 
-  return { changed, claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+  return { changed, claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
 }
 
 export function doctorClaudeNekoDriftMemory(homeDir: string): ClaudeNekoDriftMemoryStatus {
   const paths = getClaudeMemoryPaths(homeDir);
   try {
-    assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.openPetsMemoryPath);
+    assertSafeClaudeMemoryPaths(paths.claudeDir, paths.claudeMdPath, paths.nekoDriftMemoryPath);
     const claudeMd = readTextFile(paths.claudeMdPath);
-    const openPetsMemory = readTextFile(paths.openPetsMemoryPath);
+    const openPetsMemory = readTextFile(paths.nekoDriftMemoryPath);
     const hasImport = hasManagedImport(claudeMd) || hasImportLineOutsideManagedBlock(claudeMd);
     const hasInstructions = createNekoDriftBlockPattern().test(openPetsMemory) || /nekodrift_say|NekoDrift MCP/i.test(openPetsMemory);
     if (hasImport && hasInstructions) {
-      return { status: "installed", message: "Claude will load NekoDrift instructions from ~/.claude/nekodrift.md.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+      return { status: "installed", message: "Claude will load NekoDrift instructions from ~/.claude/nekodrift.md.", claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
     }
     if (hasImport) {
-      return { status: "not_installed", message: "Claude imports NekoDrift instructions, but the NekoDrift memory file is missing or incomplete.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+      return { status: "not_installed", message: "Claude imports NekoDrift instructions, but the NekoDrift memory file is missing or incomplete.", claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
     }
     if (hasInstructions) {
-      return { status: "not_installed", message: "NekoDrift instructions exist, but Claude is not importing them yet.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+      return { status: "not_installed", message: "NekoDrift instructions exist, but Claude is not importing them yet.", claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
     }
-    return { status: "not_installed", message: "Claude NekoDrift instructions are not installed.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+    return { status: "not_installed", message: "Claude NekoDrift instructions are not installed.", claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
   } catch (error) {
-    return { status: "error", message: error instanceof Error ? error.message : "Claude NekoDrift instruction status is unavailable.", claudeMdPath: paths.claudeMdPath, openPetsMemoryPath: paths.openPetsMemoryPath };
+    return { status: "error", message: error instanceof Error ? error.message : "Claude NekoDrift instruction status is unavailable.", claudeMdPath: paths.claudeMdPath, nekoDriftMemoryPath: paths.nekoDriftMemoryPath };
   }
 }
 
-export function getClaudeMemoryPaths(homeDir: string): { readonly claudeDir: string; readonly claudeMdPath: string; readonly openPetsMemoryPath: string } {
+export function getClaudeMemoryPaths(homeDir: string): { readonly claudeDir: string; readonly claudeMdPath: string; readonly nekoDriftMemoryPath: string } {
   const claudeDir = join(homeDir, ".claude");
   return {
     claudeDir,
     claudeMdPath: join(claudeDir, "CLAUDE.md"),
-    openPetsMemoryPath: join(claudeDir, "nekodrift.md"),
+    nekoDriftMemoryPath: join(claudeDir, "nekodrift.md"),
   };
 }
 
 export function createNekoDriftMemoryBlock(): string {
-  return `${openPetsMemoryStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${openPetsMemoryEnd}\n`;
+  return `${nekoDriftMemoryStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${nekoDriftMemoryEnd}\n`;
 }
 
 export function ensureImportLine(source: string, importLine: string): string {
@@ -119,10 +119,10 @@ export function ensureImportLine(source: string, importLine: string): string {
 
 export function ensureManagedImport(source: string): string {
   const withoutManagedImports = removeManagedImport(source).replace(/\s*$/u, "");
-  if (withoutManagedImports.split(/\r?\n/).some((line) => line.trim() === openPetsClaudeImportLine)) {
+  if (withoutManagedImports.split(/\r?\n/).some((line) => line.trim() === nekoDriftClaudeImportLine)) {
     return withoutManagedImports ? `${withoutManagedImports}\n` : "";
   }
-  const block = `${openPetsImportStart}\n${openPetsClaudeImportLine}\n${openPetsImportEnd}`;
+  const block = `${nekoDriftImportStart}\n${nekoDriftClaudeImportLine}\n${nekoDriftImportEnd}`;
   return withoutManagedImports ? `${withoutManagedImports}\n\n${block}\n` : `${block}\n`;
 }
 
@@ -150,11 +150,11 @@ export function removeNekoDriftMemoryBlock(source: string): string {
 }
 
 function createNekoDriftBlockPattern(): RegExp {
-  return new RegExp(`${escapeRegExp(openPetsMemoryStart)}[\\s\\S]*?${escapeRegExp(openPetsMemoryEnd)}\\n?`, "g");
+  return new RegExp(`${escapeRegExp(nekoDriftMemoryStart)}[\\s\\S]*?${escapeRegExp(nekoDriftMemoryEnd)}\\n?`, "g");
 }
 
 function createManagedImportPattern(): RegExp {
-  return new RegExp(`${escapeRegExp(openPetsImportStart)}[\\s\\S]*?${escapeRegExp(openPetsImportEnd)}\\n?`, "g");
+  return new RegExp(`${escapeRegExp(nekoDriftImportStart)}[\\s\\S]*?${escapeRegExp(nekoDriftImportEnd)}\\n?`, "g");
 }
 
 function hasManagedImport(source: string): boolean {
@@ -162,15 +162,15 @@ function hasManagedImport(source: string): boolean {
 }
 
 function hasImportLineOutsideManagedBlock(source: string): boolean {
-  return removeManagedImport(source).split(/\r?\n/).some((line) => line.trim() === openPetsClaudeImportLine);
+  return removeManagedImport(source).split(/\r?\n/).some((line) => line.trim() === nekoDriftClaudeImportLine);
 }
 
-function assertSafeClaudeMemoryPaths(claudeDir: string, claudeMdPath: string, openPetsMemoryPath: string): void {
+function assertSafeClaudeMemoryPaths(claudeDir: string, claudeMdPath: string, nekoDriftMemoryPath: string): void {
   if (existsSync(claudeDir)) {
     const stat = lstatSync(claudeDir);
     if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Claude memory directory is not a safe directory.");
   }
-  for (const path of [claudeMdPath, openPetsMemoryPath]) {
+  for (const path of [claudeMdPath, nekoDriftMemoryPath]) {
     if (!existsSync(path)) continue;
     const stat = lstatSync(path);
     if (stat.isSymbolicLink() || !stat.isFile()) throw new Error("Claude memory file is not a safe regular file.");

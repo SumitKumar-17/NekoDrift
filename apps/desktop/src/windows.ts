@@ -63,7 +63,7 @@ function getPetsStateSnapshot(): { preferences: { defaultPetId: string }; pets: 
 }
 
 function getSettingsStateSnapshot(): {
-  preferences: Pick<ReturnType<typeof getAppStateSnapshot>["preferences"], "openDefaultPetOnLaunch" | "petScale" | "reactionAnimationOverrides" | "userName" | "fixedMessage" | "fixedMessageEnabled">;
+  preferences: Pick<ReturnType<typeof getAppStateSnapshot>["preferences"], "openDefaultPetOnLaunch" | "petScale" | "reactionAnimationOverrides" | "userName" | "fixedMessage" | "fixedMessageEnabled" | "catPattern" | "eyeFollowEnabled">;
   petScaleOptions: typeof petScaleOptions;
 } {
   const state = getAppStateSnapshot();
@@ -75,6 +75,8 @@ function getSettingsStateSnapshot(): {
       userName: state.preferences.userName,
       fixedMessage: state.preferences.fixedMessage,
       fixedMessageEnabled: state.preferences.fixedMessageEnabled,
+      catPattern: state.preferences.catPattern,
+      eyeFollowEnabled: state.preferences.eyeFollowEnabled,
     },
     petScaleOptions,
   };
@@ -235,10 +237,12 @@ export function installInternalUiHandlers(): void {
     const previousScale = prev.petScale;
     const previousOverrides = JSON.stringify(prev.reactionAnimationOverrides ?? {});
     const previousFixed = `${prev.fixedMessage ?? ""}:${prev.fixedMessageEnabled ?? false}`;
+    const previousPattern = prev.catPattern ?? "default";
     const state = updatePreferences(validatePreferencePatch(patch));
     const nextOverrides = JSON.stringify(state.preferences.reactionAnimationOverrides ?? {});
     const nextFixed = `${state.preferences.fixedMessage ?? ""}:${state.preferences.fixedMessageEnabled ?? false}`;
-    if (state.preferences.petScale !== previousScale || nextOverrides !== previousOverrides || nextFixed !== previousFixed) {
+    const nextPattern = state.preferences.catPattern ?? "default";
+    if (state.preferences.petScale !== previousScale || nextOverrides !== previousOverrides || nextFixed !== previousFixed || nextPattern !== previousPattern) {
       refreshDefaultPetContent();
       refreshAgentPetContent();
     }
@@ -632,12 +636,12 @@ async function getDefaultPetPreviewSpriteInfo(): Promise<{ readonly path: string
   return { path: builtInPath, version: `builtin-${Math.round(fallback.mtimeMs)}-${fallback.size}` };
 }
 
-function validatePreferencePatch(value: unknown): { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides>; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean } {
+function validatePreferencePatch(value: unknown): { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides>; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean; catPattern?: "default" | "orange" | "black" | "tabby"; eyeFollowEnabled?: boolean } {
   if (!isRecord(value)) {
     throw new Error("Invalid preferences patch.");
   }
 
-  const patch: { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides>; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean } = {};
+  const patch: { openDefaultPetOnLaunch?: boolean; petScale?: number; reactionAnimationOverrides?: ReturnType<typeof validateReactionAnimationOverrides>; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean; catPattern?: "default" | "orange" | "black" | "tabby"; eyeFollowEnabled?: boolean } = {};
 
   if ("openDefaultPetOnLaunch" in value) {
     if (typeof value.openDefaultPetOnLaunch !== "boolean") throw new Error("Invalid open-on-launch value.");
@@ -667,6 +671,17 @@ function validatePreferencePatch(value: unknown): { openDefaultPetOnLaunch?: boo
   if ("fixedMessageEnabled" in value) {
     if (typeof value.fixedMessageEnabled !== "boolean") throw new Error("Invalid fixed message enabled value.");
     patch.fixedMessageEnabled = value.fixedMessageEnabled;
+  }
+
+  if ("catPattern" in value) {
+    const allowed = ["default", "orange", "black", "tabby"] as const;
+    if (!allowed.includes(value.catPattern as "default")) throw new Error("Invalid cat pattern.");
+    patch.catPattern = value.catPattern as "default" | "orange" | "black" | "tabby";
+  }
+
+  if ("eyeFollowEnabled" in value) {
+    if (typeof value.eyeFollowEnabled !== "boolean") throw new Error("Invalid eye follow value.");
+    patch.eyeFollowEnabled = value.eyeFollowEnabled;
   }
 
   return patch;

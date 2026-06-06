@@ -65,6 +65,7 @@ export function isPetWindowDragging(window: BrowserWindow): boolean {
 export function createDefaultPetWindow(options: DefaultPetWindowOptions, dismissToken?: string): BrowserWindow {
   const window = createBasePetWindow("NekoDrift — Default Pet", options.position);
   info("pet.window", "default window create", { windowId: window.id, position: options.position, paused: options.paused, hasDisplay: Boolean(options.display), badge: options.badge });
+  registerEyeFollowWindow(window);
   installMousePassthroughAndDrag(window, options.onBubbleDismissed);
   installMotionStatePublisher(window);
   installPetContextMenu(window, { label: "Hide pet", click: options.onHideRequested, defaultPet: true });
@@ -636,10 +637,12 @@ async function createDefaultPetRender(paused: boolean, display: PetTransientDisp
   const bodyHtml = createPetBodyMarkup("NekoDrift default pet", createBubbleMarkup(display, paused, badge, dismissToken), `<div class="sprite" role="img" aria-label="Claude animated default pet"></div>`);
   const reactionState = getReactionSpriteState(display?.reaction);
   const stateRows = defaultPetSprite.states;
-  const scale = getAppStateSnapshot().preferences.petScale as PetScaleValue;
+  const prefs = getAppStateSnapshot().preferences;
+  const scale = prefs.petScale as PetScaleValue;
+  const catFilter = getCatPatternFilter(prefs.catPattern ?? "default");
 
   return {
-    cacheKey: `default:builtin:${paused}:${scale}`,
+    cacheKey: `default:builtin:${paused}:${scale}:${prefs.catPattern ?? "default"}`,
     bodyHtml,
     reactionState,
     html: `<!doctype html>
@@ -666,6 +669,7 @@ async function createDefaultPetRender(paused: boolean, display: PetTransientDisp
             animation-play-state: var(--play-state);
             transform: scale(${scale});
             transform-origin: top left;
+            filter: ${catFilter};
           }
           ${createSpriteStateCss(".sprite")}
           @keyframes pet-frames {
@@ -827,6 +831,10 @@ function createPetWindowCss(paused: boolean, scale: PetScaleValue): string {
     .bubble.is-waiting .bubble-status-icon::before { content: ""; position: absolute; left: 3px; top: 3px; box-sizing: border-box; width: 12px; height: 12px; border: 2px solid rgba(255, 255, 255, 0.96); border-top-color: rgba(255, 255, 255, 0.28); border-radius: 999px; }
     @keyframes bubble-in { from { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.96); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
     @keyframes status-pulse { 0%, 100% { opacity: 0.52; } 50% { opacity: 1; } }
+    @keyframes mochi-bounce { 0% { transform: scaleX(1.18) scaleY(0.82) translateY(6px); } 40% { transform: scaleX(0.94) scaleY(1.08) translateY(-3px); } 70% { transform: scaleX(1.04) scaleY(0.96) translateY(1px); } 100% { transform: scaleX(1) scaleY(1) translateY(0); } }
+    body.dragging .pet-shell { transform: scaleX(1.18) scaleY(0.82) translateY(6px) !important; transition: transform 80ms cubic-bezier(0.2, 0, 0, 1); }
+    body.mochi-settle .pet-shell { animation: mochi-bounce 320ms cubic-bezier(0.2, 0, 0, 1) forwards; }
+    html[data-cursor-side="left"] .sprite, html[data-cursor-side="left"] .installed-sprite { transform: scale(${scale}) scaleX(-1); }
     @media (prefers-reduced-motion: reduce) { .sprite, .installed-sprite, .bubble, .bubble-status-icon::before { animation: none !important; } }
   `;
 }
@@ -847,6 +855,41 @@ function createSpriteRule(selector: string, state: UniversalSpriteState): string
 
 function getReactionSpriteState(reaction: NekoDriftReaction | undefined): UniversalSpriteState {
   return resolveReactionSpriteState(reaction, getAppStateSnapshot().preferences.reactionAnimationOverrides);
+}
+
+function getCatPatternFilter(pattern: string): string {
+  if (pattern === "orange") return "sepia(1) saturate(3.2) hue-rotate(8deg) brightness(1.05)";
+  if (pattern === "black") return "grayscale(1) brightness(0.06) contrast(5)";
+  if (pattern === "tabby") return "sepia(0.55) hue-rotate(14deg) saturate(2.1) brightness(0.95)";
+  return "none";
+}
+
+let cursorPollInterval: ReturnType<typeof setInterval> | null = null;
+const eyeFollowWindows = new Set<BrowserWindow>();
+
+export function registerEyeFollowWindow(window: BrowserWindow): void {
+  eyeFollowWindows.add(window);
+  window.on("closed", () => eyeFollowWindows.delete(window));
+  if (!cursorPollInterval) {
+    cursorPollInterval = setInterval(broadcastCursorDirection, 200);
+  }
+}
+
+function broadcastCursorDirection(): void {
+  if (eyeFollowWindows.size === 0) {
+    if (cursorPollInterval) { clearInterval(cursorPollInterval); cursorPollInterval = null; }
+    return;
+  }
+  const enabled = getAppStateSnapshot().preferences.eyeFollowEnabled;
+  const cursor = screen.getCursorScreenPoint();
+  for (const win of eyeFollowWindows) {
+    if (win.isDestroyed()) { eyeFollowWindows.delete(win); continue; }
+    if (!enabled) continue;
+    const [wx, wy, ww] = win.getBounds().x !== undefined ? [win.getBounds().x, win.getBounds().y, win.getBounds().width] : [0, 0, 100];
+    const petCenterX = wx + ww / 2;
+    const side = cursor.x < petCenterX ? "left" : "right";
+    win.webContents.send("nekodrift:cursor-direction", side);
+  }
 }
 
 function createBubbleMarkup(display: PetTransientDisplay | null, paused: boolean, badgeReaction: PetStatusBadgeReaction | null, dismissToken?: string): string {

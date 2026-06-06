@@ -141,7 +141,7 @@ try {
   assert.deepEqual(opencodeConfig.mcp?.nekodrift?.command, ["npx", "-y", `@neko-drift/cli@${packageVersion}`, "mcp", "--pet", "fixer"]);
   assert.deepEqual(opencodeConfig.instructions, [".opencode/nekodrift.md"]);
   assert.deepEqual(opencodeConfig.plugin, [[`@neko-drift/opencode@${packageVersion}`, { pet: "fixer" }]]);
-  assert.match(readFileSync(opencodeInstructionPath, "utf8"), /OPENPETS:START/);
+  assert.match(readFileSync(opencodeInstructionPath, "utf8"), /NEKODRIFT:START/);
   await configureProject({ agent: "opencode", petId: "fixer", cwd: opencodeProject, yes: true, force: false, localDev: false });
   const opencodeConfigAgain = readFileSync(opencodeConfigPath, "utf8");
   assert.equal((opencodeConfigAgain.match(/@neko-drift\/opencode/g) ?? []).length, 1);
@@ -180,7 +180,7 @@ try {
   await configureProject({ agent: "opencode", petId: "fixer", cwd: instructionProject, yes: true, force: false, localDev: false });
   const instructionText = readFileSync(join(instructionProject, ".opencode", "nekodrift.md"), "utf8");
   assert.match(instructionText, /User text/);
-  assert.match(instructionText, /OPENPETS:START/);
+  assert.match(instructionText, /NEKODRIFT:START/);
 
   const symlinkOpenCodeProject = join(dir, "opencode-symlink");
   const outsideOpenCode = join(dir, "outside-opencode");
@@ -232,7 +232,7 @@ try {
   await configureProject({ agent: "cursor", cwd: cursorRulesOnlyProject, yes: true, force: false, localDev: false, cursorRulesMode: "only" });
   const cursorRulesPath = join(cursorRulesOnlyProject, ".cursor", "rules", "nekodrift.mdc");
   const cursorRulesContent = readFileSync(cursorRulesPath, "utf8");
-  assert.match(cursorRulesContent, /OPENPETS:CURSOR_RULES:START/);
+  assert.match(cursorRulesContent, /NEKODRIFT:CURSOR_RULES:START/);
   assert.match(cursorRulesContent, /nekodrift_say/);
   assert.doesNotMatch(cursorRulesContent, /alwaysApply:\s*true/);
   assert.equal(existsSync(join(cursorRulesOnlyProject, ".cursor", "mcp.json")), false);
@@ -259,7 +259,7 @@ try {
   assert.equal(cursorWithRulesOutput.includes("hidden"), false);
   const cursorWithRulesConfig = JSON.parse(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "mcp.json"), "utf8")) as { readonly mcpServers?: Record<string, { readonly args?: readonly string[] }> };
   assert.deepEqual(cursorWithRulesConfig.mcpServers?.nekodrift?.args, ["-y", `@neko-drift/mcp@${packageVersion}`, "--pet", "fixer"]);
-  assert.match(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "nekodrift.mdc"), "utf8"), /OPENPETS:CURSOR_RULES:START/);
+  assert.match(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", "nekodrift.mdc"), "utf8"), /NEKODRIFT:CURSOR_RULES:START/);
   const cursorRulesBackups = readdirSync(join(cursorWithRulesConflictProject, ".cursor", "rules")).filter((name) => name.includes("nekodrift-backup"));
   assert.equal(cursorRulesBackups.length, 1);
   assert.equal(readFileSync(join(cursorWithRulesConflictProject, ".cursor", "rules", cursorRulesBackups[0]!), "utf8"), "User rule SECRET=hidden\n");

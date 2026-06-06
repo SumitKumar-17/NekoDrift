@@ -53,7 +53,7 @@ Recursive, case-insensitive redaction of:
 
 ### Cursor Rules Management
 - Exact whole-file ownership requires recognized frontmatter
-- Requires exactly one ordered `OPENPETS:CURSOR_RULES:START/END` marker pair
+- Requires exactly one ordered `NEKODRIFT:CURSOR_RULES:START/END` marker pair
 - Rejects duplicate, reversed, or missing markers
 - Rejects user content before/after managed block
 - Desktop uses preview/copy only; CLI writes project-local rules

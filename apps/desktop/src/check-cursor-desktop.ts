@@ -127,10 +127,10 @@ try {
   // Test desktop Phase 2 rules posture: preview/copy only, no project writes
   const rulesPreview = {
     rulesPath: ".cursor/rules/nekodrift.mdc",
-    rulesContent: "<!-- OPENPETS:CURSOR_RULES:START -->\nUse NekoDrift sparingly.\n<!-- OPENPETS:CURSOR_RULES:END -->\n",
+    rulesContent: "<!-- NEKODRIFT:CURSOR_RULES:START -->\nUse NekoDrift sparingly.\n<!-- NEKODRIFT:CURSOR_RULES:END -->\n",
   };
   assert.equal(rulesPreview.rulesPath, ".cursor/rules/nekodrift.mdc");
-  assert.match(rulesPreview.rulesContent, /OPENPETS:CURSOR_RULES:START/);
+  assert.match(rulesPreview.rulesContent, /NEKODRIFT:CURSOR_RULES:START/);
   assert.doesNotMatch(rulesPreview.rulesContent, /alwaysApply:\s*true/);
 
   console.error("Cursor desktop validation passed.");

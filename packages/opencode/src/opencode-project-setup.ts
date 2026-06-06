@@ -31,8 +31,8 @@ export interface PlannedTextWrite {
 }
 
 const maxInstructionBytes = 1024 * 1024;
-const openPetsStart = "<!-- OPENPETS:START -->";
-const openPetsEnd = "<!-- OPENPETS:END -->";
+const nekoDriftStart = "<!-- NEKODRIFT:START -->";
+const nekoDriftEnd = "<!-- NEKODRIFT:END -->";
 
 export function prepareOpenCodeProjectSetup(options: PrepareOpenCodeProjectSetupOptions): PreparedOpenCodeProjectSetup {
   const petId = validateNekoDriftPetArg(options.petId);
@@ -79,7 +79,7 @@ export function writePreparedOpenCodeProjectSetup(prepared: PreparedOpenCodeProj
 }
 
 export function createNekoDriftInstructionBlock(): string {
-  return `${openPetsStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${openPetsEnd}\n`;
+  return `${nekoDriftStart}\n## NekoDrift\n\nNekoDrift MCP tools may be available.\n\nUse NekoDrift as a short visible status channel for meaningful coding progress:\n- Use \`nekodrift_say\` when starting, completing, blocking, or needing review on non-trivial work.\n- Keep messages brief, user-facing, and non-sensitive.\n- Do not include code, logs, secrets, URLs, or file paths.\n- Use \`nekodrift_react\` for small visual or emotional feedback.\n- Use \`nekodrift_status\` only when checking availability or the targeted pet.\n- Do not spam every internal step.\n${nekoDriftEnd}\n`;
 }
 
 function buildNextConfig(config: Record<string, unknown>, petId: string, options: PrepareOpenCodeProjectSetupOptions): { readonly mcp: Record<string, unknown>; readonly instructions: readonly string[]; readonly plugin: readonly unknown[] } {
@@ -161,7 +161,7 @@ function assertSafeProjectLocalPath(projectDir: string, targetPath: string, labe
 }
 
 function upsertNekoDriftInstructionBlock(source: string): string {
-  const withoutBlock = source.replace(new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
+  const withoutBlock = source.replace(new RegExp(`${escapeRegExp(nekoDriftStart)}[\\s\\S]*?${escapeRegExp(nekoDriftEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
   const block = createNekoDriftInstructionBlock();
   return withoutBlock ? `${withoutBlock}\n\n${block}` : block;
 }

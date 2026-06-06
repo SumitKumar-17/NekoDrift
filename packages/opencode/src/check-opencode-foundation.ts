@@ -75,9 +75,9 @@ try {
   assert.equal(classifyOpenCodeMcpStatus([{ mcp: { nekodrift: { type: "local", command: ["npx", "-y", "@neko-drift/cli@0.0.0", "mcp", "--pet", "fixer"], enabled: true, timeout: 10 } } }], expected).status, "custom");
   assert.equal(classifyOpenCodeMcpStatus([{ mcp: { nekodrift: { type: "local", command: ["my-nekodrift-wrapper"] } } }], expected).status, "custom");
   assert.equal(classifyOpenCodeMcpStatus([{ mcp: { nekodrift: buildOpenCodeMcpEntry(expected) } }, { mcp: { nekodrift: buildOpenCodeMcpEntry({ cliVersion: "0.0.0", petId: "helper" }) } }], expected).status, "conflict");
-  assert.equal(classifyOpenCodeInstructionsStatus([{ instructions: [".opencode/nekodrift.md"] }], "project", undefined, { ".opencode/nekodrift.md": "<!-- OPENPETS:START -->\nHi\n<!-- OPENPETS:END -->\n" }).status, "installed");
+  assert.equal(classifyOpenCodeInstructionsStatus([{ instructions: [".opencode/nekodrift.md"] }], "project", undefined, { ".opencode/nekodrift.md": "<!-- NEKODRIFT:START -->\nHi\n<!-- NEKODRIFT:END -->\n" }).status, "installed");
   assert.equal(classifyOpenCodeInstructionsStatus([{ instructions: [".opencode/nekodrift.md"] }], "project").status, "needs_update");
-  assert.equal(classifyOpenCodeInstructionsStatus([{ instructions: [".opencode/nekodrift.md"] }, { instructions: ["old-nekodrift.md"] }], "project", undefined, { ".opencode/nekodrift.md": "<!-- OPENPETS:START -->\nHi\n<!-- OPENPETS:END -->\n" }).status, "conflict");
+  assert.equal(classifyOpenCodeInstructionsStatus([{ instructions: [".opencode/nekodrift.md"] }, { instructions: ["old-nekodrift.md"] }], "project", undefined, { ".opencode/nekodrift.md": "<!-- NEKODRIFT:START -->\nHi\n<!-- NEKODRIFT:END -->\n" }).status, "conflict");
   assert.equal(classifyOpenCodeInstructionsStatus([{ instructions: ["old-nekodrift.md"] }], "project").status, "custom");
   assert.equal(classifyOpenCodePluginStatus([{ plugin: [["@neko-drift/opencode", { pet: "fixer" }]] }], "fixer").status, "installed");
   assert.equal(classifyOpenCodePluginStatus([{ plugin: [["@neko-drift/opencode@0.0.0", { pet: "fixer" }]] }], "fixer", "0.0.0").status, "installed");
@@ -127,7 +127,7 @@ try {
   assert.equal(doctorOpenCodeGlobalSetup(globalDir).status, "installed");
   const globalConfig = readFileSync(join(globalDir, "opencode.jsonc"), "utf8");
   assert.match(globalConfig, /@neko-drift\/opencode@0\.0\.0/);
-  assert.match(readFileSync(join(globalDir, "nekodrift.md"), "utf8"), /OPENPETS:START/);
+  assert.match(readFileSync(join(globalDir, "nekodrift.md"), "utf8"), /NEKODRIFT:START/);
   const globalRemove = prepareOpenCodeGlobalRemove(globalDir);
   writePreparedOpenCodeGlobalRemove(globalRemove);
   assert.equal(doctorOpenCodeGlobalSetup(globalDir).status, "not_installed");

@@ -36,8 +36,8 @@ export interface CursorRulesPlannedWrite {
 }
 
 export const maxCursorRulesBytes = 64 * 1024;
-export const cursorRulesStartMarker = "<!-- OPENPETS:CURSOR_RULES:START -->";
-export const cursorRulesEndMarker = "<!-- OPENPETS:CURSOR_RULES:END -->";
+export const cursorRulesStartMarker = "<!-- NEKODRIFT:CURSOR_RULES:START -->";
+export const cursorRulesEndMarker = "<!-- NEKODRIFT:CURSOR_RULES:END -->";
 
 const cursorRulesFrontmatter = "---\ndescription: Use NekoDrift MCP tools for lightweight coding-status feedback.\n---";
 

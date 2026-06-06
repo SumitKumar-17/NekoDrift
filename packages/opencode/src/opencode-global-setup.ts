@@ -39,8 +39,8 @@ export interface OpenCodeGlobalState {
 }
 
 const maxInstructionBytes = 1024 * 1024;
-const openPetsStart = "<!-- OPENPETS:START -->";
-const openPetsEnd = "<!-- OPENPETS:END -->";
+const nekoDriftStart = "<!-- NEKODRIFT:START -->";
+const nekoDriftEnd = "<!-- NEKODRIFT:END -->";
 
 export function getExplicitGlobalOpenCodeConfigPaths(configDir: string): OpenCodeConfigPaths {
   assertSafeDirectoryRoot(configDir, true);
@@ -300,17 +300,17 @@ function readSafeInstructionFile(path: string): string {
 }
 
 function upsertNekoDriftBlock(source: string): string {
-  const withoutBlock = source.replace(new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
+  const withoutBlock = source.replace(new RegExp(`${escapeRegExp(nekoDriftStart)}[\\s\\S]*?${escapeRegExp(nekoDriftEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, "");
   const block = createNekoDriftInstructionBlock();
   return withoutBlock ? `${withoutBlock}\n\n${block}` : block;
 }
 
 function removeNekoDriftBlock(source: string): string {
-  return source.replace(new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, (match) => (match.includes("\n") ? "\n" : ""));
+  return source.replace(new RegExp(`${escapeRegExp(nekoDriftStart)}[\\s\\S]*?${escapeRegExp(nekoDriftEnd)}\\n?`, "g"), "").replace(/\n{3,}/g, "\n\n").replace(/\s*$/u, (match) => (match.includes("\n") ? "\n" : ""));
 }
 
 function hasManagedInstructionBlock(value: string): boolean {
-  return new RegExp(`${escapeRegExp(openPetsStart)}[\\s\\S]*?${escapeRegExp(openPetsEnd)}`).test(value);
+  return new RegExp(`${escapeRegExp(nekoDriftStart)}[\\s\\S]*?${escapeRegExp(nekoDriftEnd)}`).test(value);
 }
 
 function assertSafeDirectoryRoot(root: string, allowMissing: boolean): void {

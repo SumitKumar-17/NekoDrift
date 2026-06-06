@@ -30,7 +30,7 @@ Provides comprehensive OpenCode editor integration including: MCP server configu
 
 **Project Setup** (`opencode-project-setup.ts`):
 - Status classification: `not_installed`, `installed`, `needs_update`, `custom`, `conflict`, `error`
-- Managed block detection in instruction files (`<!-- OPENPETS:START/END -->`)
+- Managed block detection in instruction files (`<!-- NEKODRIFT:START/END -->`)
 - Config field updates: `mcp`, `instructions`, `plugin` arrays
 - Instruction file: `.opencode/nekodrift.md` with usage guidelines
 

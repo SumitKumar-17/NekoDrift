@@ -139,7 +139,7 @@ function isNekoDriftLikeInstruction(value: string): boolean {
 }
 
 function hasManagedInstructionBlock(value: string | undefined): boolean {
-  return typeof value === "string" && /<!-- OPENPETS:START -->[\s\S]*?<!-- OPENPETS:END -->/.test(value);
+  return typeof value === "string" && /<!-- NEKODRIFT:START -->[\s\S]*?<!-- NEKODRIFT:END -->/.test(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

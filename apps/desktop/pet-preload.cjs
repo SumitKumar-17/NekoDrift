@@ -5,6 +5,37 @@ const allowedReactionStates = new Set(["idle", "running-right", "running-left", 
 let lastInteractiveHit = null;
 let dragging = false;
 
+// --- Mochi drag / bounce settle ---
+function setDraggingVisual(active) {
+  document.body.classList.toggle("dragging", active);
+  if (!active) {
+    document.body.classList.add("mochi-settle");
+    setTimeout(() => document.body.classList.remove("mochi-settle"), 400);
+  }
+}
+
+// --- Eye follow: flip sprite to face cursor direction ---
+let lastCursorSide = "right";
+function applyCursorSide(side) {
+  if (side === lastCursorSide) return;
+  lastCursorSide = side;
+  document.documentElement.dataset.cursorSide = side;
+}
+
+// Track cursor relative to the pet center when mouse is inside the window
+function updateCursorSideFromEvent(event) {
+  const hitbox = document.querySelector(".pet-hitbox");
+  if (!hitbox) return;
+  const rect = hitbox.getBoundingClientRect();
+  const petCenterX = rect.left + rect.width / 2;
+  applyCursorSide(event.clientX < petCenterX ? "left" : "right");
+}
+
+// Main process sends global cursor direction when mouse is outside window
+ipcRenderer.on("nekodrift:cursor-direction", (_event, side) => {
+  if (side === "left" || side === "right") applyCursorSide(side);
+});
+
 const dismissBubble = (event) => {
   if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
 
@@ -114,6 +145,7 @@ const installMouseInterop = () => {
 
   document.addEventListener("mousemove", (event) => {
     updateInteractiveHit(event);
+    updateCursorSideFromEvent(event);
     if (dragging) ipcRenderer.send("nekodrift:pet-drag-move", { screenX: event.screenX, screenY: event.screenY });
   }, { passive: true });
 
@@ -124,12 +156,14 @@ const installMouseInterop = () => {
     event.preventDefault();
     dragging = true;
     setInteractiveHit(true);
+    setDraggingVisual(true);
     ipcRenderer.send("nekodrift:pet-drag-start", { screenX: event.screenX, screenY: event.screenY });
   });
 
   document.addEventListener("mouseup", () => {
     if (!dragging) return;
     dragging = false;
+    setDraggingVisual(false);
     ipcRenderer.send("nekodrift:pet-drag-end");
   });
 

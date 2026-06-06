@@ -37,7 +37,7 @@ try {
 
   writePreparedOpenCodeGlobalSetup(install);
   assert.equal(doctorOpenCodeGlobalSetup(globalDir).status, "installed");
-  assert.match(readFileSync(join(globalDir, "nekodrift.md"), "utf8"), /OPENPETS:START/);
+  assert.match(readFileSync(join(globalDir, "nekodrift.md"), "utf8"), /NEKODRIFT:START/);
 
   const remove = prepareOpenCodeGlobalRemove(globalDir);
   assert.equal(remove.configWrites.length, 1);

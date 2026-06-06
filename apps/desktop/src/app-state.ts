@@ -46,6 +46,8 @@ export interface NekoDriftStateV1 {
     readonly userName?: string;
     readonly fixedMessage?: string;
     readonly fixedMessageEnabled?: boolean;
+    readonly catPattern?: "default" | "orange" | "black" | "tabby";
+    readonly eyeFollowEnabled?: boolean;
   };
   readonly pets: {
     readonly installed: readonly InstalledPetState[];
@@ -389,6 +391,8 @@ function normalizePreferences(value: Partial<NekoDriftStateV1["preferences"]>): 
     userName: normalizeShortText(value.userName, 64),
     fixedMessage: normalizeShortText(value.fixedMessage, 200),
     fixedMessageEnabled: typeof value.fixedMessageEnabled === "boolean" ? value.fixedMessageEnabled : false,
+    catPattern: (["default", "orange", "black", "tabby"] as const).includes(value.catPattern as "default") ? value.catPattern as "default" | "orange" | "black" | "tabby" : "default",
+    eyeFollowEnabled: typeof value.eyeFollowEnabled === "boolean" ? value.eyeFollowEnabled : true,
   };
 }
 

@@ -3,17 +3,17 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, 
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { ensureImportLine, ensureManagedImport, installClaudeNekoDriftMemory, openPetsClaudeImportLine, removeImportLine, removeNekoDriftMemoryBlock, uninstallClaudeNekoDriftMemory, upsertNekoDriftMemoryBlock } from "../src/claude-memory.js";
+import { ensureImportLine, ensureManagedImport, installClaudeNekoDriftMemory, nekoDriftClaudeImportLine, removeImportLine, removeNekoDriftMemoryBlock, uninstallClaudeNekoDriftMemory, upsertNekoDriftMemoryBlock } from "../src/claude-memory.js";
 
-assert.equal(ensureImportLine("", openPetsClaudeImportLine), `${openPetsClaudeImportLine}\n`);
-assert.equal(ensureImportLine("# User notes\n", openPetsClaudeImportLine), `# User notes\n\n${openPetsClaudeImportLine}\n`);
-assert.equal(ensureImportLine(`# User notes\n${openPetsClaudeImportLine}\n${openPetsClaudeImportLine}\n`, openPetsClaudeImportLine), `# User notes\n\n${openPetsClaudeImportLine}\n`);
-assert.equal(removeImportLine(`# User notes\n\n${openPetsClaudeImportLine}\n`, openPetsClaudeImportLine), "# User notes\n");
-assert.match(upsertNekoDriftMemoryBlock("custom\n", "<!-- OPENPETS:START -->\nmanaged\n<!-- OPENPETS:END -->\n"), /custom[\s\S]*managed/);
-assert.equal((upsertNekoDriftMemoryBlock("<!-- OPENPETS:START -->\nold\n<!-- OPENPETS:END -->\n\n<!-- OPENPETS:START -->\nolder\n<!-- OPENPETS:END -->\n", "<!-- OPENPETS:START -->\nnew\n<!-- OPENPETS:END -->\n").match(/OPENPETS:START/g) ?? []).length, 1);
-assert.match(ensureManagedImport("# User notes\n"), /OPENPETS:IMPORT:START[\s\S]*@~\/\.claude\/nekodrift\.md[\s\S]*OPENPETS:IMPORT:END/);
-assert.equal(ensureManagedImport(`${openPetsClaudeImportLine}\n`), `${openPetsClaudeImportLine}\n`, "user-owned import line should not be wrapped as managed.");
-assert.equal(removeNekoDriftMemoryBlock("custom\n<!-- OPENPETS:START -->\nmanaged\n<!-- OPENPETS:END -->\n"), "custom\n");
+assert.equal(ensureImportLine("", nekoDriftClaudeImportLine), `${nekoDriftClaudeImportLine}\n`);
+assert.equal(ensureImportLine("# User notes\n", nekoDriftClaudeImportLine), `# User notes\n\n${nekoDriftClaudeImportLine}\n`);
+assert.equal(ensureImportLine(`# User notes\n${nekoDriftClaudeImportLine}\n${nekoDriftClaudeImportLine}\n`, nekoDriftClaudeImportLine), `# User notes\n\n${nekoDriftClaudeImportLine}\n`);
+assert.equal(removeImportLine(`# User notes\n\n${nekoDriftClaudeImportLine}\n`, nekoDriftClaudeImportLine), "# User notes\n");
+assert.match(upsertNekoDriftMemoryBlock("custom\n", "<!-- NEKODRIFT:START -->\nmanaged\n<!-- NEKODRIFT:END -->\n"), /custom[\s\S]*managed/);
+assert.equal((upsertNekoDriftMemoryBlock("<!-- NEKODRIFT:START -->\nold\n<!-- NEKODRIFT:END -->\n\n<!-- NEKODRIFT:START -->\nolder\n<!-- NEKODRIFT:END -->\n", "<!-- NEKODRIFT:START -->\nnew\n<!-- NEKODRIFT:END -->\n").match(/NEKODRIFT:START/g) ?? []).length, 1);
+assert.match(ensureManagedImport("# User notes\n"), /NEKODRIFT:IMPORT:START[\s\S]*@~\/\.claude\/nekodrift\.md[\s\S]*NEKODRIFT:IMPORT:END/);
+assert.equal(ensureManagedImport(`${nekoDriftClaudeImportLine}\n`), `${nekoDriftClaudeImportLine}\n`, "user-owned import line should not be wrapped as managed.");
+assert.equal(removeNekoDriftMemoryBlock("custom\n<!-- NEKODRIFT:START -->\nmanaged\n<!-- NEKODRIFT:END -->\n"), "custom\n");
 
 const dir = mkdtempSync(join(tmpdir(), "nekodrift-claude-memory-"));
 try {
@@ -31,7 +31,7 @@ try {
   const reinstalled = installClaudeNekoDriftMemory(dir);
   assert.equal(reinstalled.changed, false);
   assert.equal((readFileSync(claudeMd, "utf8").match(/@~\/\.claude\/nekodrift\.md/g) ?? []).length, 1);
-  assert.match(readFileSync(claudeMd, "utf8"), /OPENPETS:IMPORT:START/);
+  assert.match(readFileSync(claudeMd, "utf8"), /NEKODRIFT:IMPORT:START/);
 
   writeFileSync(nekodriftMd, `${readFileSync(nekodriftMd, "utf8")}\nUser custom note.\n`, "utf8");
   const uninstalled = uninstallClaudeNekoDriftMemory(dir);
@@ -43,10 +43,10 @@ try {
   const userImportHome = join(dir, "user-import-home");
   const userClaudeDir = join(userImportHome, ".claude");
   mkdirSync(userClaudeDir, { recursive: true });
-  writeFileSync(join(userClaudeDir, "CLAUDE.md"), `# User-owned import\n${openPetsClaudeImportLine}\n`, "utf8");
+  writeFileSync(join(userClaudeDir, "CLAUDE.md"), `# User-owned import\n${nekoDriftClaudeImportLine}\n`, "utf8");
   writeFileSync(join(userClaudeDir, "nekodrift.md"), "User-owned content.\n", "utf8");
   installClaudeNekoDriftMemory(userImportHome);
-  assert.doesNotMatch(readFileSync(join(userClaudeDir, "CLAUDE.md"), "utf8"), /OPENPETS:IMPORT:START/, "pre-existing import should remain user-owned.");
+  assert.doesNotMatch(readFileSync(join(userClaudeDir, "CLAUDE.md"), "utf8"), /NEKODRIFT:IMPORT:START/, "pre-existing import should remain user-owned.");
   uninstallClaudeNekoDriftMemory(userImportHome);
   assert.match(readFileSync(join(userClaudeDir, "CLAUDE.md"), "utf8"), /@~\/\.claude\/nekodrift\.md/, "user-owned import should not be removed.");
   assert.match(readFileSync(join(userClaudeDir, "nekodrift.md"), "utf8"), /User-owned content/, "user-owned nekodrift.md content should be preserved.");

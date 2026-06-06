@@ -22,7 +22,7 @@ type CodexState = { pets: PetEntry[]; error?: string };
 type PetScaleOption = { label: string; value: number };
 type UserSelectableAnimationState = "idle" | "review" | "running" | "waiting" | "waving" | "jumping" | "failed";
 type ReactionAnimationOverrides = Record<string, UserSelectableAnimationState>;
-type SettingsState = { preferences: { openDefaultPetOnLaunch: boolean; petScale: number; reactionAnimationOverrides?: ReactionAnimationOverrides; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean }; petScaleOptions: PetScaleOption[] };
+type SettingsState = { preferences: { openDefaultPetOnLaunch: boolean; petScale: number; reactionAnimationOverrides?: ReactionAnimationOverrides; userName?: string; fixedMessage?: string; fixedMessageEnabled?: boolean; catPattern?: "default" | "orange" | "black" | "tabby"; eyeFollowEnabled?: boolean }; petScaleOptions: PetScaleOption[] };
 type LaunchAtLoginState = { supported: boolean; enabled: boolean };
 type UpdateStatus = { state: "idle" | "checking" | "available" | "current" | "error"; currentVersion: string; latestVersion?: string; releaseUrl?: string; checkedAt?: number; error?: string };
 type DashboardActivity = { messagesSent: number; reactionsSent: number; reactionCounts: Record<string, number>; perPetActivityCounts: Record<string, number>; lastActivityAt?: number };
@@ -1043,6 +1043,39 @@ function SettingsView() {
                   onChange={(e) => patchPreferences({ userName: e.target.value || undefined }, "Name saved.")}
                 />
               </div>
+            </div>
+
+            <p className="eyebrow" style={{ marginTop: "24px" }}>Pet Appearance</p>
+            <h2 className="settings-section-title">Cat Pattern</h2>
+            <p className="text-sm text-slatecopy -mt-2 mb-3">Give the default pet the same markings as the cat you live with.</p>
+
+            <div className="settings-group">
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <strong>Pattern</strong>
+                  <small>Changes the colour of the built-in pet sprite.</small>
+                </div>
+                <select
+                  className="settings-select"
+                  value={settings?.preferences.catPattern ?? "default"}
+                  disabled={!settings || !!busy}
+                  onChange={(e) => patchPreferences({ catPattern: e.target.value as "default" | "orange" | "black" | "tabby" }, "Pattern saved.")}
+                  style={{ minWidth: "120px" }}
+                >
+                  <option value="default">Siamese</option>
+                  <option value="orange">Orange</option>
+                  <option value="black">Black</option>
+                  <option value="tabby">Mackerel</option>
+                </select>
+              </div>
+
+              <ToggleRow
+                title="Eye follow"
+                description="Your pet's sprite flips to watch your cursor as it moves across the screen."
+                checked={settings?.preferences.eyeFollowEnabled ?? true}
+                disabled={!settings || !!busy}
+                onChange={(checked) => patchPreferences({ eyeFollowEnabled: checked }, "Eye follow updated.")}
+              />
             </div>
 
             <p className="eyebrow" style={{ marginTop: "24px" }}>Pinned Note</p>

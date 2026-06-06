@@ -3,6 +3,7 @@ import { Menu, Tray, type MenuItemConstructorOptions } from "electron";
 import { getAppStateSnapshot } from "./app-state.js";
 import { createTrayIcon } from "./assets.js";
 import { hideDefaultPet, isDefaultPetVisible, setDefaultPetPaused, showDefaultPet } from "./default-pet-controller.js";
+import { dismissAllExtraPets, getExtraPetCount, spawnExtraPet } from "./extra-pets-controller.js";
 import { quitNekoDrift } from "./lifecycle.js";
 import { info, openLogsFolder } from "./logger.js";
 import { shellState, togglePaused } from "./state.js";
@@ -67,7 +68,16 @@ export function refreshTrayMenu(): void {
         refreshTrayMenu();
       },
     },
-    { type: "separator" },
+    {
+      label: "Spawn Another Pet",
+      enabled: getExtraPetCount() < 4,
+      click: () => { spawnExtraPet(); refreshTrayMenu(); },
+    },
+    ...(getExtraPetCount() > 0 ? [{
+      label: `Dismiss Extra Pets (${getExtraPetCount()})`,
+      click: () => { dismissAllExtraPets(); refreshTrayMenu(); },
+    } as MenuItemConstructorOptions] : []),
+    { type: "separator" as const },
     {
       label: "Manage Pets...",
       click: () => openControlCenterWindow("pets"),

@@ -19,10 +19,11 @@ const tiles: Tile[] = [
   { label: 'Pikachu', render: (c) => drawPikachu(c, FRAME, SCALE) },
   { label: 'Eevee',   render: (c) => drawEevee(c, FRAME, SCALE) },
   { label: 'Gengar',  render: (c) => drawGengar(c, FRAME, SCALE) },
-  { label: 'hearts',  render: (c) => { cat('pink', 'purr', 40)(c); drawHearts(c, 8 * SCALE, 4 * SCALE, 30, SCALE); } },
-  { label: 'speech',  render: (c) => { cat('orange', 'idle', 40)(c); drawSpeechBubble(c, 'nyaa~ hello!', 8 * SCALE, 2 * SCALE, SCALE); } },
-  { label: 'pomodoro', render: (c) => { cat('gray', 'sit', 40)(c); drawPomodoroTimer(c, 8 * SCALE, 1 * SCALE, 84_000, 'focus', SCALE); } },
+  { label: 'Snorlax', render: (c) => drawSnorlax(c, FRAME, SCALE) },
+  { label: 'Cat idle', render: cat('orange', 'idle', 40) },
+  { label: 'Cat happy', render: cat('white', 'happy', 40) },
 ];
+const LIGHT_BG = true;
 
 const cols = 3;
 const rows = Math.ceil(tiles.length / cols);
@@ -31,10 +32,11 @@ root.width  = cols * CELL;
 root.height = rows * CELL;
 const rctx = root.getContext('2d')!;
 
-// checkerboard background so transparency is visible
+// background — light so soft ground shadows are visible
 for (let y = 0; y < root.height; y += 16) {
   for (let x = 0; x < root.width; x += 16) {
-    rctx.fillStyle = ((x + y) / 16) % 2 === 0 ? '#3a3a3a' : '#2c2c2c';
+    if (LIGHT_BG) rctx.fillStyle = ((x + y) / 16) % 2 === 0 ? '#dfe2e8' : '#d3d7df';
+    else rctx.fillStyle = ((x + y) / 16) % 2 === 0 ? '#3a3a3a' : '#2c2c2c';
     rctx.fillRect(x, y, 16, 16);
   }
 }
@@ -50,7 +52,7 @@ tiles.forEach((tile, i) => {
   tile.render(octx);
   octx.restore();
   rctx.drawImage(off, cx, cy);
-  rctx.fillStyle = '#fff';
+  rctx.fillStyle = LIGHT_BG ? '#222' : '#fff';
   rctx.font = '16px sans-serif';
   rctx.fillText(tile.label, cx + 8, cy + 22);
 });

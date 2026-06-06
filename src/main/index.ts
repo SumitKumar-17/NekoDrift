@@ -4,7 +4,7 @@ import { createTray } from './tray';
 import { isMac, checkAccessibilityPermission } from './platform';
 import {
   createCatWindow, createSettingsWindow, createOnboardingWindow, createManagerWindow,
-  getCatWindow, getSettingsWindow, getOnboardingWindow, getManagerWindow,
+  getCatWindow, getSettingsWindow, getOnboardingWindow, getManagerWindow, summonCat,
 } from './window-manager';
 import { startServices, stopAll } from './services';
 import { startMouseTracking } from './mouse-tracker';
@@ -70,6 +70,7 @@ app.whenReady().then(() => {
       if (cw?.isVisible()) cw.hide();
       else cw?.show();
     },
+    onSummonCat: summonCat,
   });
 
   startMouseTracking(getCatWindow);

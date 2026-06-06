@@ -6,6 +6,7 @@ type TrayCallback = {
   onOpenManager: () => void;
   onQuit: () => void;
   onToggleCat: () => void;
+  onSummonCat: () => void;
 };
 
 export function createTray(callbacks: TrayCallback): Tray {
@@ -52,6 +53,10 @@ export function createTray(callbacks: TrayCallback): Tray {
     },
     { type: 'separator' },
     {
+      label: 'Bring Cat to Center',
+      click: callbacks.onSummonCat,
+    },
+    {
       label: 'Show / Hide Cat',
       click: callbacks.onToggleCat,
     },
@@ -61,7 +66,7 @@ export function createTray(callbacks: TrayCallback): Tray {
       accelerator: isMac ? 'Cmd+,' : undefined,
     },
     {
-      label: 'Sprite Manager...',
+      label: 'Control Panel...',
       click: callbacks.onOpenManager,
     },
     { type: 'separator' },

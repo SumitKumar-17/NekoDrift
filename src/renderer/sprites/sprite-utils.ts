@@ -62,12 +62,19 @@ export function radialGrad(
 }
 
 // Soft elliptical contact shadow under a floating/standing sprite.
-export function groundShadow(ctx: Ctx, x: number, y: number, rx: number, ry: number, alpha = 0.18): void {
+// Radial fade (dark centre → transparent edge) reads far softer than a
+// flat black ellipse and makes the sprite feel grounded on the desktop.
+export function groundShadow(ctx: Ctx, x: number, y: number, rx: number, ry: number, alpha = 0.2): void {
   ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = '#000000';
+  ctx.translate(x, y);
+  ctx.scale(1, ry / rx);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+  g.addColorStop(0, `rgba(0,0,0,${alpha})`);
+  g.addColorStop(0.6, `rgba(0,0,0,${alpha * 0.55})`);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.arc(0, 0, rx, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }

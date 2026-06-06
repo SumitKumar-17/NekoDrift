@@ -59,6 +59,25 @@ export function createCatWindow(): void {
   catWindow.on('closed', () => { catWindow = null; });
 }
 
+// Re-centre the cat on the primary display and make sure it's visible.
+// Rescue hatch for when the cat is dragged off-screen or hidden.
+export function summonCat(): void {
+  if (!catWindow || catWindow.isDestroyed()) {
+    createCatWindow();
+    return;
+  }
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const [w, h] = catWindow.getSize();
+  catWindow.setPosition(
+    Math.floor(width / 2 - w / 2),
+    Math.floor(height / 2 - h / 2),
+    false,
+  );
+  if (!catWindow.isVisible()) catWindow.show();
+  catWindow.setAlwaysOnTop(true);
+  catWindow.focus();
+}
+
 export function createSettingsWindow(): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.focus();

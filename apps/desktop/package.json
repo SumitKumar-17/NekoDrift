@@ -1,6 +1,6 @@
 {
   "name": "@neko-drift/desktop",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "private": true,
   "description": "NekoDrift tray-first desktop companion app.",
   "license": "MIT",

@@ -4,3 +4,8 @@ release/
 *.log
 .DS_Store
 Thumbs.db
+
+# Sprite preview tooling — generated artifacts
+scripts/preview/preview-entry.js
+scripts/preview/preview-entry.js.map
+scripts/preview/preview.png

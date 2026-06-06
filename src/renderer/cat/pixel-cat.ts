@@ -114,6 +114,12 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     px(5, 8 + by, 6, 3, pal.belly);
   } else {
     px(4, 6 + by, 8, 6, pal.body);
+    // Soft side + bottom ambient occlusion for a rounder body
+    px(4, 6 + by, 1, 6, shade(pal.body, -0.14));
+    px(11, 6 + by, 1, 6, shade(pal.body, -0.14));
+    px(4, 11 + by, 8, 1, shade(pal.body, -0.14));
+    // Top highlight rim
+    px(5, 6 + by, 6, 1, shade(pal.body, 0.16));
     px(5, 7 + by, 6, 4, pal.belly);
     if (pal.stripe) {
       px(4, 6 + by, 1, 5, pal.stripe);
@@ -153,6 +159,11 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     px(2, 3 + by, 12, 2, pal.body);   // widest (cols 2-13)
     px(3, 5 + by, 10, 1, pal.body);   // lower-mid
     px(4, 6 + by, 8, 1, pal.body);    // chin (cols 4-11)
+    // Depth: top highlight rim + side/chin ambient occlusion
+    px(5, 1 + by, 6, 1, shade(pal.body, 0.16));
+    px(2, 3 + by, 1, 2, shade(pal.body, -0.12));
+    px(13, 3 + by, 1, 2, shade(pal.body, -0.12));
+    px(4, 6 + by, 8, 1, shade(pal.body, -0.1));
     // Ears
     px(2, 0 + by, 3, 3, pal.body);
     px(11, 0 + by, 3, 3, pal.body);
@@ -362,6 +373,15 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
 
 // ── PREDEFINED PATTERNS ──
 type PxFn = (x: number, y: number, w: number, h: number, c: string, a?: number) => void;
+
+// Multiply a #rrggbb colour toward black (amt<0) or white (amt>0).
+// Used for subtle pixel-art ambient occlusion / highlights.
+function shade(hex: string, amt: number): string {
+  if (hex[0] !== '#' || hex.length < 7) return hex;
+  const n = parseInt(hex.slice(1, 7), 16);
+  const f = (c: number) => Math.max(0, Math.min(255, Math.round(amt < 0 ? c * (1 + amt) : c + (255 - c) * amt)));
+  return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})`;
+}
 
 // A 4-wide 3D keyboard key. Pressed → face drops a row and darkens,
 // highlight disappears (the visual "click" the user asked for).

@@ -19,9 +19,12 @@ const tiles: Tile[] = [
   { label: 'Pikachu', render: (c) => drawPikachu(c, FRAME, SCALE) },
   { label: 'Eevee',   render: (c) => drawEevee(c, FRAME, SCALE) },
   { label: 'Gengar',  render: (c) => drawGengar(c, FRAME, SCALE) },
-  { label: 'Snorlax', render: (c) => drawSnorlax(c, FRAME, SCALE) },
-  { label: 'Cat idle', render: cat('orange', 'idle', 40) },
-  { label: 'Cat happy', render: cat('white', 'happy', 40) },
+  { label: 'Cat orange', render: cat('orange', 'idle', 40) },
+  { label: 'Cat gray', render: cat('gray', 'idle', 40) },
+  { label: 'Cat black', render: cat('black', 'idle', 40) },
+  { label: 'Cat white', render: cat('white', 'sit', 40) },
+  { label: 'Cat brown', render: cat('brown', 'walk', 40) },
+  { label: 'Cat pink', render: cat('pink', 'idle', 40) },
 ];
 const LIGHT_BG = true;
 

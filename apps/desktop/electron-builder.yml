@@ -8,6 +8,11 @@ directories:
 
 artifactName: NekoDrift-${version}-${os}-${arch}.${ext}
 
+# GitHub Releases publish config (used when --publish always is passed)
+publish:
+  provider: github
+  releaseType: release
+
 files:
   - dist/**
   - control-center-preload.cjs
@@ -25,7 +30,6 @@ asar: true
 asarUnpack:
   - node_modules/**
 npmRebuild: false
-publish: null
 
 toolsets:
   appimage: 1.0.3

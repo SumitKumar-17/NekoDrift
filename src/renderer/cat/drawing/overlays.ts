@@ -23,12 +23,32 @@ export function drawPomodoroTimer(
   const urgent = remainingMs < 60_000;
   const pulse = urgent ? 0.6 + 0.4 * Math.sin(Date.now() / 300) : 1;
 
-  ctx.globalAlpha = 0.92 * pulse;
-  ctx.fillStyle = mode === 'focus' ? '#e85d3f' : '#4a90d9';
+  ctx.save();
+  // Soft drop shadow so the pill floats above the desktop
+  ctx.shadowColor = 'rgba(0,0,0,0.28)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 3;
+  ctx.globalAlpha = 0.95 * pulse;
+  // Vertical gradient fill for a glossier capsule
+  const grad = ctx.createLinearGradient(0, y - th / 2, 0, y + th / 2);
+  if (mode === 'focus') { grad.addColorStop(0, '#f4724f'); grad.addColorStop(1, '#d8492e'); }
+  else { grad.addColorStop(0, '#5aa0e6'); grad.addColorStop(1, '#3a7fc8'); }
+  ctx.fillStyle = grad;
   ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(x - tw / 2, y - th / 2, tw, th, 8);
+  if (ctx.roundRect) ctx.roundRect(x - tw / 2, y - th / 2, tw, th, th / 2);
   else ctx.rect(x - tw / 2, y - th / 2, tw, th);
   ctx.fill();
+  ctx.restore();
+
+  // Glossy top highlight
+  ctx.save();
+  ctx.globalAlpha = 0.16 * pulse;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x - tw / 2 + 3, y - th / 2 + 2, tw - 6, th / 2 - 1, th / 4);
+  else ctx.rect(x - tw / 2 + 3, y - th / 2 + 2, tw - 6, th / 2 - 1);
+  ctx.fill();
+  ctx.restore();
 
   ctx.globalAlpha = 1;
   ctx.fillStyle = '#ffffff';
@@ -76,7 +96,12 @@ export function drawSpeechBubble(
   const bY = catY - bH - 16;
   const r = 9;
 
-  ctx.fillStyle = isPinned ? 'rgba(255,245,200,0.97)' : 'rgba(255,255,255,0.97)';
+  ctx.save();
+  // Soft drop shadow lifts the bubble off the desktop
+  ctx.shadowColor = 'rgba(0,0,0,0.22)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = isPinned ? 'rgba(255,247,214,0.98)' : 'rgba(255,255,255,0.98)';
   ctx.beginPath();
   ctx.moveTo(bX + r, bY);
   ctx.lineTo(bX + bW - r, bY);
@@ -89,6 +114,7 @@ export function drawSpeechBubble(
   ctx.quadraticCurveTo(bX, bY, bX + r, bY);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
 
   ctx.strokeStyle = isPinned ? '#e8c06a' : '#f4a7b9';
   ctx.lineWidth = 1.5;

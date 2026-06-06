@@ -3,6 +3,8 @@ import { drawEevee } from '../../src/renderer/sprites/eevee';
 import { drawGengar } from '../../src/renderer/sprites/gengar';
 import { drawSnorlax } from '../../src/renderer/sprites/snorlax';
 import { drawCat } from '../../src/renderer/cat/pixel-cat';
+import { drawSpeechBubble, drawPomodoroTimer } from '../../src/renderer/cat/drawing/overlays';
+import { drawHearts, drawSteam } from '../../src/renderer/cat/drawing/particles';
 
 const SCALE = 8;          // big so we can see detail
 const CELL  = 16 * SCALE + 80;
@@ -17,9 +19,9 @@ const tiles: Tile[] = [
   { label: 'Pikachu', render: (c) => drawPikachu(c, FRAME, SCALE) },
   { label: 'Eevee',   render: (c) => drawEevee(c, FRAME, SCALE) },
   { label: 'Gengar',  render: (c) => drawGengar(c, FRAME, SCALE) },
-  { label: 'Snorlax', render: (c) => drawSnorlax(c, FRAME, SCALE) },
-  { label: 'Cat idle', render: cat('orange', 'idle', 40) },
-  { label: 'Cat type', render: cat('gray', 'type', 35) },
+  { label: 'hearts',  render: (c) => { cat('pink', 'purr', 40)(c); drawHearts(c, 8 * SCALE, 4 * SCALE, 30, SCALE); } },
+  { label: 'speech',  render: (c) => { cat('orange', 'idle', 40)(c); drawSpeechBubble(c, 'nyaa~ hello!', 8 * SCALE, 2 * SCALE, SCALE); } },
+  { label: 'pomodoro', render: (c) => { cat('gray', 'sit', 40)(c); drawPomodoroTimer(c, 8 * SCALE, 1 * SCALE, 84_000, 'focus', SCALE); } },
 ];
 
 const cols = 3;

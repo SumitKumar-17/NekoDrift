@@ -77,9 +77,11 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     ctx.rotate(animation === 'hunt' ? 0 : (tailSwing * Math.PI) / 180);
     if (animation === 'hunt') {
       px(-wobbleOff, 0, 2, 5, pal.body);
+      px(-wobbleOff, 4, 2, 1, pal.belly);   // tail tip
     } else {
       px(-wobbleOff, 0, 2, 4, pal.body);
       px(-wobbleOff + 1, 3, 3, 2, pal.body);
+      px(-wobbleOff + 2, 4, 2, 1, pal.belly);  // tail tip
     }
     ctx.restore();
   }
@@ -128,153 +130,217 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     drawCustomPixels(ctx, customPixels, scale, wobbleOff);
   }
 
-  // ── HEAD ──
+  // ── HEAD ──────────────────────────────────────────────────────
   if (animation === 'sleep') {
-    px(5, 4 + by, 7, 5, pal.body);
-    px(6, 5 + by, 5, 4, pal.body);
-    px(5, 3 + by, 2, 2, pal.body);
-    px(10, 3 + by, 2, 2, pal.body);
+    // Curled sideways
+    px(4, 4 + by, 8, 5, pal.body);
+    px(3, 5 + by, 10, 3, pal.body);
+    px(4, 3 + by, 3, 3, pal.body);   // left ear
+    px(9, 3 + by, 3, 3, pal.body);   // right ear
+    px(5, 3 + by, 1, 1, pal.ear);
+    px(10, 3 + by, 1, 1, pal.ear);
   } else if (animation === 'hunt') {
-    px(3, 3 + by, 10, 5, pal.body);
-    px(2, 4 + by, 12, 4, pal.body);
-    px(2, 2 + by, 3, 2, pal.body);
-    px(11, 2 + by, 3, 2, pal.body);
-    px(3, 2 + by, 1, 1, pal.ear);
-    px(12, 2 + by, 1, 1, pal.ear);
+    px(2, 3 + by, 12, 5, pal.body);
+    px(3, 2 + by, 10, 4, pal.body);
+    px(2, 1 + by, 3, 3, pal.body);
+    px(11, 1 + by, 3, 3, pal.body);
+    px(3, 1 + by, 1, 1, pal.ear);
+    px(12, 1 + by, 1, 1, pal.ear);
   } else {
-    px(4, 1 + by, 8, 6, pal.body);
-    px(3, 2 + by, 10, 5, pal.body);
-    px(3, 0 + by, 3, 3, pal.body);
-    px(10, 0 + by, 3, 3, pal.body);
-    px(4, 0 + by, 1, 1, pal.ear);
-    px(11, 0 + by, 1, 1, pal.ear);
+    // Oval head — tapered top/bottom, widest in the middle
+    px(4, 1 + by, 8, 1, pal.body);    // top (cols 4-11)
+    px(3, 2 + by, 10, 1, pal.body);   // upper-mid (cols 3-12)
+    px(2, 3 + by, 12, 2, pal.body);   // widest (cols 2-13)
+    px(3, 5 + by, 10, 1, pal.body);   // lower-mid
+    px(4, 6 + by, 8, 1, pal.body);    // chin (cols 4-11)
+    // Ears
+    px(2, 0 + by, 3, 3, pal.body);
+    px(11, 0 + by, 3, 3, pal.body);
+    px(3, 0 + by, 1, 2, pal.ear);
+    px(12, 0 + by, 1, 2, pal.ear);
     if (pal.stripe) {
-      px(4, 1 + by, 1, 2, pal.stripe);
-      px(6, 1 + by, 1, 2, pal.stripe);
-      px(8, 1 + by, 1, 2, pal.stripe);
+      px(5, 1 + by, 1, 2, pal.stripe);
+      px(7, 1 + by, 1, 2, pal.stripe);
+      px(9, 1 + by, 1, 2, pal.stripe);
     }
   }
 
-  // ── FACE ──
+  // ── FACE ──────────────────────────────────────────────────────
   const ey = animation === 'sleep' ? 6 : animation === 'hunt' ? 4 : 3;
 
   if (animation === 'sleep') {
-    const ec = pal.body === '#f0ece8' ? '#9eaabb' : '#2d1b0e';
-    px(6, ey + by, 2, 1, ec);
-    px(10, ey + by, 2, 1, ec);
+    const ec = color === 'white' ? '#9eaabb' : '#2d1b0e';
+    // Sleeping: single-pixel curved closed eye
+    px(5, ey + by, 3, 1, ec);
+    px(9, ey + by, 3, 1, ec);
+    // Small curve above
+    px(5, ey - 1 + by, 1, 1, ec, 0.5);
+    px(11, ey - 1 + by, 1, 1, ec, 0.5);
   } else if (!blinkOpen) {
-    px(5, ey + by, 2, 1, pal.eye);
-    px(9, ey + by, 2, 1, pal.eye);
+    px(5, ey + 1 + by, 3, 1, pal.eye);
+    px(9, ey + 1 + by, 3, 1, pal.eye);
   } else if (animation === 'surprised') {
-    px(5, ey - 1 + by, 3, 4, pal.eye);
-    px(9, ey - 1 + by, 3, 4, pal.eye);
-    px(5, ey - 1 + by, 1, 1, '#ffffff');
-    px(9, ey - 1 + by, 1, 1, '#ffffff');
+    px(4, ey - 1 + by, 4, 4, pal.eye);
+    px(9, ey - 1 + by, 4, 4, pal.eye);
+    // Large shine dots
+    px(4, ey - 1 + by, 2, 2, '#ffffff');
+    px(9, ey - 1 + by, 2, 2, '#ffffff');
+    // Pupils
+    px(5, ey + 1 + by, 2, 2, pal.eye);
+    px(10, ey + 1 + by, 2, 2, pal.eye);
   } else if (animation === 'happy' || animation === 'purr' || animation === 'jump') {
-    line(5, ey + by + 1, 7, ey + by - 0.5, pal.eye, 1);
-    line(9, ey + by + 1, 11, ey + by - 0.5, pal.eye, 1);
+    line(4, ey + 2 + by, 7, ey - 0.2 + by, pal.eye, 1);
+    line(9, ey + 2 + by, 12, ey - 0.2 + by, pal.eye, 1);
   } else if (animation === 'think') {
-    px(5, ey + by, 2, 1, pal.eye);
-    px(9, ey + by, 2, 1, pal.eye);
-    line(5, ey + by - 1, 7, ey + by - 1.5, pal.eye, 0.5);
-    line(9, ey + by - 1, 11, ey + by - 1.5, pal.eye, 0.5);
+    px(5, ey + by, 3, 2, pal.iris);
+    px(9, ey + by, 3, 2, pal.iris);
+    px(5, ey + by, 1, 1, '#ffffff');
+    px(9, ey + by, 1, 1, '#ffffff');
+    px(6, ey + 1 + by, 1, 1, pal.eye);
+    px(10, ey + 1 + by, 1, 1, pal.eye);
+    line(5, ey - 1 + by, 7, ey - 1.5 + by, pal.eye, 0.55);
+    line(9, ey - 1 + by, 11, ey - 1.5 + by, pal.eye, 0.55);
   } else if (animation === 'hunt') {
-    px(5, ey + by, 1, 2, pal.eye);
-    px(10, ey + by, 1, 2, pal.eye);
+    // Narrow slit eyes
+    px(4, ey + by, 2, 2, pal.eye);
+    px(10, ey + by, 2, 2, pal.eye);
+    px(5, ey + by, 1, 2, '#000000');
+    px(11, ey + by, 1, 2, '#000000');
   } else if (animation === 'overheat') {
-    px(5, ey + by - 1, 2, 3, pal.eye);
-    px(9, ey + by - 1, 2, 3, pal.eye);
-    px(5, ey + by - 1, 1, 1, '#ff4444');
-    px(9, ey + by - 1, 1, 1, '#ff4444');
+    px(5, ey - 1 + by, 3, 3, pal.eye);
+    px(9, ey - 1 + by, 3, 3, pal.eye);
+    // X pattern
+    px(5, ey - 1 + by, 1, 1, '#ff4444');
+    px(7, ey - 1 + by, 1, 1, '#ff4444');
+    px(6, ey + by, 1, 1, '#ff4444');
+    px(9, ey - 1 + by, 1, 1, '#ff4444');
+    px(11, ey - 1 + by, 1, 1, '#ff4444');
+    px(10, ey + by, 1, 1, '#ff4444');
+    px(5, ey + 1 + by, 1, 1, '#ff4444');
+    px(7, ey + 1 + by, 1, 1, '#ff4444');
+    px(9, ey + 1 + by, 1, 1, '#ff4444');
+    px(11, ey + 1 + by, 1, 1, '#ff4444');
   } else if (animation === 'type') {
-    px(5, ey + by, 2, 2, pal.eye);
-    px(9, ey + by, 2, 2, pal.eye);
-    px(5, ey + by, 2, 1, pal.body);
-    px(9, ey + by, 2, 1, pal.body);
+    // Half-lidded: iris visible in lower half only
+    px(5, ey + by, 3, 2, pal.iris);
+    px(9, ey + by, 3, 2, pal.iris);
+    px(5, ey + by, 3, 1, pal.body);    // top lid
+    px(9, ey + by, 3, 1, pal.body);
     const ex = eyeDir ? Math.round(eyeDir.dx * 0.5) : 0;
-    px(5 + ex, ey + by + 1, 1, 1, '#ffffff');
-    px(9 + ex, ey + by + 1, 1, 1, '#ffffff');
+    px(5 + ex + 1, ey + 1 + by, 1, 1, pal.eye);   // pupil
+    px(9 + ex + 1, ey + 1 + by, 1, 1, pal.eye);
   } else {
-    px(5, ey + by, 2, 2, pal.eye);
-    px(9, ey + by, 2, 2, pal.eye);
-    const ex = eyeDir ? Math.round(eyeDir.dx) : 0;
+    // Iris (breed-specific color) + dark pupil + shine
+    px(5, ey + by, 3, 2, pal.iris);
+    px(9, ey + by, 3, 2, pal.iris);
+    // Pupil (dark, tracks eye direction)
+    const ex  = eyeDir ? Math.round(eyeDir.dx) : 0;
     const eyd = eyeDir ? Math.round(eyeDir.dy * 0.5) : 0;
-    px(5 + ex, ey + by + eyd, 1, 1, '#ffffff');
-    px(9 + ex, ey + by + eyd, 1, 1, '#ffffff');
+    px(5 + ex + 1, ey + 1 + by + eyd, 1, 1, pal.eye);
+    px(9 + ex + 1, ey + 1 + by + eyd, 1, 1, pal.eye);
+    // Shine (top-left)
+    px(5, ey + by, 1, 1, '#ffffff');
+    px(9, ey + by, 1, 1, '#ffffff');
   }
 
-  // Nose
+  // Muzzle + cheeks (normal/type/think poses)
   const ny = animation === 'sleep' ? 8 : animation === 'hunt' ? 6 : 5;
+  if (animation !== 'sleep' && animation !== 'hunt') {
+    px(6, ny + by, 4, 2, pal.belly);               // muzzle bump (belly-colored)
+    px(4, ny + by, 2, 1, pal.ear, 0.32);           // left cheek blush
+    px(10, ny + by, 2, 1, pal.ear, 0.32);          // right cheek blush
+  }
+  // Nose (on top of muzzle)
   px(7, ny + by, 2, 1, pal.nose);
 
   // Mouth
   if (animation !== 'sleep') {
     if (animation === 'happy' || animation === 'purr' || animation === 'jump') {
-      px(6, 6 + by, 1, 1, pal.eye);
-      px(9, 6 + by, 1, 1, pal.eye);
+      px(6, ny + 1 + by, 1, 1, pal.eye);
+      px(9, ny + 1 + by, 1, 1, pal.eye);
     } else if (animation === 'overheat') {
-      px(6, 6 + by, 4, 1, pal.eye);
-      px(7, 7 + by, 2, 1, '#ff9999');
+      px(5, ny + 1 + by, 6, 1, pal.eye);
+      px(6, ny + 2 + by, 4, 1, '#ff9999');
     } else {
-      px(7, 6 + by, 1, 1, pal.eye);
-      px(8, 6 + by, 1, 1, pal.eye);
+      px(7, ny + 1 + by, 1, 1, pal.eye);
+      px(8, ny + 1 + by, 1, 1, pal.eye);
     }
   }
 
-  // Whiskers
+  // Whiskers — longer and more visible
   if (animation !== 'sleep') {
-    line(1, 5 + by, 5, 5.5 + by, '#7a5c48', 0.45);
-    line(1, 6 + by, 5, 5.5 + by, '#7a5c48', 0.45);
-    line(15, 5 + by, 11, 5.5 + by, '#7a5c48', 0.45);
-    line(15, 6 + by, 11, 5.5 + by, '#7a5c48', 0.45);
+    const wy = (animation === 'hunt' ? 6 : 5) + by;
+    line(0,  wy,       5, wy + 0.5, '#7a5c48', 0.58);
+    line(0,  wy + 1,   5, wy + 0.5, '#7a5c48', 0.58);
+    line(16, wy,      11, wy + 0.5, '#7a5c48', 0.58);
+    line(16, wy + 1,  11, wy + 0.5, '#7a5c48', 0.58);
   }
 
   if (animation === 'think') {
-    px(4, 3 + by, 2, 2, pal.body);
+    px(3, 2 + by, 2, 2, pal.body); // thought bubble start
   }
 
-  // ── LEGS / PAWS ──
+  // ── LEGS / PAWS ───────────────────────────────────────────────
+  // Round the bob for the lower body so paws stay crisp on the pixel grid.
+  const byr = Math.round(by);
   if (animation === 'sleep') {
-    px(4, 11 + by, 4, 2, pal.body);
-    px(9, 11 + by, 4, 2, pal.body);
+    // Curled paws tucked under — one soft row
+    px(3, 11 + byr, 10, 2, pal.body);
+    px(4, 12 + byr, 3, 1, pal.belly);
+    px(9, 12 + byr, 3, 1, pal.belly);
   } else if (animation === 'stretch') {
-    px(0, 11 + by, 3, 2, pal.body);
-    px(14, 11 + by, 3, 2, pal.body);
-    px(5, 9 + by, 2, 3, pal.body);
-    px(9, 9 + by, 2, 3, pal.body);
+    px(0, 11 + byr, 3, 2, pal.body);
+    px(13, 11 + byr, 3, 2, pal.body);
+    px(4, 9 + byr, 2, 4, pal.body);
+    px(10, 9 + byr, 2, 4, pal.body);
   } else if (animation === 'sit' || animation === 'purr' || animation === 'think') {
-    px(5, 10 + by, 2, 3, pal.body);
-    px(9, 10 + by, 2, 3, pal.body);
+    // Two front paws side by side, center gap (cols 7-8)
+    px(4, 10 + byr, 3, 3, pal.body);
+    px(9, 10 + byr, 3, 3, pal.body);
+    px(4, 12 + byr, 3, 1, pal.belly);   // paw tips
+    px(9, 12 + byr, 3, 1, pal.belly);
   } else if (animation === 'type') {
-    const k = Math.sin(frame * 0.45);
-    const leftDown = Math.round(Math.max(0, k) * 2.5);
-    const rightDown = Math.round(Math.max(0, -k) * 2.5);
-    px(4, 11 + by, 2, 2 + leftDown, pal.body);
-    px(10, 11 + by, 2, 2 + rightDown, pal.body);
-    if (leftDown > 1) px(4, 13 + by + leftDown - 1, 1, 1, pal.belly);
-    if (rightDown > 1) px(10, 13 + by + rightDown - 1, 1, 1, pal.belly);
-    px(6, 11 + by, 2, 2, pal.body);
-    px(8, 11 + by, 2, 2, pal.body);
+    // ── KEYBOARD TYPING: alternating paw press + 3D keys ────────
+    const phase  = Math.sin(frame * 0.32);
+    const lPress = phase > 0.15;
+    const rPress = phase < -0.15;
+    const lOff   = lPress ? 1 : 0;
+    const rOff   = rPress ? 1 : 0;
+
+    // Arms reaching down to the keyboard
+    px(3, 10 + byr, 3, 2, pal.body);    // left arm
+    px(10, 10 + byr, 3, 2, pal.body);   // right arm
+    px(5, 11 + byr, 6, 1, pal.body);    // chest base between arms
+    // Paws press down onto the keys
+    px(3, 12 + byr + lOff, 3, 1, pal.belly);
+    px(10, 12 + byr + rOff, 3, 1, pal.belly);
+
+    // 3D keyboard keys (highlight / face / shadow). Pressed = drops + darkens.
+    drawKey(px, 3, 13 + byr, lPress);
+    drawKey(px, 10, 13 + byr, rPress);
   } else if (animation === 'hunt') {
-    px(3, 12 + by, 2, 1, pal.body);
-    px(11, 12 + by, 2, 1, pal.body);
-    px(5, 12 + by, 2, 2 + Math.round(legOffset), pal.body);
-    px(9, 12 + by, 2, 2 - Math.round(legOffset), pal.body);
+    px(2, 12 + byr, 3, 1, pal.body);
+    px(11, 12 + byr, 3, 1, pal.body);
+    px(4, 12 + byr, 3, 2 + Math.round(legOffset), pal.body);
+    px(9, 12 + byr, 3, 2 - Math.round(legOffset), pal.body);
   } else if (animation === 'paper') {
-    px(2, 12 + by, 4, 2, pal.body);
-    px(10, 12 + by, 4, 2, pal.body);
-    const scrollF = Math.sin(frame * 0.3) * 2;
-    px(3, 11 + by + Math.round(scrollF), 2, 1, pal.belly);
-    px(11, 11 + by - Math.round(scrollF), 2, 1, pal.belly);
+    px(4, 11 + byr, 3, 2, pal.body);
+    px(9, 11 + byr, 3, 2, pal.body);
+    const scrollF = Math.round(Math.sin(frame * 0.3) * 2);
+    px(4, 13 + byr + scrollF, 3, 1, pal.belly);
+    px(9, 13 + byr - scrollF, 3, 1, pal.belly);
   } else if (animation === 'jump') {
-    px(5, 9 + by, 2, 2, pal.body);
-    px(9, 9 + by, 2, 2, pal.body);
-    px(6, 11 + by, 4, 1, pal.body);
+    px(4, 9 + byr, 3, 2, pal.body);
+    px(9, 9 + byr, 3, 2, pal.body);
+    px(5, 11 + byr, 6, 1, pal.body);
   } else {
-    px(4, 11 + by, 2, 2 + Math.round(legOffset), pal.body);
-    px(10, 11 + by, 2, 2 - Math.round(legOffset), pal.body);
-    px(6, 11 + by, 2, 2 - Math.round(legOffset * 0.5), pal.body);
-    px(8, 11 + by, 2, 2 + Math.round(legOffset * 0.5), pal.body);
+    // Walk / run / idle — two clean front legs, alternating for walk.
+    // Clamp the swing so a leg never shrinks to zero height.
+    const lo = Math.max(-1, Math.min(1, Math.round(legOffset * 0.5)));
+    px(4, 11 + byr, 3, 2 + lo, pal.body);   // left leg
+    px(9, 11 + byr, 3, 2 - lo, pal.body);   // right leg
+    px(4, 13 + byr + lo, 3, 1, pal.belly);  // paw tips track each leg
+    px(9, 13 + byr - lo, 3, 1, pal.belly);
   }
 
   // ── OVERHEAT TINT ──
@@ -295,6 +361,21 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
 }
 
 // ── PREDEFINED PATTERNS ──
+type PxFn = (x: number, y: number, w: number, h: number, c: string, a?: number) => void;
+
+// A 4-wide 3D keyboard key. Pressed → face drops a row and darkens,
+// highlight disappears (the visual "click" the user asked for).
+function drawKey(px: PxFn, x: number, y: number, pressed: boolean): void {
+  if (pressed) {
+    px(x, y + 1, 4, 1, '#8e96a0');   // face (dropped down a row)
+    px(x, y + 2, 4, 1, '#555d68');   // shadow
+  } else {
+    px(x, y, 4, 1, '#dfe4ec');       // highlight (top)
+    px(x, y + 1, 4, 1, '#aab4be');   // face
+    px(x, y + 2, 4, 1, '#555d68');   // shadow
+  }
+}
+
 function drawPattern(
   ctx: CanvasRenderingContext2D,
   scale: number,

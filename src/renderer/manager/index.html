@@ -3,130 +3,688 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'" />
-  <title>NekoDrift — Sprite Manager</title>
+  <title>NekoDrift — Control Panel</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Design tokens ──────────────────────────────────────── */
     :root {
-      --bg: #1e1e2e;
-      --surface: #2a2a3e;
-      --border: #3a3a5c;
-      --accent: #f4a7b9;
-      --text: #e0e0f0;
-      --muted: #888aaa;
-      --radius: 12px;
+      --bg:        #12111a;
+      --surface:   #1c1929;
+      --card:      #231f33;
+      --border:    #35305a;
+      --accent:    #f4a7b9;
+      --accent2:   #9b8ef8;
+      --text:      #ede8f8;
+      --muted:     #7a769a;
+      --green:     #4dda8c;
+      --red:       #ff6b78;
+      --orange:    #ffa55a;
+      --r:         10px;
     }
+
     html, body {
+      height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: Inter, system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
       font-size: 13px;
-      height: 100vh;
-      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
       user-select: none;
     }
-    header {
-      padding: 16px 20px 12px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    header h1 {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-    }
-    header span { font-size: 18px; }
-    .sprite-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
+
+    /* ── App shell ──────────────────────────────────────────── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .sidebar {
+      width: 192px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-    .sprite-card {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 14px;
+      border-right: 1px solid var(--border);
+      padding: 0;
+    }
+
+    .logo {
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: border-color 0.15s;
+      padding: 18px 16px 16px;
+      border-bottom: 1px solid var(--border);
     }
-    .sprite-card:hover { border-color: var(--accent); }
-    .sprite-emoji { font-size: 20px; width: 28px; text-align: center; }
-    .sprite-info { flex: 1; }
-    .sprite-name { font-weight: 600; font-size: 13px; }
-    .sprite-id { font-size: 10px; color: var(--muted); margin-top: 1px; }
-    .sprite-actions { display: flex; gap: 6px; }
-    .btn {
-      border: none;
+    .logo-emoji { font-size: 22px; line-height: 1; }
+    .logo-title { font-size: 14px; font-weight: 700; letter-spacing: 0.01em; }
+    .logo-sub   { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+    .nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
       border-radius: 8px;
-      padding: 5px 10px;
-      font-size: 11px;
-      font-weight: 600;
       cursor: pointer;
-      font-family: inherit;
-      transition: opacity 0.12s;
-    }
-    .btn:hover { opacity: 0.82; }
-    .btn-remove {
-      background: #443040;
-      color: #f4a7b9;
-    }
-    .empty-state {
-      text-align: center;
       color: var(--muted);
-      padding: 32px 20px;
-      font-size: 12px;
-      line-height: 1.7;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.13s, color 0.13s;
     }
-    .empty-state .big { font-size: 32px; margin-bottom: 8px; }
-    footer {
-      padding: 12px;
+    .nav-item:hover  { background: rgba(255,255,255,0.05); color: var(--text); }
+    .nav-item.active { background: rgba(155,142,248,0.18); color: var(--accent2); }
+    .nav-icon { font-size: 16px; width: 22px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 12px 8px;
       border-top: 1px solid var(--border);
+    }
+    .btn-settings {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.13s, color 0.13s, background 0.13s;
+    }
+    .btn-settings:hover { border-color: var(--accent); color: var(--accent); background: rgba(244,167,185,0.06); }
+
+    /* ── Content area ───────────────────────────────────────── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 22px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .content::-webkit-scrollbar { width: 5px; }
+    .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      min-height: 44px;
+    }
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-label { font-size: 13px; font-weight: 400; }
+    .setting-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .setting-col {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      padding: 12px 14px;
     }
-    .add-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
+    .setting-col label { font-size: 11px; color: var(--muted); }
+
+    /* ── Toggle ─────────────────────────────────────────────── */
+    .toggle { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+    .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .track {
+      position: absolute; inset: 0;
+      background: #333050;
+      border-radius: 26px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    .btn-add {
+    .toggle input:checked ~ .track { background: var(--green); }
+    .track::after {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      top: 3px; left: 3px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      transition: transform 0.18s;
+    }
+    .toggle input:checked ~ .track::after { transform: translateX(18px); }
+
+    /* ── Inputs ─────────────────────────────────────────────── */
+    input[type="number"],
+    input[type="text"],
+    textarea {
       background: var(--surface);
       border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: inherit;
       color: var(--text);
-      border-radius: 10px;
-      padding: 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    textarea:focus { border-color: var(--accent2); }
+
+    input[type="number"] { width: 64px; }
+    input.wide           { width: 100%; }
+    textarea             { width: 100%; resize: vertical; min-height: 60px; }
+
+    .time-group { display: flex; align-items: center; gap: 6px; }
+    .time-sep   { color: var(--muted); font-weight: 700; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 80px; height: 4px;
+      background: var(--border);
+      border: none;
+      border-radius: 4px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent2);
+      cursor: pointer;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────── */
+    .btn-save {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: var(--r);
+      background: var(--accent2);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: opacity 0.13s, transform 0.1s;
+    }
+    .btn-save:hover  { opacity: 0.88; }
+    .btn-save:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
       font-size: 12px;
       font-weight: 600;
-      cursor: pointer;
       font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.13s, color 0.13s;
+    }
+    .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* ── Sprites tab ────────────────────────────────────────── */
+    #sprites-list { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+    .sprite-card {
       display: flex;
       align-items: center;
-      gap: 6px;
-      transition: border-color 0.15s, background 0.15s;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.13s;
     }
-    .btn-add:hover { border-color: var(--accent); background: #333355; }
-    .btn-add .em { font-size: 16px; }
-    .main { display: flex; flex-direction: column; height: 100%; }
+    .sprite-card:hover { border-color: var(--accent2); }
+    .sprite-card-icon  { font-size: 22px; width: 32px; text-align: center; flex-shrink: 0; }
+    .sprite-card-info  { flex: 1; min-width: 0; }
+    .sprite-card-name  { font-weight: 600; font-size: 13px; }
+    .sprite-card-id    { font-size: 10px; color: var(--muted); margin-top: 1px; font-family: monospace; }
+    .sprite-card-controls { display: flex; align-items: center; gap: 10px; }
+
+    .size-control { display: flex; align-items: center; gap: 6px; }
+    .size-label   { font-size: 11px; color: var(--muted); }
+    .size-val     { font-size: 12px; font-weight: 600; width: 22px; color: var(--accent2); }
+
+    .btn-remove {
+      padding: 4px 9px;
+      border: 1px solid rgba(255,107,120,0.3);
+      border-radius: 6px;
+      background: rgba(255,107,120,0.08);
+      color: var(--red);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.13s, border-color 0.13s;
+    }
+    .btn-remove:hover { background: rgba(255,107,120,0.18); border-color: var(--red); }
+
+    .add-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .add-sprite-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 12px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.13s, background 0.13s, transform 0.1s;
+    }
+    .add-sprite-btn:hover { border-color: var(--accent2); background: rgba(155,142,248,0.08); transform: scale(1.04); }
+    .add-sprite-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+    .add-sprite-emoji { font-size: 22px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .empty-icon { font-size: 28px; margin-bottom: 6px; }
+
+    /* ── Timers tab ─────────────────────────────────────────── */
+    .pomo-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 14px 12px;
+      gap: 4px;
+    }
+
+    .pomo-mode {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(155,142,248,0.12);
+      color: var(--accent2);
+    }
+    .pomo-mode.mode-focus  { background: rgba(77,218,140,0.12); color: var(--green); }
+    .pomo-mode.mode-break  { background: rgba(244,167,185,0.12); color: var(--accent); }
+    .pomo-mode.mode-idle   { background: rgba(122,118,154,0.12); color: var(--muted); }
+
+    .pomo-time {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .pomo-session {
+      font-size: 11px;
+      color: var(--muted);
+      height: 16px;
+    }
+
+    .pomo-controls {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
+
+    .btn-pomo {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.13s, background 0.13s;
+    }
+    .btn-pomo:hover { border-color: var(--accent2); background: rgba(155,142,248,0.1); }
+
+    .pomo-cfg {
+      display: flex;
+      gap: 20px;
+      padding: 10px 14px 14px;
+      border-top: 1px solid var(--border);
+    }
+    .pomo-cfg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .pomo-cfg-item input { width: 56px; }
+
+    /* ── Notes tab ──────────────────────────────────────────── */
+    .notes-body { padding: 12px 14px; }
+
+    /* ── Claude tab ─────────────────────────────────────────── */
+    .info-chip {
+      font-family: 'SF Mono', Menlo, monospace;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 4px 9px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .claude-desc {
+      padding: 10px 14px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    #save-toast {
+      position: fixed;
+      bottom: 16px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--accent2);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 18px;
+      border-radius: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      white-space: nowrap;
+    }
+    #save-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
-  <div class="main">
-    <header>
-      <h1>Sprite Manager</h1>
-      <span>🐾</span>
-    </header>
-    <div class="sprite-list" id="sprite-list"></div>
-    <footer>
-      <div class="add-grid" id="add-grid"></div>
-    </footer>
-  </div>
-  <script type="module" src="./manager.js"></script>
+<div class="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-emoji">🐾</span>
+      <div>
+        <div class="logo-title">NekoDrift</div>
+        <div class="logo-sub">Control Panel</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="nav-item active" data-tab="sprites">
+        <span class="nav-icon">🐾</span> Sprites
+      </div>
+      <div class="nav-item" data-tab="timers">
+        <span class="nav-icon">⏱</span> Timers
+      </div>
+      <div class="nav-item" data-tab="notes">
+        <span class="nav-icon">📝</span> Notes
+      </div>
+      <div class="nav-item" data-tab="claude">
+        <span class="nav-icon">🤖</span> Claude
+      </div>
+      <div class="nav-item" data-tab="system">
+        <span class="nav-icon">⚙️</span> System
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-settings" id="btn-open-settings">
+        <span>🎨</span> Cat Appearance
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Content ─────────────────────────────────────────────── -->
+  <main class="content">
+
+    <!-- ── Sprites ─────────────────────────────────────────────── -->
+    <section class="page active" id="page-sprites">
+      <div class="page-title">Sprites</div>
+
+      <div class="card">
+        <div class="card-header">Active Sprites</div>
+        <div id="sprites-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Add Sprite</div>
+        <div class="add-grid" id="sprites-add-grid"></div>
+      </div>
+    </section>
+
+    <!-- ── Timers ──────────────────────────────────────────────── -->
+    <section class="page" id="page-timers">
+      <div class="page-title">Timers</div>
+
+      <!-- Pomodoro -->
+      <div class="card">
+        <div class="card-header">
+          Pomodoro Timer
+          <label class="toggle">
+            <input type="checkbox" id="toggle-pomo" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="pomo-display">
+          <div class="pomo-mode mode-idle" id="pomo-mode">IDLE</div>
+          <div class="pomo-time" id="pomo-time">25:00</div>
+          <div class="pomo-session" id="pomo-session"></div>
+        </div>
+        <div class="pomo-controls">
+          <button class="btn-pomo" id="btn-pomo-start">▶ Start</button>
+          <button class="btn-pomo" id="btn-pomo-pause">⏸ Pause</button>
+          <button class="btn-pomo" id="btn-pomo-reset">↺ Reset</button>
+        </div>
+        <div class="pomo-cfg">
+          <div class="pomo-cfg-item">
+            Focus <input type="number" id="pomo-focus" min="5" max="90" step="5" /> min
+          </div>
+          <div class="pomo-cfg-item">
+            Break <input type="number" id="pomo-break" min="1" max="30" step="1" /> min
+          </div>
+        </div>
+      </div>
+
+      <!-- Stretch -->
+      <div class="card">
+        <div class="card-header">
+          Stretch Reminder
+          <label class="toggle">
+            <input type="checkbox" id="toggle-stretch" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Interval</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="stretch-interval" min="10" max="120" step="5" />
+            <span style="color:var(--muted);font-size:12px;">min</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Reminder -->
+      <div class="card">
+        <div class="card-header">
+          Daily Reminder
+          <label class="toggle">
+            <input type="checkbox" id="toggle-reminder" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Time (24h)</span>
+          <div class="time-group">
+            <input type="number" id="reminder-hour" min="0" max="23" />
+            <span class="time-sep">:</span>
+            <input type="number" id="reminder-min" min="0" max="59" />
+          </div>
+        </div>
+        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+          <span class="setting-label">Message</span>
+          <input type="text" id="reminder-msg" class="wide" maxlength="80" placeholder="Hey! Check in time!" />
+        </div>
+      </div>
+
+      <button class="btn-save" id="btn-save-timers">Save Timer Settings</button>
+    </section>
+
+    <!-- ── Notes ───────────────────────────────────────────────── -->
+    <section class="page" id="page-notes">
+      <div class="page-title">Notes</div>
+
+      <div class="card">
+        <div class="card-header">
+          Hover Note
+          <label class="toggle">
+            <input type="checkbox" id="toggle-sticky" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-col">
+          <label>Shown as a sticky note when you hover the cat</label>
+          <textarea id="sticky-text" maxlength="200" placeholder="Your note here..."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          Pinned Message
+          <label class="toggle">
+            <input type="checkbox" id="toggle-pinned" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-col">
+          <label>Always visible above the cat</label>
+          <input type="text" id="pinned-msg" class="wide" maxlength="80" placeholder="Write something..." />
+        </div>
+      </div>
+
+      <button class="btn-save" id="btn-save-notes">Save Notes</button>
+    </section>
+
+    <!-- ── Claude ──────────────────────────────────────────────── -->
+    <section class="page" id="page-claude">
+      <div class="page-title">Claude Code</div>
+
+      <div class="card">
+        <div class="card-header">
+          Reactions
+          <label class="toggle">
+            <input type="checkbox" id="toggle-claude" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="claude-desc">
+          Cat thinks along while Claude is working, then celebrates when a task finishes.
+          Add the hooks below to your <code style="font-size:11px;color:var(--accent2)">~/.claude/settings.local.json</code>.
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Endpoint</span>
+          <span class="info-chip">127.0.0.1:27182</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Hook config</span>
+          <button class="btn-secondary" id="btn-copy-hooks">Copy JSON</button>
+        </div>
+      </div>
+
+      <button class="btn-save" id="btn-save-claude">Save</button>
+    </section>
+
+    <!-- ── System ──────────────────────────────────────────────── -->
+    <section class="page" id="page-system">
+      <div class="page-title">System</div>
+
+      <div class="card">
+        <div class="card-header">Behaviour</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Always on top</div>
+            <div class="setting-sub">Cat stays above all other windows</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-ontop" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Launch at login</div>
+            <div class="setting-sub">Start NekoDrift when you log in</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-login" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Do Not Disturb</div>
+            <div class="setting-sub">Pause stretch &amp; daily reminders</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-dnd" />
+            <span class="track"></span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn-save" id="btn-save-system">Save System Settings</button>
+    </section>
+
+  </main>
+</div>
+
+<div id="save-toast"></div>
+
+<script type="module" src="./manager.js"></script>
 </body>
 </html>

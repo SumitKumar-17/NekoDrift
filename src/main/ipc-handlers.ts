@@ -48,7 +48,7 @@ export function setupIPC(deps: IpcDeps): void {
     const updated = saveSettings(partial);
     send(IPC.CAT_SETTINGS, updated);
 
-    if (partial.stretchIntervalMin !== undefined || partial.stretchEnabled !== undefined) {
+    if (partial.stretchIntervalMin !== undefined || partial.stretchEnabled !== undefined || partial.name !== undefined) {
       getStretchTimer()?.stop();
       setStretchTimer(undefined);
       if (updated.stretchEnabled) {

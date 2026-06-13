@@ -1,13 +1,15 @@
 import { CatSettings } from '../../../shared/types';
 
 export function initSystemTab(api: any, settings: CatSettings): void {
-  const ontopToggle = document.getElementById('toggle-ontop') as HTMLInputElement;
-  const loginToggle = document.getElementById('toggle-login') as HTMLInputElement;
-  const dndToggle   = document.getElementById('toggle-dnd') as HTMLInputElement;
+  const ontopToggle      = document.getElementById('toggle-ontop') as HTMLInputElement;
+  const loginToggle      = document.getElementById('toggle-login') as HTMLInputElement;
+  const dndToggle        = document.getElementById('toggle-dnd') as HTMLInputElement;
+  const allDesktopToggle = document.getElementById('toggle-all-desktops') as HTMLInputElement;
 
-  ontopToggle.checked = settings.alwaysOnTop;
-  loginToggle.checked = settings.startOnLogin;
-  dndToggle.checked   = settings.dndEnabled;
+  ontopToggle.checked      = settings.alwaysOnTop;
+  loginToggle.checked      = settings.startOnLogin;
+  dndToggle.checked        = settings.dndEnabled;
+  allDesktopToggle.checked = settings.showOnAllDesktops ?? true;
 
   document.getElementById('btn-open-settings')!.addEventListener('click', () => {
     api.openSettings();
@@ -15,9 +17,10 @@ export function initSystemTab(api: any, settings: CatSettings): void {
 
   document.getElementById('btn-save-system')!.addEventListener('click', async () => {
     await api.saveSettings({
-      alwaysOnTop:  ontopToggle.checked,
-      startOnLogin: loginToggle.checked,
-      dndEnabled:   dndToggle.checked,
+      alwaysOnTop:       ontopToggle.checked,
+      startOnLogin:      loginToggle.checked,
+      dndEnabled:        dndToggle.checked,
+      showOnAllDesktops: allDesktopToggle.checked,
     });
     showSaveToast('System settings saved');
   });

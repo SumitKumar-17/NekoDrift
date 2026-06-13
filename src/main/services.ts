@@ -4,12 +4,14 @@ import { applyLoginItem } from './platform';
 import { IdleDetector } from './idle-detector';
 import { KeyboardTracker } from './keyboard-tracker';
 import { StretchTimer } from './stretch-timer';
+import { PomodoroTimer } from './pomodoro-timer';
 import { MessageReminder } from './message-reminder';
 import { NekoDriftHttpServer } from './http-server';
 import { IPC } from '../shared/types';
 import { GREETING_MESSAGES, IDLE_MESSAGES } from '../shared/constants';
 import { broadcastToSprites } from './sprite-manager';
 
+let servicesStarted = false;
 let idleDetector: IdleDetector;
 let keyboardTracker: KeyboardTracker;
 let stretchTimer: StretchTimer | undefined;
@@ -27,6 +29,8 @@ export function getHttpServer() { return httpServer; }
 export function setHttpServer(s: NekoDriftHttpServer | null) { httpServer = s; }
 
 export function startServices(getCatWindow: () => BrowserWindow | null): void {
+  if (servicesStarted) return;
+  servicesStarted = true;
   const settings = getSettings();
   const send = (channel: string, ...args: unknown[]) =>
     getCatWindow()?.webContents.send(channel, ...args);

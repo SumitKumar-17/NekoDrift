@@ -163,11 +163,25 @@ export function setupIPC(deps: IpcDeps): void {
   ipcMain.on(IPC.OPEN_SETTINGS, () => createSettingsWindow());
   ipcMain.on(IPC.QUIT_APP, () => quitApp());
 
-  ipcMain.on(IPC.ONBOARDING_DONE, (_event, settings) => {
-    saveSettings(settings);
+  ipcMain.on(IPC.ONBOARDING_DONE, (_event, onboardingSettings) => {
+    const updated = saveSettings(onboardingSettings);
     setFirstRunDone();
     deps.closeOnboarding();
     deps.startServices();
+    // Push saved settings to cat renderer so name/color/etc. take effect immediately
+    send(IPC.CAT_SETTINGS, updated);
+    // Rebuild stretch timer with the user's chosen name & interval
+    if (updated.stretchEnabled) {
+      getStretchTimer()?.stop();
+      setStretchTimer(undefined);
+      const st = new StretchTimer(
+        (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
+        updated.stretchIntervalMin,
+        updated.name,
+      );
+      st.start();
+      setStretchTimer(st);
+    }
   });
 
   ipcMain.on(IPC.SET_IGNORE_MOUSE, (_event, ignore: boolean) => {

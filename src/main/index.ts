@@ -77,9 +77,8 @@ app.whenReady().then(() => {
 
   if (isFirstRun()) {
     createOnboardingWindow();
-  } else {
-    startServices(getCatWindow);
   }
+  startServices(getCatWindow);
 });
 
 app.on('window-all-closed', () => {

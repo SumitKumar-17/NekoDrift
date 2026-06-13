@@ -77,11 +77,13 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     ctx.rotate(animation === 'hunt' ? 0 : (tailSwing * Math.PI) / 180);
     if (animation === 'hunt') {
       px(-wobbleOff, 0, 2, 5, pal.body);
-      px(-wobbleOff, 4, 2, 1, pal.belly);   // tail tip
+      px(-wobbleOff, 4, 2, 1, pal.belly);                          // tail tip
+      px(-wobbleOff, 4, 1, 1, shade(pal.belly, 0.18), 0.65);      // tip highlight
     } else {
       px(-wobbleOff, 0, 2, 4, pal.body);
       px(-wobbleOff + 1, 3, 3, 2, pal.body);
-      px(-wobbleOff + 2, 4, 2, 1, pal.belly);  // tail tip
+      px(-wobbleOff + 2, 4, 2, 1, pal.belly);                     // tail tip
+      px(-wobbleOff + 2, 4, 1, 1, shade(pal.belly, 0.18), 0.65); // tip highlight
     }
     ctx.restore();
   }
@@ -249,24 +251,26 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     const eyd = eyeDir ? Math.round(eyeDir.dy * 0.5) : 0;
     px(5 + ex + 1, ey + 1 + by + eyd, 1, 1, pal.eye);
     px(9 + ex + 1, ey + 1 + by + eyd, 1, 1, pal.eye);
-    // Shine (top-left)
-    px(5, ey + by, 1, 1, '#ffffff');
-    px(9, ey + by, 1, 1, '#ffffff');
+    // Shine — shifts right when pupil moves left so it never overlaps
+    const shineOff = eyeDir ? Math.max(0, Math.round(-eyeDir.dx * 0.7)) : 0;
+    px(5 + shineOff, ey + by, 1, 1, '#ffffff');
+    px(9 + shineOff, ey + by, 1, 1, '#ffffff');
   }
 
   // Muzzle + cheeks (normal/type/think poses)
   const ny = animation === 'sleep' ? 8 : animation === 'hunt' ? 6 : 5;
   if (animation !== 'sleep' && animation !== 'hunt') {
     px(6, ny + by, 4, 2, pal.belly);               // muzzle bump (belly-colored)
-    px(4, ny + by, 2, 1, pal.ear, 0.32);           // left cheek blush
-    px(10, ny + by, 2, 1, pal.ear, 0.32);          // right cheek blush
+    const blushAlpha = mood === 'happy' ? 0.48 : mood === 'tired' || mood === 'lonely' ? 0.16 : 0.32;
+    px(4, ny + by, 2, 1, pal.ear, blushAlpha);     // left cheek blush
+    px(10, ny + by, 2, 1, pal.ear, blushAlpha);    // right cheek blush
   }
   // Nose (on top of muzzle)
   px(7, ny + by, 2, 1, pal.nose);
 
   // Mouth
   if (animation !== 'sleep') {
-    if (animation === 'happy' || animation === 'purr' || animation === 'jump') {
+    if (animation === 'happy' || animation === 'purr' || animation === 'jump' || animation === 'sit') {
       px(6, ny + 1 + by, 1, 1, pal.eye);
       px(9, ny + 1 + by, 1, 1, pal.eye);
     } else if (animation === 'overheat') {
@@ -278,13 +282,14 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     }
   }
 
-  // Whiskers — longer and more visible
+  // Whiskers — color derived from cat palette so they match each colorway
   if (animation !== 'sleep') {
+    const whiskerColor = shade(pal.body, color === 'black' ? 0.45 : color === 'gray' ? -0.1 : -0.28);
     const wy = (animation === 'hunt' ? 6 : 5) + by;
-    line(0,  wy,       5, wy + 0.5, '#7a5c48', 0.58);
-    line(0,  wy + 1,   5, wy + 0.5, '#7a5c48', 0.58);
-    line(16, wy,      11, wy + 0.5, '#7a5c48', 0.58);
-    line(16, wy + 1,  11, wy + 0.5, '#7a5c48', 0.58);
+    line(0,  wy,       5, wy + 0.5, whiskerColor, 0.62);
+    line(0,  wy + 1,   5, wy + 0.5, whiskerColor, 0.62);
+    line(16, wy,      11, wy + 0.5, whiskerColor, 0.62);
+    line(16, wy + 1,  11, wy + 0.5, whiskerColor, 0.62);
   }
 
   if (animation === 'think') {

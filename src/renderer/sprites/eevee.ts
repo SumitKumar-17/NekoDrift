@@ -148,8 +148,8 @@ export function drawEevee(
     blob(ctx, darkBrown, ink, u(0.1), () => { ctx.ellipse(u(9.5), u(4.3 + by), u(0.95), u(1.08), 0, 0, Math.PI * 2); });
     fill(ctx, '#1a0e04', 1, () => { ctx.arc(u(6.5 + ex * 0.4), u(4.45 + by + edy * 0.4), u(0.5), 0, Math.PI * 2); });
     fill(ctx, '#1a0e04', 1, () => { ctx.arc(u(9.5 + ex * 0.4), u(4.45 + by + edy * 0.4), u(0.5), 0, Math.PI * 2); });
-    glint(ctx, u(6.22 + ex * 0.2), u(3.95 + by + edy * 0.2), u(0.27));
-    glint(ctx, u(9.22 + ex * 0.2), u(3.95 + by + edy * 0.2), u(0.27));
+    glint(ctx, u(6.22 + ex * 0.2), u(3.95 + by + edy * 0.2), u(0.31));
+    glint(ctx, u(9.22 + ex * 0.2), u(3.95 + by + edy * 0.2), u(0.31));
   }
 
   // ── NOSE + MOUTH ────────────────────────────────────────────

@@ -131,14 +131,15 @@ export function drawPikachu(
     ctx.ellipse(u(8), u(4.9 + by), u(3.5), u(3.2), 0, 0, Math.PI * 2);
   });
 
-  // ── CHEEKS ──────────────────────────────────────────────────
-  const cheekGradL = radialGrad(ctx, u(4.9), u(6.1 + by), u(1.25), '#ff6b5c', red);
-  const cheekGradR = radialGrad(ctx, u(11.1), u(6.1 + by), u(1.25), '#ff6b5c', red);
+  // ── CHEEKS — scale with mood for personality ─────────────────
+  const cheekR = mood === 'happy' ? 1.14 : mood === 'tired' ? 0.87 : 1.0;
+  const cheekGradL = radialGrad(ctx, u(4.9), u(6.1 + by), u(1.25 * cheekR), '#ff6b5c', red);
+  const cheekGradR = radialGrad(ctx, u(11.1), u(6.1 + by), u(1.25 * cheekR), '#ff6b5c', red);
   blob(ctx, cheekGradL, '#b03224', u(0.12), () => {
-    ctx.ellipse(u(5.0), u(6.2 + by), u(1.28), u(1.04), 0, 0, Math.PI * 2);
+    ctx.ellipse(u(5.0), u(6.2 + by), u(1.28 * cheekR), u(1.04 * cheekR), 0, 0, Math.PI * 2);
   });
   blob(ctx, cheekGradR, '#b03224', u(0.12), () => {
-    ctx.ellipse(u(11.0), u(6.2 + by), u(1.28), u(1.04), 0, 0, Math.PI * 2);
+    ctx.ellipse(u(11.0), u(6.2 + by), u(1.28 * cheekR), u(1.04 * cheekR), 0, 0, Math.PI * 2);
   });
 
   // ── EYES ────────────────────────────────────────────────────
@@ -182,6 +183,12 @@ export function drawPikachu(
     stroke(ctx, brownDark, u(0.16), 0.7, () => {
       ctx.moveTo(u(7.4), u(6.35 + by));
       ctx.lineTo(u(8.6), u(6.35 + by));
+    });
+  } else if (mood === 'happy') {
+    // Wider, higher-arc smile — Pikachu's signature big grin
+    stroke(ctx, brownDark, u(0.18), 0.92, () => {
+      ctx.moveTo(u(7.0), u(6.15 + by));
+      ctx.quadraticCurveTo(u(8), u(6.95 + by), u(9.0), u(6.15 + by));
     });
   } else {
     stroke(ctx, brownDark, u(0.16), 0.85, () => {

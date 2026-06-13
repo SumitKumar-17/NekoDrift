@@ -316,6 +316,10 @@ window.nekodrift.onIdleChanged((idle) => {
   if (!idle) {
     forceAnim('happy', 3000);
     showHeartsBurst(2000);
+    setTimeout(() => sound.chime(), 600);
+  } else {
+    // Cat settles to sleep with a soft purr
+    setTimeout(() => sound.purr(1.8), 800);
   }
 });
 

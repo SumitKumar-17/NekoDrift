@@ -27,13 +27,6 @@ export class MessageReminder {
     }
   }
 
-  update(hour: number, minute: number, message: string): void {
-    this.hour = hour;
-    this.minute = minute;
-    this.message = message;
-    this.lastFiredDate = ''; // allow re-fire if time matches
-  }
-
   private check(): void {
     const now = new Date();
     const dateKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;

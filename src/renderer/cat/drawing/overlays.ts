@@ -132,6 +132,8 @@ export function drawSpeechBubble(
   ctx.stroke();
 
   ctx.fillStyle = isPinned ? '#8b6200' : '#d94f70';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
   lines.forEach((l, i) => {
     ctx.fillText(l, bX + padding, bY + padding + fontSize + i * lineH);
   });

@@ -5,6 +5,7 @@ export function drawEevee(
   frame: number,
   scale: number,
   eyeDir?: { dx: number; dy: number },
+  mood = 'content',
 ): void {
   const u = (n: number) => n * scale;
   const t = frame;
@@ -120,7 +121,22 @@ export function drawEevee(
     }));
 
   // ── EYES ────────────────────────────────────────────────────
-  if (!blinkOpen) {
+  if (mood === 'tired') {
+    if (blinkOpen) {
+      // Droopy half-lidded: small iris peeking under a heavy eyelid
+      fill(ctx, darkBrown, 0.78, () => { ctx.arc(u(6.5), u(4.65 + by), u(0.65), 0, Math.PI * 2); });
+      fill(ctx, darkBrown, 0.78, () => { ctx.arc(u(9.5), u(4.65 + by), u(0.65), 0, Math.PI * 2); });
+      stroke(ctx, ink, u(0.28), 0.9, () => {
+        ctx.moveTo(u(5.6), u(4.15 + by)); ctx.lineTo(u(7.4), u(4.15 + by));
+        ctx.moveTo(u(8.6), u(4.15 + by)); ctx.lineTo(u(10.4), u(4.15 + by));
+      });
+    } else {
+      stroke(ctx, ink, u(0.24), 1, () => {
+        ctx.moveTo(u(5.9), u(4.3 + by)); ctx.lineTo(u(7.1), u(4.3 + by));
+        ctx.moveTo(u(8.9), u(4.3 + by)); ctx.lineTo(u(10.1), u(4.3 + by));
+      });
+    }
+  } else if (!blinkOpen) {
     stroke(ctx, ink, u(0.24), 1, () => {
       ctx.moveTo(u(5.9), u(4.3 + by)); ctx.lineTo(u(7.1), u(4.3 + by));
       ctx.moveTo(u(8.9), u(4.3 + by)); ctx.lineTo(u(10.1), u(4.3 + by));

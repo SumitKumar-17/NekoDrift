@@ -74,8 +74,13 @@ export function summonCat(): void {
     false,
   );
   if (!catWindow.isVisible()) catWindow.show();
+  // Briefly force alwaysOnTop to surface the window, then restore user setting
   catWindow.setAlwaysOnTop(true);
   catWindow.focus();
+  const userAlwaysOnTop = getSettings().alwaysOnTop;
+  if (!userAlwaysOnTop) {
+    setTimeout(() => catWindow?.setAlwaysOnTop(false), 400);
+  }
 }
 
 export function createSettingsWindow(): void {

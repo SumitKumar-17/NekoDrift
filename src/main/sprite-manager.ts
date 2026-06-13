@@ -111,7 +111,7 @@ export function getSpriteWindow(id: string): BrowserWindow | null {
 
 export function trackMouseForSprites(cursorX: number, cursorY: number) {
   for (const { config, win } of sprites.values()) {
-    if (win.isDestroyed() || config.lockedPosition) continue;
+    if (win.isDestroyed()) continue;
     const [wX, wY] = win.getPosition();
     const [wW, wH] = win.getSize();
     const catCX = wX + wW / 2;

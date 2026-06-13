@@ -61,10 +61,12 @@ export function addSprite(type: SpriteType): SpriteInfo {
 
   win.setIgnoreMouseEvents(true, { forward: true });
 
-  if (isMac) {
-    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
-  } else if (isLinux) {
-    win.setVisibleOnAllWorkspaces(true);
+  if (settings.showOnAllDesktops) {
+    if (isMac) {
+      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+    } else if (isLinux) {
+      win.setVisibleOnAllWorkspaces(true);
+    }
   }
 
   win.loadURL(spriteUrl(config));

@@ -129,7 +129,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
   ctx.restore();
 
   // ── PATTERN overlay ──
-  drawPattern(ctx, scale, pattern, by, wobbleOff, pal.body);
+  drawPattern(ctx, scale, pattern, by, wobbleOff, pal.stripe);
 
   // ── CUSTOM PIXEL overlay ──
   if (customPixels && customPixels.length === 256) {
@@ -418,7 +418,7 @@ function drawPattern(
   pattern: CatPattern,
   by: number,
   wobbleOff: number,
-  bodyColor: string,
+  stripeColor: string | null,
 ): void {
   if (pattern === 'none') return;
   const px = (x: number, y: number, w: number, h: number, c: string, a = 1) => {
@@ -437,16 +437,21 @@ function drawPattern(
     px(8, 6 + by, 4, 3, '#2c2c3e', 0.65);
     px(4, 9 + by, 3, 3, '#e8894a', 0.6);
   } else if (pattern === 'spotted') {
-    px(5, 7 + by, 2, 2, '#00000033', 0.55);
-    px(9, 8 + by, 2, 2, '#00000033', 0.55);
-    px(6, 3 + by, 2, 1, '#00000033', 0.4);
+    px(5, 7 + by, 2, 2, '#3a2a1a', 0.32);
+    px(9, 8 + by, 2, 2, '#3a2a1a', 0.32);
+    px(6, 3 + by, 2, 1, '#3a2a1a', 0.24);
   } else if (pattern === 'bicolor') {
     px(8, 1 + by, 8, 12, '#ffffff', 0.32);
-  } else if (pattern === 'tabby') {
-    px(5, 7 + by, 1, 4, bodyColor, 0.45);
-    px(7, 7 + by, 1, 4, bodyColor, 0.45);
-    px(9, 7 + by, 1, 4, bodyColor, 0.45);
-    px(11, 7 + by, 1, 4, bodyColor, 0.45);
+  } else if (pattern === 'tabby' && stripeColor) {
+    // Darker stripe drawn over body for visible mackerel stripes
+    px(5, 7 + by, 1, 4, stripeColor, 0.62);
+    px(7, 7 + by, 1, 4, stripeColor, 0.62);
+    px(9, 7 + by, 1, 4, stripeColor, 0.62);
+    px(11, 7 + by, 1, 4, stripeColor, 0.62);
+    // Head stripes
+    px(5, 2 + by, 1, 3, stripeColor, 0.5);
+    px(7, 2 + by, 1, 3, stripeColor, 0.5);
+    px(9, 2 + by, 1, 3, stripeColor, 0.5);
   }
 }
 

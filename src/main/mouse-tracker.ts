@@ -82,6 +82,7 @@ export function startMouseTracking(getCatWindow: () => BrowserWindow | null): vo
         dx: Math.max(-1, Math.min(1, (targetX - catCx) / 40)),
         dy: Math.max(-1, Math.min(1, (targetY - catCy) / 40)),
       });
+      trackMouseForSprites(targetX, targetY);
       return;
     }
 

@@ -59,7 +59,7 @@ export function initSpritesTab(api: any): void {
           <div class="size-control">
             <span class="size-label">Size</span>
             <input type="range" class="size-slider"
-              min="1" max="3" step="1" value="${sprite.size ?? 2}"
+              min="1" max="4" step="1" value="${sprite.size ?? 2}"
               data-id="${sprite.id}" />
             <span class="size-val">${sprite.size ?? 2}×</span>
           </div>

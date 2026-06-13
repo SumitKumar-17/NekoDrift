@@ -200,7 +200,17 @@ function hitTestCat(clientX: number, clientY: number): boolean {
   } catch (_) { return false; }
 }
 
+function isBannerVisible(): boolean {
+  return stretchBanner.classList.contains('visible');
+}
+
 function updateIgnoreMouse(x: number, y: number) {
+  // If stretch banner is visible, never go into click-through mode —
+  // the user needs to click the Done/Snooze buttons.
+  if (isBannerVisible()) {
+    if (!isHoveringCat) { isHoveringCat = true; window.nekodrift.setIgnoreMouse(false); }
+    return;
+  }
   const over = hitTestCat(x, y);
   if (over !== isHoveringCat) {
     isHoveringCat = over;
@@ -263,7 +273,7 @@ canvas.addEventListener('pointerup', () => {
 
 canvas.addEventListener('pointerleave', () => {
   if (currentAnim === 'purr') currentAnim = 'idle';
-  if (!isDragging) {
+  if (!isDragging && !isBannerVisible()) {
     isHoveringCat = false;
     window.nekodrift.setIgnoreMouse(true);
   }
@@ -279,6 +289,13 @@ canvas.addEventListener('contextmenu', (e) => {
 // ─── Stretch banner ────────────────────────────────────────────
 const stretchBanner = document.getElementById('stretch-banner')!;
 const stretchMsg = document.getElementById('stretch-msg')!;
+function onBannerDismiss() {
+  // After hiding the banner, re-evaluate mouse state so the window doesn't
+  // remain non-click-through unnecessarily when the cat isn't under cursor.
+  isHoveringCat = hitTestCat(0, 0); // will almost always be false (top-left is transparent)
+  window.nekodrift.setIgnoreMouse(true);
+}
+
 document.getElementById('btn-dismiss')!.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
   window.nekodrift.dismissStretch();
@@ -288,12 +305,14 @@ document.getElementById('btn-dismiss')!.addEventListener('click', () => {
   forceAnim('happy', 3000);
   showHeartsBurst(3000);
   sound.chime();
+  onBannerDismiss();
 });
 document.getElementById('btn-snooze')!.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
   window.nekodrift.snoozeStretch(5);
   const msg = STRETCH_SNOOZE_MESSAGES[Math.floor(Math.random() * STRETCH_SNOOZE_MESSAGES.length)];
   showSpeech(msg, 2000);
+  onBannerDismiss();
 });
 
 // ─── IPC listeners ─────────────────────────────────────────────

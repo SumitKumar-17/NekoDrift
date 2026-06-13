@@ -55,7 +55,7 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
   );
   keyboardTracker.start();
 
-  if (settings.stretchEnabled) {
+  if (settings.stretchEnabled && !settings.dndEnabled) {
     stretchTimer = new StretchTimer(
       (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
       settings.stretchIntervalMin,
@@ -64,7 +64,7 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
     stretchTimer.start();
   }
 
-  if (settings.reminderEnabled) {
+  if (settings.reminderEnabled && !settings.dndEnabled) {
     messageReminder = new MessageReminder(
       settings.reminderHour, settings.reminderMinute, settings.reminderMessage,
       (msg) => send(IPC.REMINDER_TRIGGER, msg),
@@ -83,10 +83,15 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
 }
 
 export function stopAll(): void {
+  servicesStarted = false;
   try { idleDetector?.stop(); } catch (_) {}
   try { keyboardTracker?.stop(); } catch (_) {}
   try { stretchTimer?.stop(); } catch (_) {}
   try { pomodoroTimer?.stop(); } catch (_) {}
   try { messageReminder?.stop(); } catch (_) {}
   try { httpServer?.stop(); } catch (_) {}
+  stretchTimer = undefined;
+  pomodoroTimer = null;
+  messageReminder = null;
+  httpServer = null;
 }

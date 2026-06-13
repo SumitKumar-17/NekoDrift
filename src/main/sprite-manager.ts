@@ -132,6 +132,29 @@ export function broadcastToSprites(channel: string, ...args: unknown[]): void {
   }
 }
 
+export function setSpritesAlwaysOnTop(alwaysOnTop: boolean): void {
+  for (const { win } of sprites.values()) {
+    if (!win.isDestroyed()) win.setAlwaysOnTop(alwaysOnTop);
+  }
+}
+
+export function setSpritesVisibleOnAllWorkspaces(visible: boolean): void {
+  for (const { win } of sprites.values()) {
+    if (win.isDestroyed()) continue;
+    if (visible) {
+      if (isMac) {
+        win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+      } else if (isLinux) {
+        win.setVisibleOnAllWorkspaces(true);
+      } else {
+        win.setVisibleOnAllWorkspaces(true);
+      }
+    } else {
+      win.setVisibleOnAllWorkspaces(false);
+    }
+  }
+}
+
 export function destroyAllSprites(): void {
   for (const { win } of sprites.values()) {
     try { if (!win.isDestroyed()) win.destroy(); } catch { /* ignore */ }

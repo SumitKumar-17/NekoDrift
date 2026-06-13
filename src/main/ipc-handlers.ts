@@ -12,7 +12,14 @@ import {
   getHttpServer, setHttpServer,
 } from './services';
 import { NekoDriftHttpServer } from './http-server';
-import { addSprite, removeSprite, listSprites, resizeSprite } from './sprite-manager';
+import {
+  addSprite,
+  removeSprite,
+  listSprites,
+  resizeSprite,
+  setSpritesAlwaysOnTop,
+  setSpritesVisibleOnAllWorkspaces,
+} from './sprite-manager';
 import { SpriteType } from '../shared/types';
 import { getManagerWindow } from './window-manager';
 
@@ -44,6 +51,47 @@ export function setupIPC(deps: IpcDeps): void {
     }
   };
 
+  const restartStretchTimer = (updated: import('../shared/types').CatSettings) => {
+    getStretchTimer()?.stop();
+    setStretchTimer(undefined);
+    if (!updated.stretchEnabled || updated.dndEnabled) return;
+
+    const st = new StretchTimer(
+      (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
+      updated.stretchIntervalMin,
+      updated.name,
+    );
+    st.start();
+    setStretchTimer(st);
+  };
+
+  const restartPomodoroTimer = (updated: import('../shared/types').CatSettings) => {
+    getPomodoroTimer()?.stop();
+    setPomodoroTimer(null);
+    if (!updated.pomodoroEnabled) return;
+
+    setPomodoroTimer(new PomodoroTimer(
+      updated.pomodoroFocusMin,
+      updated.pomodoroBreakMin,
+      (state) => send(IPC.POMODORO_STATE, state),
+    ));
+  };
+
+  const restartMessageReminder = (updated: import('../shared/types').CatSettings) => {
+    getMessageReminder()?.stop();
+    setMessageReminder(null);
+    if (!updated.reminderEnabled || updated.dndEnabled) return;
+
+    const mr = new MessageReminder(
+      updated.reminderHour,
+      updated.reminderMinute,
+      updated.reminderMessage,
+      (msg) => send(IPC.REMINDER_TRIGGER, msg),
+    );
+    mr.start();
+    setMessageReminder(mr);
+  };
+
   ipcMain.handle(IPC.GET_SETTINGS, () => getSettings());
 
   ipcMain.handle(IPC.SAVE_SETTINGS, (_event, partial) => {
@@ -51,74 +99,32 @@ export function setupIPC(deps: IpcDeps): void {
     send(IPC.CAT_SETTINGS, updated);
 
     if (partial.stretchIntervalMin !== undefined || partial.stretchEnabled !== undefined || partial.name !== undefined) {
-      getStretchTimer()?.stop();
-      setStretchTimer(undefined);
-      if (updated.stretchEnabled) {
-        const st = new StretchTimer(
-          (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
-          updated.stretchIntervalMin,
-          updated.name,
-        );
-        st.start();
-        setStretchTimer(st);
-      }
+      restartStretchTimer(updated);
     }
 
     if (partial.pomodoroEnabled !== undefined || partial.pomodoroFocusMin !== undefined || partial.pomodoroBreakMin !== undefined) {
-      getPomodoroTimer()?.stop();
-      setPomodoroTimer(null);
-      if (updated.pomodoroEnabled) {
-        setPomodoroTimer(new PomodoroTimer(
-          updated.pomodoroFocusMin, updated.pomodoroBreakMin,
-          (state) => send(IPC.POMODORO_STATE, state),
-        ));
-      }
+      restartPomodoroTimer(updated);
     }
 
     if (partial.reminderEnabled !== undefined || partial.reminderHour !== undefined
       || partial.reminderMinute !== undefined || partial.reminderMessage !== undefined) {
-      getMessageReminder()?.stop();
-      setMessageReminder(null);
-      if (updated.reminderEnabled) {
-        const mr = new MessageReminder(
-          updated.reminderHour, updated.reminderMinute, updated.reminderMessage,
-          (msg) => send(IPC.REMINDER_TRIGGER, msg),
-        );
-        mr.start();
-        setMessageReminder(mr);
-      }
+      restartMessageReminder(updated);
     }
 
     if (partial.dndEnabled !== undefined) {
       if (updated.dndEnabled) {
-        getStretchTimer()?.stop();
-        setStretchTimer(undefined);
-        getMessageReminder()?.stop();
-        setMessageReminder(null);
+        restartStretchTimer(updated);
+        restartMessageReminder(updated);
       } else {
-        if (updated.stretchEnabled && !getStretchTimer()) {
-          const st = new StretchTimer(
-            (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
-            updated.stretchIntervalMin,
-            updated.name,
-          );
-          st.start();
-          setStretchTimer(st);
-        }
-        if (updated.reminderEnabled && !getMessageReminder()) {
-          const mr = new MessageReminder(
-            updated.reminderHour, updated.reminderMinute, updated.reminderMessage,
-            (msg) => send(IPC.REMINDER_TRIGGER, msg),
-          );
-          mr.start();
-          setMessageReminder(mr);
-        }
+        restartStretchTimer(updated);
+        restartMessageReminder(updated);
       }
     }
 
     if (partial.alwaysOnTop !== undefined) {
       const cw = getCatWindow();
       if (cw && !cw.isDestroyed()) cw.setAlwaysOnTop(updated.alwaysOnTop);
+      setSpritesAlwaysOnTop(updated.alwaysOnTop);
     }
 
     if (partial.showOnAllDesktops !== undefined) {
@@ -130,6 +136,7 @@ export function setupIPC(deps: IpcDeps): void {
           cw.setVisibleOnAllWorkspaces(false);
         }
       }
+      setSpritesVisibleOnAllWorkspaces(updated.showOnAllDesktops);
     }
 
     if (partial.startOnLogin !== undefined) {
@@ -171,17 +178,7 @@ export function setupIPC(deps: IpcDeps): void {
     // Push saved settings to cat renderer so name/color/etc. take effect immediately
     send(IPC.CAT_SETTINGS, updated);
     // Rebuild stretch timer with the user's chosen name & interval
-    if (updated.stretchEnabled) {
-      getStretchTimer()?.stop();
-      setStretchTimer(undefined);
-      const st = new StretchTimer(
-        (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
-        updated.stretchIntervalMin,
-        updated.name,
-      );
-      st.start();
-      setStretchTimer(st);
-    }
+    restartStretchTimer(updated);
   });
 
   ipcMain.on(IPC.SET_IGNORE_MOUSE, (_event, ignore: boolean) => {

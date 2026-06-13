@@ -243,6 +243,7 @@ canvas.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('pointerdown', (e) => {
   if (!isHoveringCat) return;
+  if (settings.lockedPosition) return;
   isDragging = true;
   dragStartX = e.clientX;
   dragStartY = e.clientY;

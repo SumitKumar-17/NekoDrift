@@ -1,6 +1,6 @@
 import { ipcMain, Menu, screen, BrowserWindow } from 'electron';
 import { getSettings, saveSettings, setFirstRunDone } from './store';
-import { applyLoginItem } from './platform';
+import { applyLoginItem, isMac } from './platform';
 import { IPC } from '../shared/types';
 import { StretchTimer } from './stretch-timer';
 import { PomodoroTimer } from './pomodoro-timer';
@@ -119,6 +119,17 @@ export function setupIPC(deps: IpcDeps): void {
       if (cw && !cw.isDestroyed()) cw.setAlwaysOnTop(updated.alwaysOnTop);
     }
 
+    if (partial.showOnAllDesktops !== undefined) {
+      const cw = getCatWindow();
+      if (cw && !cw.isDestroyed()) {
+        if (updated.showOnAllDesktops) {
+          cw.setVisibleOnAllWorkspaces(true, isMac ? { visibleOnFullScreen: false } : {});
+        } else {
+          cw.setVisibleOnAllWorkspaces(false);
+        }
+      }
+    }
+
     if (partial.startOnLogin !== undefined) {
       applyLoginItem(updated.startOnLogin);
     }
@@ -195,6 +206,7 @@ export function setupIPC(deps: IpcDeps): void {
   });
 
   ipcMain.on(IPC.DRAG_CAT, (_event, dx: number, dy: number) => {
+    if (getSettings().lockedPosition) return;
     const cw = getCatWindow();
     if (!cw || cw.isDestroyed()) return;
     const [x, y] = cw.getPosition();

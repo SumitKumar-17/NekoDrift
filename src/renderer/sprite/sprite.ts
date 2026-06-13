@@ -38,7 +38,7 @@ function draw() {
   switch (spriteType) {
     case 'pikachu': drawPikachu(ctx, frame, scale, eyeDir, spriteMood); break;
     case 'eevee':   drawEevee(ctx, frame, scale, eyeDir, spriteMood); break;
-    case 'gengar':  drawGengar(ctx, frame, scale, eyeDir); break;
+    case 'gengar':  drawGengar(ctx, frame, scale, eyeDir, spriteMood); break;
     case 'snorlax': drawSnorlax(ctx, frame, scale, isIdle); break;
   }
   ctx.restore();

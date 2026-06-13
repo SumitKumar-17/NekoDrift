@@ -240,6 +240,7 @@ function collectSettings(): Partial<CatSettings> {
     claudeIntegration:  checked('toggle-claude'),
     alwaysOnTop:        checked('toggle-ontop'),
     startOnLogin:       checked('toggle-login'),
+    showOnAllDesktops:  checked('toggle-all-desktops'),
     customPixels:       editor.export(),
   };
 }
@@ -292,6 +293,7 @@ async function init() {
   // System
   (document.getElementById('toggle-ontop') as HTMLInputElement).checked = s.alwaysOnTop;
   (document.getElementById('toggle-login') as HTMLInputElement).checked = s.startOnLogin;
+  (document.getElementById('toggle-all-desktops') as HTMLInputElement).checked = s.showOnAllDesktops ?? true;
   (document.getElementById('toggle-sound') as HTMLInputElement).checked = s.soundEnabled;
 
   // Size slider label

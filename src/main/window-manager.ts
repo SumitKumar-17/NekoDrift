@@ -49,10 +49,12 @@ export function createCatWindow(): void {
 
   catWindow.setIgnoreMouseEvents(true, { forward: true });
 
-  if (isMac) {
-    catWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
-  } else if (isLinux) {
-    catWindow.setVisibleOnAllWorkspaces(true);
+  if (settings.showOnAllDesktops) {
+    if (isMac) {
+      catWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+    } else if (isLinux) {
+      catWindow.setVisibleOnAllWorkspaces(true);
+    }
   }
 
   catWindow.loadURL(rendererPath('cat/index.html'));

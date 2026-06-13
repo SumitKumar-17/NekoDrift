@@ -5,6 +5,7 @@ export function drawGengar(
   frame: number,
   scale: number,
   eyeDir?: { dx: number; dy: number },
+  mood = 'content',
 ): void {
   const u = (n: number) => n * scale;
   const t = frame;
@@ -101,10 +102,22 @@ export function drawGengar(
     fill(ctx, white, 1, () => { ctx.arc(u(9.6 + ex), u(ey + edy), u(0.34), 0, Math.PI * 2); });
   }
 
+  // Tired: droopy half-lids over each eye
+  if (mood === 'tired' && blinkOpen) {
+    fill(ctx, purpleMid, 0.88, () => {
+      ctx.arc(u(6.4), u(ey), u(1.05), Math.PI, 0);
+    });
+    fill(ctx, purpleMid, 0.88, () => {
+      ctx.arc(u(9.6), u(ey), u(1.05), Math.PI, 0);
+    });
+  }
+
   // ── WIDE GRIN: dark cavity + tongue + white teeth ───────────
   const mCx = u(8), mCy = u(6.1 + by);
-  const mOuter = u(2.9), mInner = u(2.0);
-  const gStart = Math.PI * 0.05, gEnd = Math.PI * 0.95;
+  const mOuter = mood === 'tired' ? u(2.3) : u(2.9);
+  const mInner = mood === 'tired' ? u(1.5) : u(2.0);
+  const gStart = mood === 'tired' ? Math.PI * 0.12 : Math.PI * 0.05;
+  const gEnd   = mood === 'tired' ? Math.PI * 0.88 : Math.PI * 0.95;
 
   // cavity (outlined)
   ctx.save();

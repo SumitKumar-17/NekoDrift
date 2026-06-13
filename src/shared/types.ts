@@ -144,7 +144,6 @@ export const IPC = {
   SPRITE_RESIZE:      'sprite:resize',
   SPRITE_CONFIG:      'sprite:config',
   SPRITE_EYE_DIR:     'sprite:eye-dir',
-  SPRITE_STATE:       'sprite:state',
   OPEN_MANAGER:       'window:open-manager',
   POMO_GET:           'pomodoro:get',
 } as const;

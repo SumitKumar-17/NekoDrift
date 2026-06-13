@@ -34,11 +34,12 @@ function draw() {
   const pad = 40;
   ctx.save();
   ctx.translate(pad / 2, pad / 2);
+  const spriteMood = isIdle ? 'tired' : 'content';
   switch (spriteType) {
-    case 'pikachu': drawPikachu(ctx, frame, scale, eyeDir); break;
+    case 'pikachu': drawPikachu(ctx, frame, scale, eyeDir, spriteMood); break;
     case 'eevee':   drawEevee(ctx, frame, scale, eyeDir); break;
     case 'gengar':  drawGengar(ctx, frame, scale, eyeDir); break;
-    case 'snorlax': drawSnorlax(ctx, frame, scale); break;
+    case 'snorlax': drawSnorlax(ctx, frame, scale, isIdle); break;
   }
   ctx.restore();
 }

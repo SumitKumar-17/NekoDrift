@@ -70,28 +70,81 @@ export const IDLE_MESSAGES = [
   'zzz... purr...',
   '*sleeping soundly*',
   'meow... zzzz...',
+  '*dreaming of fish* 🐟',
+  'purrrr... do not disturb...',
+  '*curls into a perfect circle*',
+  'nap time ♡ wake me when snacks',
+  '...zzzZZZ...',
 ];
 
 export const GREETING_MESSAGES = [
   (name: string) => `Welcome back, ${name}! meow~ ♡`,
   (name: string) => `${name}! You're here! *purring intensifies*`,
   (name: string) => `nyaa~ hello ${name}!`,
+  (name: string) => `${name}! I missed you so much! 🥰`,
+  (name: string) => `oh! you're back! *stretches dramatically* hi ${name}!`,
+  (name: string) => `mrrrow~ good to see you, ${name}! ♡`,
+  (name: string) => `*yawns and blinks* oh! ${name}! you woke me!`,
+  (name: string) => `there you are, ${name}! I was just... not waiting. nope.`,
 ];
 
 export const OVERHEAT_MESSAGES = [
   'too... fast... overheating... 🔥',
   'keyboard goes brrrrr 💨',
   'steam coming out of ears! 😤',
+  'my paws can\'t keep up!! 🐾',
+  'you type like the keyboard owes you money',
+  'ERROR: cat.exe is running too hot 🔥',
 ];
 
 export const AI_THINK_MESSAGES = [
   'hmm... thinking along... 🤔',
   '*concentrated face* ...',
   'ooh ooh what is Claude doing? 👀',
+  'shhh... big brain moment happening',
+  'Claude is thinking... I can feel it 🧠',
+  '*watches screen intensely*',
 ];
 
 export const AI_DONE_MESSAGES = [
   (name: string) => `Claude is done, ${name}! 🎉`,
   (name: string) => `Yay! Task complete! ♡ ${name}`,
   (name: string) => `Go check your screen, ${name}! ✨`,
+  (name: string) => `*happy dance* Claude did the thing! ${name}! 🎊`,
+  (name: string) => `done done done!! check it, ${name}! 🐾`,
+  (name: string) => `ooh looks like something finished! ${name}!`,
+];
+
+export const BOOT_MESSAGES = [
+  (catName: string) => `meow! i'm ${catName}! ♡`,
+  (catName: string) => `nyaa~ ${catName} reporting for duty! 🐾`,
+  (catName: string) => `*stretches* hi!! i'm ${catName}!`,
+  (catName: string) => `${catName} has arrived! pet me immediately ♡`,
+  (catName: string) => `mrrrow! ${catName} online! ready to supervise! 🐱`,
+];
+
+export const STRETCH_DONE_MESSAGES = [
+  (name: string) => `good stretch! ♡ keep it up, ${name}!`,
+  (name: string) => `yayyy! your body thanks you, ${name}! 🌟`,
+  (name: string) => `proud of you, ${name}! stretch complete! ♡`,
+  (name: string) => `nice one! ${name}, your back will love this 💪`,
+];
+
+export const STRETCH_SNOOZE_MESSAGES = [
+  'ok, 5 more mins... 😴',
+  'fine fine, 5 mins. don\'t forget! 🐾',
+  '*sighs* ok, snoozing... for now 😒',
+  'just 5 more mins! promise me! ♡',
+];
+
+export const CAT_RANDOM_THOUGHTS = [
+  '*stares into the void*',
+  'what if... birds? 🐦',
+  '*pretends not to notice you*',
+  'meow? meow. meow! 🐾',
+  '...is that a snack I smell? 👀',
+  '*judges you silently*',
+  'I wonder if I\'m a good cat... (I am)',
+  '*yawns dramatically*',
+  'do you ever just... stare at a wall? ...no? just me.',
 ];

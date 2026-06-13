@@ -2,7 +2,10 @@ import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState } f
 import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
 import { SoundEngine } from './sound';
 import { MoodSystem } from './mood';
-import { OVERHEAT_MESSAGES, AI_THINK_MESSAGES, AI_DONE_MESSAGES } from '../../shared/constants';
+import {
+  OVERHEAT_MESSAGES, AI_THINK_MESSAGES, AI_DONE_MESSAGES,
+  BOOT_MESSAGES, STRETCH_DONE_MESSAGES, STRETCH_SNOOZE_MESSAGES, CAT_RANDOM_THOUGHTS,
+} from '../../shared/constants';
 
 declare global {
   interface Window {
@@ -276,7 +279,8 @@ document.getElementById('btn-dismiss')!.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
   window.nekodrift.dismissStretch();
   mood.onStretchDone();
-  showSpeech('good stretch! ♡ keep it up!', 2500);
+  const msg = STRETCH_DONE_MESSAGES[Math.floor(Math.random() * STRETCH_DONE_MESSAGES.length)];
+  showSpeech(msg(settings.name), 2500);
   forceAnim('happy', 3000);
   showHeartsBurst(3000);
   sound.chime();
@@ -284,7 +288,8 @@ document.getElementById('btn-dismiss')!.addEventListener('click', () => {
 document.getElementById('btn-snooze')!.addEventListener('click', () => {
   stretchBanner.classList.remove('visible');
   window.nekodrift.snoozeStretch(5);
-  showSpeech('ok, 5 more mins... 😴', 2000);
+  const msg = STRETCH_SNOOZE_MESSAGES[Math.floor(Math.random() * STRETCH_SNOOZE_MESSAGES.length)];
+  showSpeech(msg, 2000);
 });
 
 // ─── IPC listeners ─────────────────────────────────────────────
@@ -316,7 +321,8 @@ window.nekodrift.onIdleChanged((idle) => {
 
 window.nekodrift.onTypingChanged((typing) => {
   isTyping = typing;
-  if (!typing) heatLevel = Math.max(0, heatLevel - 0.8);
+  if (typing) mood.onTyping();
+  else heatLevel = Math.max(0, heatLevel - 0.8);
 });
 
 window.nekodrift.onHeatLevel((level) => {
@@ -421,14 +427,20 @@ setInterval(() => {
   if (isIdle || forcedAnim || isTyping || currentAnim !== 'idle') return;
   const catMood = mood.getMood();
   const r = Math.random();
-  if (r < 0.2) {
-    // Mood reaction
+  if (r < 0.18) {
     if (catMood === 'lonely') showSpeech(`${settings.name}... pet me please... 🥺`, 4000);
     else if (catMood === 'happy') { forceAnim('happy', 1500); showHeartsBurst(1500); }
-  } else if (r < 0.4) {
+    else if (catMood === 'tired') showSpeech('...so tired... need nap... 😴', 3500);
+  } else if (r < 0.35) {
     forceAnim('stretch', 3000);
-  } else if (r < 0.5) {
+  } else if (r < 0.45) {
     forceAnim('sit', 4500);
+  } else if (r < 0.58) {
+    const thought = CAT_RANDOM_THOUGHTS[Math.floor(Math.random() * CAT_RANDOM_THOUGHTS.length)];
+    showSpeech(thought, 4000);
+  } else if (r < 0.66) {
+    forceAnim('purr', 2500);
+    showSpeech('*self-grooming intensifies* 🐾', 2500);
   }
 }, 45_000);
 
@@ -440,7 +452,8 @@ async function boot() {
 
   forceAnim('happy', 5000);
   showHeartsBurst(4000);
-  showSpeech(`meow! i'm ${settings.catName}! ♡`, 4500);
+  const bootMsg = BOOT_MESSAGES[Math.floor(Math.random() * BOOT_MESSAGES.length)];
+  showSpeech(bootMsg(settings.catName), 4500);
 
   setTimeout(() => { if (sound.enabled) sound.meow(); }, 300);
 

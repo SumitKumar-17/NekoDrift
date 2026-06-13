@@ -142,7 +142,24 @@ export function drawPikachu(
   });
 
   // ── EYES ────────────────────────────────────────────────────
-  if (!blinkOpen) {
+  if (mood === 'tired') {
+    // Droopy half-closed eyes: small iris at bottom, eyelid covers top half
+    if (blinkOpen) {
+      fill(ctx, black, 0.82, () => { ctx.arc(u(6.55), u(4.85 + by), u(0.6), 0, Math.PI * 2); });
+      fill(ctx, black, 0.82, () => { ctx.arc(u(9.45), u(4.85 + by), u(0.6), 0, Math.PI * 2); });
+      // eyelid stroke across top of each eye
+      stroke(ctx, black, u(0.3), 0.95, () => {
+        ctx.moveTo(u(5.85), u(4.5 + by)); ctx.lineTo(u(7.25), u(4.5 + by));
+        ctx.moveTo(u(8.75), u(4.5 + by)); ctx.lineTo(u(10.15), u(4.5 + by));
+      });
+    } else {
+      // blink: flat lines
+      stroke(ctx, black, u(0.26), 1, () => {
+        ctx.moveTo(u(6.0), u(4.6 + by)); ctx.lineTo(u(7.2), u(4.6 + by));
+        ctx.moveTo(u(8.8), u(4.6 + by)); ctx.lineTo(u(10.0), u(4.6 + by));
+      });
+    }
+  } else if (!blinkOpen) {
     stroke(ctx, black, u(0.26), 1, () => {
       ctx.moveTo(u(6.0), u(4.6 + by)); ctx.lineTo(u(7.2), u(4.6 + by));
       ctx.moveTo(u(8.8), u(4.6 + by)); ctx.lineTo(u(10.0), u(4.6 + by));
@@ -160,8 +177,16 @@ export function drawPikachu(
   fill(ctx, black, 0.92, () => {
     ctx.ellipse(u(8), u(5.7 + by), u(0.24), u(0.17), 0, 0, Math.PI * 2);
   });
-  stroke(ctx, brownDark, u(0.16), 0.85, () => {
-    ctx.moveTo(u(7.3), u(6.2 + by));
-    ctx.quadraticCurveTo(u(8), u(6.78 + by), u(8.7), u(6.2 + by));
-  });
+  if (mood === 'tired') {
+    // Flat neutral mouth — too tired to smile
+    stroke(ctx, brownDark, u(0.16), 0.7, () => {
+      ctx.moveTo(u(7.4), u(6.35 + by));
+      ctx.lineTo(u(8.6), u(6.35 + by));
+    });
+  } else {
+    stroke(ctx, brownDark, u(0.16), 0.85, () => {
+      ctx.moveTo(u(7.3), u(6.2 + by));
+      ctx.quadraticCurveTo(u(8), u(6.78 + by), u(8.7), u(6.2 + by));
+    });
+  }
 }

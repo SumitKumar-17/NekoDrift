@@ -4,7 +4,6 @@ import { applyLoginItem } from './platform';
 import { IdleDetector } from './idle-detector';
 import { KeyboardTracker } from './keyboard-tracker';
 import { StretchTimer } from './stretch-timer';
-import { PomodoroTimer } from './pomodoro-timer';
 import { MessageReminder } from './message-reminder';
 import { NekoDriftHttpServer } from './http-server';
 import { IPC } from '../shared/types';
@@ -59,14 +58,6 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
       settings.name,
     );
     stretchTimer.start();
-  }
-
-  if (settings.pomodoroEnabled) {
-    pomodoroTimer = new PomodoroTimer(
-      settings.pomodoroFocusMin,
-      settings.pomodoroBreakMin,
-      (state) => send(IPC.POMODORO_STATE, state),
-    );
   }
 
   if (settings.reminderEnabled) {

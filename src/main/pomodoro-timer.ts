@@ -39,7 +39,7 @@ export class PomodoroTimer {
   }
 
   reset(): void {
-    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    this.clearTimer();
     this.mode = 'idle';
     this.remainingMs = 0;
     this.session = 0;
@@ -49,11 +49,19 @@ export class PomodoroTimer {
   restart(focusMin: number, breakMin: number): void {
     this.focusMs = focusMin * 60_000;
     this.breakMs = breakMin * 60_000;
-    this.reset();
+    this.stop();
   }
 
   stop(): void {
-    this.reset();
+    this.clearTimer();
+    this.mode = 'idle';
+    this.remainingMs = 0;
+    this.session = 0;
+    // no emit — caller is discarding the timer, not completing a session
+  }
+
+  private clearTimer(): void {
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
   }
 
   getState(): PomodoroState {

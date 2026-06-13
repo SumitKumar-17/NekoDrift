@@ -6,7 +6,6 @@ import { drawSnorlax } from '../sprites/snorlax';
 
 declare const window: Window & {
   nekodrift: {
-    onEyeDir: (cb: (dir: { dx: number; dy: number }) => void) => void;
     onSpriteEyeDir: (cb: (id: string, dir: { dx: number; dy: number }) => void) => void;
     onIdleChanged: (cb: (isIdle: boolean) => void) => void;
   };
@@ -59,10 +58,6 @@ async function init() {
 
   resize();
   tick();
-
-  window.nekodrift.onEyeDir((dir) => {
-    if (dir) eyeDir = dir;
-  });
 
   const myId = params.get('id');
   window.nekodrift.onSpriteEyeDir((id, dir) => {

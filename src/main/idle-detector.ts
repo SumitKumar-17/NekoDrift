@@ -7,7 +7,6 @@ export class IdleDetector {
   private callback: IdleCallback;
   private interval: ReturnType<typeof setInterval> | null = null;
   private isIdle = false;
-  private lastActivity = Date.now();
 
   constructor(callback: IdleCallback) {
     this.callback = callback;
@@ -31,10 +30,6 @@ export class IdleDetector {
       clearInterval(this.interval);
       this.interval = null;
     }
-  }
-
-  recordActivity(): void {
-    this.lastActivity = Date.now();
   }
 
   getIsIdle(): boolean {

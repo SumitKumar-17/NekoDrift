@@ -1,6 +1,7 @@
 import { BrowserWindow, screen } from 'electron';
 import { getSettings } from './store';
 import { IPC } from '../shared/types';
+import { trackMouseForSprites } from './sprite-manager';
 
 export function startMouseTracking(getCatWindow: () => BrowserWindow | null): void {
   let targetX = 400;
@@ -107,5 +108,6 @@ export function startMouseTracking(getCatWindow: () => BrowserWindow | null): vo
       dx: Math.max(-1, Math.min(1, (targetX - catCx) / 40)),
       dy: Math.max(-1, Math.min(1, (targetY - catCy) / 40)),
     });
+    trackMouseForSprites(targetX, targetY);
   }, 16);
 }

@@ -35,7 +35,7 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
     broadcastToSprites(IPC.IDLE_CHANGED, isIdle);
     if (!isIdle) {
       const msg = GREETING_MESSAGES[Math.floor(Math.random() * GREETING_MESSAGES.length)];
-      setTimeout(() => send(IPC.CAT_SPEECH, msg(settings.name)), 500);
+      setTimeout(() => send(IPC.CAT_SPEECH, msg(getSettings().name)), 500);
     } else {
       const msg = IDLE_MESSAGES[Math.floor(Math.random() * IDLE_MESSAGES.length)];
       send(IPC.CAT_SPEECH, msg);

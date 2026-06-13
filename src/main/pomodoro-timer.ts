@@ -18,10 +18,14 @@ export class PomodoroTimer {
   }
 
   start(): void {
-    if (this.mode !== 'idle') return;
-    this.mode = 'focus';
-    this.remainingMs = this.focusMs;
-    this.session++;
+    if (this.timer) return; // already ticking
+    if (this.mode === 'idle') {
+      // Fresh start
+      this.mode = 'focus';
+      this.remainingMs = this.focusMs;
+      this.session++;
+    }
+    // else: resuming from pause — mode and remainingMs are already set
     this.tick();
     this.timer = setInterval(() => this.tick(), 1000);
   }
@@ -30,11 +34,12 @@ export class PomodoroTimer {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+      this.emit();
     }
   }
 
   reset(): void {
-    this.pause();
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
     this.mode = 'idle';
     this.remainingMs = 0;
     this.session = 0;
@@ -52,7 +57,7 @@ export class PomodoroTimer {
   }
 
   getState(): PomodoroState {
-    return { mode: this.mode, remainingMs: this.remainingMs, session: this.session };
+    return { mode: this.mode, remainingMs: this.remainingMs, session: this.session, running: this.timer !== null };
   }
 
   private tick(): void {

@@ -126,11 +126,14 @@ export function setupIPC(deps: IpcDeps): void {
     return updated;
   });
 
-  ipcMain.on(IPC.DISMISS_STRETCH, () => send(IPC.CAT_SPEECH, null));
+  ipcMain.on(IPC.DISMISS_STRETCH, () => {
+    // Cat renderer already shows a new speech bubble on dismiss — do NOT
+    // send CAT_SPEECH:null here or it races and clears the new message.
+  });
 
   ipcMain.on(IPC.SNOOZE_STRETCH, (_event, minutes: number) => {
     getStretchTimer()?.snooze(minutes);
-    send(IPC.CAT_SPEECH, null);
+    // Same race: renderer sets its own snooze speech, so don't clear it.
   });
 
   ipcMain.on(IPC.OPEN_SETTINGS, () => createSettingsWindow());

@@ -33,13 +33,26 @@ export function initTimersTab(api: any, settings: CatSettings): void {
     pomoSession.textContent = `Session ${state.session}`;
   }
 
+  const btnStart = document.getElementById('btn-pomo-start')!;
+
+  function applyPomoStateAndButtons(state: PomodoroState | null): void {
+    applyPomoState(state);
+    if (!state || state.mode === 'idle') {
+      btnStart.textContent = 'Start';
+    } else if (state.running) {
+      btnStart.textContent = 'Running…';
+    } else {
+      btnStart.textContent = 'Resume';
+    }
+  }
+
   // Fetch current state on open
-  api.getPomoState().then((s: PomodoroState | null) => applyPomoState(s));
+  api.getPomoState().then((s: PomodoroState | null) => applyPomoStateAndButtons(s));
 
   // Live updates
-  (window as any).nekodrift.onPomodoroState((s: PomodoroState) => applyPomoState(s));
+  (window as any).nekodrift.onPomodoroState((s: PomodoroState) => applyPomoStateAndButtons(s));
 
-  document.getElementById('btn-pomo-start')!.addEventListener('click', () => {
+  btnStart.addEventListener('click', () => {
     api.pomodoroControl('start');
   });
   document.getElementById('btn-pomo-pause')!.addEventListener('click', () => {
@@ -47,7 +60,7 @@ export function initTimersTab(api: any, settings: CatSettings): void {
   });
   document.getElementById('btn-pomo-reset')!.addEventListener('click', () => {
     api.pomodoroControl('reset');
-    applyPomoState(null);
+    applyPomoStateAndButtons(null);
   });
 
   // ── Stretch ──────────────────────────────────────────────────

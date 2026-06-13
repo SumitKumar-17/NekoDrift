@@ -80,6 +80,7 @@ export interface PomodoroState {
   mode: 'focus' | 'break' | 'idle';
   remainingMs: number;
   session: number;
+  running: boolean;
 }
 
 export interface AiState {

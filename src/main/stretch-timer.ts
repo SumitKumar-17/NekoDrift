@@ -8,7 +8,6 @@ export class StretchTimer {
   private userName: string;
   private timer: ReturnType<typeof setInterval> | null = null;
   private snoozeTimer: ReturnType<typeof setTimeout> | null = null;
-  private lastStretch = Date.now();
 
   constructor(callback: StretchCallback, intervalMinutes: number, userName: string) {
     this.callback = callback;
@@ -20,7 +19,6 @@ export class StretchTimer {
     this.timer = setInterval(() => {
       const msg = STRETCH_MESSAGES[Math.floor(Math.random() * STRETCH_MESSAGES.length)];
       this.callback(msg(this.userName));
-      this.lastStretch = Date.now();
     }, this.intervalMs);
   }
 

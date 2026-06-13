@@ -1,25 +1,3 @@
-// ─── Sprite abstraction ────────────────────────────────────────
-// All desktop sprites implement this interface.
-// Today it's a cat. Future: dog, duck, robot, etc.
-export interface ISpriteRenderer {
-  readonly id: string;
-  draw(ctx: CanvasRenderingContext2D, opts: SpriteDrawOptions): void;
-  getAnimations(): readonly string[];
-  getColors?(): readonly string[];
-}
-
-export interface SpriteDrawOptions {
-  animation: string;
-  frame: number;
-  scale: number;
-  eyeDir?: EyeDir;
-  heatLevel?: number;
-  wobble?: number;
-  mood?: string;
-  // Per-sprite extras (ignored by sprites that don't use them)
-  [key: string]: unknown;
-}
-
 // ─── Cat types ─────────────────────────────────────────────────
 export type CatColor = 'orange' | 'gray' | 'black' | 'white' | 'brown' | 'pink';
 
@@ -108,7 +86,6 @@ export interface SpriteInfo {
 // ─── IPC channel names ─────────────────────────────────────────
 export const IPC = {
   // Main → Renderer
-  CAT_ANIMATE:        'cat:animate',
   CAT_SPEECH:         'cat:speech',
   CAT_SETTINGS:       'cat:settings',
   STRETCH_REMINDER:   'stretch:reminder',

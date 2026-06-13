@@ -24,6 +24,8 @@ export function getPomodoroTimer() { return pomodoroTimer; }
 export function setPomodoroTimer(t: PomodoroTimer | null) { pomodoroTimer = t; }
 export function getMessageReminder() { return messageReminder; }
 export function setMessageReminder(r: MessageReminder | null) { messageReminder = r; }
+export function getHttpServer() { return httpServer; }
+export function setHttpServer(s: NekoDriftHttpServer | null) { httpServer = s; }
 
 export function startServices(getCatWindow: () => BrowserWindow | null): void {
   const settings = getSettings();

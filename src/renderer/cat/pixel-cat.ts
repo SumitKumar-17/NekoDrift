@@ -377,6 +377,14 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     ctx.fillRect(wobbleOff * scale, 0, 16 * scale, 16 * scale);
     ctx.globalAlpha = 1;
   }
+
+  // ── TIRED TINT ──
+  if (mood === 'tired') {
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = '#8899aa';
+    ctx.fillRect(wobbleOff * scale, 0, 16 * scale, 16 * scale);
+    ctx.globalAlpha = 1;
+  }
 }
 
 // ── PREDEFINED PATTERNS ──

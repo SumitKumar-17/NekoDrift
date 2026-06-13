@@ -9,7 +9,9 @@ import {
   getStretchTimer, setStretchTimer,
   getPomodoroTimer, setPomodoroTimer,
   getMessageReminder, setMessageReminder,
+  getHttpServer, setHttpServer,
 } from './services';
+import { NekoDriftHttpServer } from './http-server';
 import { addSprite, removeSprite, listSprites, resizeSprite } from './sprite-manager';
 import { SpriteType } from '../shared/types';
 import { getManagerWindow } from './window-manager';
@@ -132,6 +134,17 @@ export function setupIPC(deps: IpcDeps): void {
 
     if (partial.startOnLogin !== undefined) {
       applyLoginItem(updated.startOnLogin);
+    }
+
+    if (partial.claudeIntegration !== undefined) {
+      if (!updated.claudeIntegration) {
+        getHttpServer()?.stop();
+        setHttpServer(null);
+      } else if (!getHttpServer()) {
+        const srv = new NekoDriftHttpServer();
+        srv.start((thinking, done) => send(IPC.AI_STATE, { thinking, done }));
+        setHttpServer(srv);
+      }
     }
 
     return updated;

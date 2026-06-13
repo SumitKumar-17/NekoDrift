@@ -7,6 +7,7 @@ export class StretchTimer {
   private intervalMs: number;
   private userName: string;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private snoozeTimer: ReturnType<typeof setTimeout> | null = null;
   private lastStretch = Date.now();
 
   constructor(callback: StretchCallback, intervalMinutes: number, userName: string) {
@@ -24,10 +25,8 @@ export class StretchTimer {
   }
 
   stop(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    if (this.snoozeTimer) { clearTimeout(this.snoozeTimer); this.snoozeTimer = null; }
   }
 
   restart(intervalMinutes: number, userName: string): void {
@@ -39,7 +38,8 @@ export class StretchTimer {
 
   snooze(minutes: number): void {
     this.stop();
-    setTimeout(() => {
+    this.snoozeTimer = setTimeout(() => {
+      this.snoozeTimer = null;
       this.start();
     }, minutes * 60 * 1000);
   }

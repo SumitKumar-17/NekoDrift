@@ -20,7 +20,7 @@ export function computeAnimState(
   let legOffset = 0;
   let bodySquish = 1;
 
-  const moodTailMult = mood === 'happy' ? 1.4 : mood === 'lonely' ? 0.5 : 1;
+  const moodTailMult = mood === 'happy' ? 1.4 : mood === 'lonely' ? 0.5 : mood === 'tired' ? 0.65 : 1;
   const moodBlinkRate = mood === 'tired' ? 60 : mood === 'happy' ? 220 : 180;
 
   switch (animation) {

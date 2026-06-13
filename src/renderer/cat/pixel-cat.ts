@@ -369,6 +369,14 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     ctx.fillRect(wobbleOff * scale, 0, 16 * scale, 16 * scale);
     ctx.globalAlpha = 1;
   }
+
+  // ── HAPPY TINT ──
+  if (mood === 'happy') {
+    ctx.globalAlpha = 0.09;
+    ctx.fillStyle = '#ffe066';
+    ctx.fillRect(wobbleOff * scale, 0, 16 * scale, 16 * scale);
+    ctx.globalAlpha = 1;
+  }
 }
 
 // ── PREDEFINED PATTERNS ──

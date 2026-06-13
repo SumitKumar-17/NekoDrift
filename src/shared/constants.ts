@@ -64,6 +64,10 @@ export const STRETCH_MESSAGES = [
   (name: string) => `Look away from the screen for 20s, ${name}! 👀`,
   (name: string) => `Deep breath, ${name}! You've got this! 😮‍💨`,
   (name: string) => `${name}, your back will thank you later! 🌟`,
+  (name: string) => `Stretch break, ${name}! Even I need to stretch! 🐾`,
+  (name: string) => `${name}! Hydration check + stretch time! 💧`,
+  (name: string) => `Wrists need a rest, ${name}! Shake them out! ✋`,
+  (name: string) => `${name}, quick walk to the window? Eyes need a break too! 🪟`,
 ];
 
 export const IDLE_MESSAGES = [

@@ -5,6 +5,7 @@ import { MoodSystem } from './mood';
 import {
   OVERHEAT_MESSAGES, AI_THINK_MESSAGES, AI_DONE_MESSAGES,
   BOOT_MESSAGES, STRETCH_DONE_MESSAGES, STRETCH_SNOOZE_MESSAGES, CAT_RANDOM_THOUGHTS,
+  POMODORO_BREAK_MESSAGES, POMODORO_FOCUS_MESSAGES, POMODORO_DONE_MESSAGES, SHAKE_MESSAGES,
 } from '../../shared/constants';
 
 declare global {
@@ -64,6 +65,7 @@ let isTyping = false;
 let heatLevel = 0;
 let speechText: string | null = null;
 let speechTimer: ReturnType<typeof setTimeout> | null = null;
+let isAiSpeech = false;
 let eyeDir: EyeDir = { dx: 0, dy: 0 };
 let pomodoroState: PomodoroState = { mode: 'idle', remainingMs: 0, session: 0 };
 let frame = 0;
@@ -184,10 +186,11 @@ function render() {
 }
 
 // ─── Speech ────────────────────────────────────────────────────
-function showSpeech(text: string, durationMs = 3500) {
+function showSpeech(text: string, durationMs = 3500, ai = false) {
   speechText = text;
+  isAiSpeech = ai;
   if (speechTimer) clearTimeout(speechTimer);
-  speechTimer = setTimeout(() => { speechText = null; }, durationMs);
+  speechTimer = setTimeout(() => { speechText = null; isAiSpeech = false; }, durationMs);
 }
 
 // ─── Per-pixel hit test ────────────────────────────────────────
@@ -362,15 +365,18 @@ window.nekodrift.onPomodoroState((s) => {
   if (prev.mode === 'focus' && s.mode === 'break') {
     forceAnim('happy', 2500);
     showHeartsBurst(2500);
-    showSpeech(`break time! you earned it ♡ ${settings.name}`, 5000);
+    const msg = POMODORO_BREAK_MESSAGES[Math.floor(Math.random() * POMODORO_BREAK_MESSAGES.length)];
+    showSpeech(msg(settings.name), 5000);
     sound.chime();
   } else if (prev.mode === 'break' && s.mode === 'focus') {
     forceAnim('surprised', 1200);
-    showSpeech(`back to focus! let's go ${settings.name}! 🍅`, 3500);
+    const msg = POMODORO_FOCUS_MESSAGES[Math.floor(Math.random() * POMODORO_FOCUS_MESSAGES.length)];
+    showSpeech(msg(settings.name), 3500);
     sound.alert();
   } else if (prev.mode !== 'idle' && s.mode === 'idle') {
     forceAnim('happy', 2000);
-    showSpeech('all sessions done! great work! 🎉', 4000);
+    const msg = POMODORO_DONE_MESSAGES[Math.floor(Math.random() * POMODORO_DONE_MESSAGES.length)];
+    showSpeech(msg(settings.name), 4000);
     sound.chime();
   }
 });
@@ -380,7 +386,7 @@ window.nekodrift.onAiState((s) => {
     forcedAnim = 'think';
     if (forcedAnimTimer) { clearTimeout(forcedAnimTimer); forcedAnimTimer = null; }
     const thinkMsg = AI_THINK_MESSAGES[Math.floor(Math.random() * AI_THINK_MESSAGES.length)];
-    showSpeech(thinkMsg, 60_000);
+    showSpeech(thinkMsg, 60_000, true);
   } else if (s.done) {
     forcedAnim = null;
     forceAnim('jump', 1600);
@@ -391,7 +397,7 @@ window.nekodrift.onAiState((s) => {
     showSpeech(donePick(settings.name), 5000);
   } else {
     if (forcedAnim === 'think') forcedAnim = null;
-    if (speechText?.includes('thinking') || speechText?.includes('Claude') || speechText?.includes('ooh')) speechText = null;
+    if (isAiSpeech) { speechText = null; isAiSpeech = false; }
   }
 });
 
@@ -419,6 +425,10 @@ window.nekodrift.onShakeEvent(() => {
   wobbleStep();
   forceAnim('surprised', 800);
   sound.pop();
+  if (Math.random() < 0.45) {
+    const msg = SHAKE_MESSAGES[Math.floor(Math.random() * SHAKE_MESSAGES.length)];
+    setTimeout(() => showSpeech(msg, 2500), 400);
+  }
 });
 
 // ─── Heat decay ────────────────────────────────────────────────

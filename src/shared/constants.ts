@@ -141,6 +141,32 @@ export const STRETCH_SNOOZE_MESSAGES = [
   'just 5 more mins! promise me! ♡',
 ];
 
+export const POMODORO_BREAK_MESSAGES = [
+  (name: string) => `break time! you earned it ♡ ${name}`,
+  (name: string) => `great focus session, ${name}! rest up! ☕`,
+  (name: string) => `yayyy break! stand up, ${name}! 🐾`,
+  (name: string) => `${name}! coffee and stretch time! ♡`,
+];
+
+export const POMODORO_FOCUS_MESSAGES = [
+  (name: string) => `back to focus! let's go ${name}! 🍅`,
+  (name: string) => `you got this, ${name}! focus mode! 💪`,
+  (name: string) => `*focused face* let's do this, ${name}!`,
+];
+
+export const POMODORO_DONE_MESSAGES = [
+  (name: string) => `all sessions done! great work, ${name}! 🎉`,
+  (name: string) => `${name} is unstoppable! all done! ✨`,
+  (name: string) => `session complete! so proud of you, ${name}! ♡`,
+];
+
+export const SHAKE_MESSAGES = [
+  '*hissing noises* 😾',
+  'heyyyy! stop that! 😤',
+  '*dizzy cat noises*',
+  'wh-wha-WHAT was that?! 👀',
+];
+
 export const CAT_RANDOM_THOUGHTS = [
   '*stares into the void*',
   'what if... birds? 🐦',

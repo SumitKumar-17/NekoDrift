@@ -71,7 +71,7 @@ export function addSprite(type: SpriteType): SpriteInfo {
   win.on('closed', () => { sprites.delete(id); });
 
   sprites.set(id, { config, win });
-  return { id, type, lockedPosition: config.lockedPosition };
+  return { id, type, lockedPosition: config.lockedPosition, size: config.size };
 }
 
 export function removeSprite(id: string): boolean {
@@ -121,6 +121,12 @@ export function trackMouseForSprites(cursorX: number, cursorY: number) {
       dx: mag > 0 ? dx / mag : 0,
       dy: mag > 0 ? dy / mag : 0,
     });
+  }
+}
+
+export function broadcastToSprites(channel: string, ...args: unknown[]): void {
+  for (const { win } of sprites.values()) {
+    if (!win.isDestroyed()) win.webContents.send(channel, ...args);
   }
 }
 

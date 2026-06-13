@@ -67,6 +67,9 @@ contextBridge.exposeInMainWorld('nekodrift', {
   onHeatLevel: (cb: (level: number) => void) => {
     ipcRenderer.on(IPC.HEAT_LEVEL, (_e, level) => cb(level));
   },
+  onSpriteEyeDir: (cb: (id: string, dir: { dx: number; dy: number }) => void) => {
+    ipcRenderer.on(IPC.SPRITE_EYE_DIR, (_e, id, dir) => cb(id, dir));
+  },
 
   showContextMenu: () => ipcRenderer.send(IPC.SHOW_CONTEXT_MENU),
   toggleLock: () => ipcRenderer.send(IPC.TOGGLE_LOCK),

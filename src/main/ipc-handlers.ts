@@ -90,7 +90,9 @@ export function setupIPC(deps: IpcDeps): void {
     if (partial.dndEnabled !== undefined) {
       if (updated.dndEnabled) {
         getStretchTimer()?.stop();
+        setStretchTimer(undefined);
         getMessageReminder()?.stop();
+        setMessageReminder(null);
       } else {
         if (updated.stretchEnabled && !getStretchTimer()) {
           const st = new StretchTimer(

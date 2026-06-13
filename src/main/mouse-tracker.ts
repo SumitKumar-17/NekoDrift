@@ -11,6 +11,10 @@ export function startMouseTracking(getCatWindow: () => BrowserWindow | null): vo
   const recentVelX: number[] = [];
   let lastShakeTime = 0;
 
+  // Walk animation state — sent as vel=0 (stop) or vel>0 (start)
+  let walkActive = false;
+  let walkStopTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Cursor position poll — velocity + shake detection
   setInterval(() => {
     const pos = screen.getCursorScreenPoint();
@@ -25,8 +29,25 @@ export function startMouseTracking(getCatWindow: () => BrowserWindow | null): vo
         getCatWindow()?.webContents.send(IPC.MOUSE_VELOCITY, vel);
         velTimer = 0;
       }
+      // Hunt overrides walk — cancel pending walk-stop and clear walk state
+      if (walkActive) {
+        walkActive = false;
+        if (walkStopTimer) { clearTimeout(walkStopTimer); walkStopTimer = null; }
+      }
     } else {
       velTimer = 0;
+      if (vel > 120 && !getSettings().lockedPosition) {
+        if (!walkActive) {
+          walkActive = true;
+          getCatWindow()?.webContents.send(IPC.MOUSE_VELOCITY, vel);
+        }
+        if (walkStopTimer) clearTimeout(walkStopTimer);
+        walkStopTimer = setTimeout(() => {
+          walkActive = false;
+          walkStopTimer = null;
+          getCatWindow()?.webContents.send(IPC.MOUSE_VELOCITY, 0);
+        }, 500);
+      }
     }
 
     recentVelX.push(vx);

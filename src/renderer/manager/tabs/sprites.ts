@@ -15,6 +15,7 @@ export function initSpritesTab(api: any): void {
   // ── Add grid ────────────────────────────────────────────────
   addGrid.innerHTML = '';
   for (const [type, meta] of Object.entries(SPRITE_META) as [SpriteType, typeof SPRITE_META[SpriteType]][]) {
+    if (type === 'cat') continue;
     const btn = document.createElement('button');
     btn.className = 'add-sprite-btn';
     btn.innerHTML = `<span class="add-sprite-emoji">${meta.emoji}</span><span>${meta.name}</span>`;

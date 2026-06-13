@@ -2,6 +2,7 @@ import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState } f
 import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
 import { SoundEngine } from './sound';
 import { MoodSystem } from './mood';
+import { OVERHEAT_MESSAGES, AI_THINK_MESSAGES, AI_DONE_MESSAGES } from '../../shared/constants';
 
 declare global {
   interface Window {
@@ -49,6 +50,7 @@ let settings: CatSettings = {
   reminderEnabled: false, reminderMessage: '', reminderHour: 15, reminderMinute: 0,
   claudeIntegration: true,
   lockedPosition: false, stickyNote: '', stickyNoteEnabled: false,
+  dndEnabled: false,
 };
 
 let currentAnim: CatAnimation = 'idle';
@@ -322,14 +324,18 @@ window.nekodrift.onHeatLevel((level) => {
   heatLevel = level;
   if (level >= 2 && prev < 2) {
     mood.onOverheat();
-    const msgs = ['too fast! overheating!! 🔥', 'keyboard goes BRRR 💨', 'steam from ears! 😤'];
-    showSpeech(msgs[Math.floor(Math.random() * msgs.length)], 3000);
+    showSpeech(OVERHEAT_MESSAGES[Math.floor(Math.random() * OVERHEAT_MESSAGES.length)], 3000);
   }
 });
 
 window.nekodrift.onMouseVelocity((vel) => {
-  if (vel > 300 && !isIdle && currentAnim !== 'hunt') {
+  if (isIdle) return;
+  if (vel > 300 && currentAnim !== 'hunt') {
     forceAnim('hunt', 2200);
+  } else if (vel > 0 && !forcedAnim && !isTyping && currentAnim === 'idle') {
+    currentAnim = 'walk';
+  } else if (vel === 0 && currentAnim === 'walk') {
+    currentAnim = 'idle';
   }
 });
 
@@ -363,17 +369,19 @@ window.nekodrift.onAiState((s) => {
   if (s.thinking) {
     forcedAnim = 'think';
     if (forcedAnimTimer) { clearTimeout(forcedAnimTimer); forcedAnimTimer = null; }
-    showSpeech('hmm... thinking along... 🤔', 60_000);
+    const thinkMsg = AI_THINK_MESSAGES[Math.floor(Math.random() * AI_THINK_MESSAGES.length)];
+    showSpeech(thinkMsg, 60_000);
   } else if (s.done) {
     forcedAnim = null;
     forceAnim('jump', 1600);
     showHeartsBurst(3000);
     setTimeout(() => { forceAnim('happy', 2500); }, 1600);
     sound.meow();
-    showSpeech(`Claude is done, ${settings.name}! ✨`, 5000);
+    const donePick = AI_DONE_MESSAGES[Math.floor(Math.random() * AI_DONE_MESSAGES.length)];
+    showSpeech(donePick(settings.name), 5000);
   } else {
     if (forcedAnim === 'think') forcedAnim = null;
-    if (speechText?.includes('thinking')) speechText = null;
+    if (speechText?.includes('thinking') || speechText?.includes('Claude') || speechText?.includes('ooh')) speechText = null;
   }
 });
 
@@ -408,15 +416,19 @@ setInterval(() => {
   if (!isTyping && heatLevel > 0) heatLevel = Math.max(0, heatLevel - 0.15);
 }, 1500);
 
-// ─── Mood-based idle behaviours ────────────────────────────────
+// ─── Idle behaviours ───────────────────────────────────────────
 setInterval(() => {
-  if (isIdle || forcedAnim || isTyping) return;
+  if (isIdle || forcedAnim || isTyping || currentAnim !== 'idle') return;
   const catMood = mood.getMood();
   const r = Math.random();
-  if (catMood === 'lonely' && r < 0.3 && currentAnim === 'idle') {
-    showSpeech(`${settings.name}... pet me please... 🥺`, 4000);
-  } else if (catMood === 'happy' && r < 0.2 && currentAnim === 'idle') {
-    forceAnim('happy', 1500);
+  if (r < 0.2) {
+    // Mood reaction
+    if (catMood === 'lonely') showSpeech(`${settings.name}... pet me please... 🥺`, 4000);
+    else if (catMood === 'happy') { forceAnim('happy', 1500); showHeartsBurst(1500); }
+  } else if (r < 0.4) {
+    forceAnim('stretch', 3000);
+  } else if (r < 0.5) {
+    forceAnim('sit', 4500);
   }
 }, 45_000);
 

@@ -8,7 +8,8 @@ import { PomodoroTimer } from './pomodoro-timer';
 import { MessageReminder } from './message-reminder';
 import { NekoDriftHttpServer } from './http-server';
 import { IPC } from '../shared/types';
-import { GREETING_MESSAGES, IDLE_MESSAGES, AI_DONE_MESSAGES } from '../shared/constants';
+import { GREETING_MESSAGES, IDLE_MESSAGES } from '../shared/constants';
+import { broadcastToSprites } from './sprite-manager';
 
 let idleDetector: IdleDetector;
 let keyboardTracker: KeyboardTracker;
@@ -31,6 +32,7 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
 
   idleDetector = new IdleDetector((isIdle) => {
     send(IPC.IDLE_CHANGED, isIdle);
+    broadcastToSprites(IPC.IDLE_CHANGED, isIdle);
     if (!isIdle) {
       const msg = GREETING_MESSAGES[Math.floor(Math.random() * GREETING_MESSAGES.length)];
       setTimeout(() => send(IPC.CAT_SPEECH, msg(settings.name)), 500);
@@ -77,11 +79,6 @@ export function startServices(getCatWindow: () => BrowserWindow | null): void {
     httpServer = new NekoDriftHttpServer();
     httpServer.start((thinking, done) => {
       send(IPC.AI_STATE, { thinking, done });
-      if (done) {
-        const s = getSettings();
-        const msg = AI_DONE_MESSAGES[Math.floor(Math.random() * AI_DONE_MESSAGES.length)](s.name);
-        setTimeout(() => send(IPC.CAT_SPEECH, msg), 200);
-      }
     });
   }
 

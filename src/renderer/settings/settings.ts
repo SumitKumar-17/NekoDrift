@@ -401,6 +401,7 @@ function initSpritesSection(): void {
 
   grid.innerHTML = '';
   for (const [type, meta] of Object.entries(SPRITE_META)) {
+    if (type === 'cat') continue;
     const btn = document.createElement('button');
     btn.className = 'breed-btn';
     btn.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;';

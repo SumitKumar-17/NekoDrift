@@ -94,6 +94,24 @@ export function glint(ctx: Ctx, x: number, y: number, r: number): void {
   ctx.restore();
 }
 
+// Rim light: thin bright crescent on the far edge of a shape, faking a
+// backlit 3D look. lightAngle=0 means light from top → rim at bottom.
+export function rimLight(
+  ctx: Ctx, cx: number, cy: number, rx: number, ry: number,
+  lightAngle: number, color: string, alpha = 0.3,
+): void {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = rx * 0.12;
+  ctx.lineCap = 'round';
+  const rimAngle = lightAngle + Math.PI;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx * 0.9, ry * 0.9, 0, rimAngle - 0.75, rimAngle + 0.75);
+  ctx.stroke();
+  ctx.restore();
+}
+
 // Draws a Pokémon-style Z floater (zzz sleeping animation)
 export function drawZzz(
   ctx: Ctx, cx: number, cy: number, size: number,

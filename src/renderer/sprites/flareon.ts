@@ -1,170 +1,230 @@
-import { Ctx, blob, radialGrad, groundShadow, glint, fill, stroke } from './sprite-utils';
+import { fill, stroke, blob, radialGrad, groundShadow, glint, Ctx } from './sprite-utils';
 
 export function drawFlareon(
   ctx: Ctx,
   frame: number,
   scale: number,
   eyeDir?: { dx: number; dy: number },
-  mood?: string,
+  mood = 'content',
 ): void {
-  const s  = scale;
-  const cx = 8 * s;
-  const bob = Math.sin(frame * 0.058) * 0.5 * s;
+  const u = (n: number) => n * scale;
   const t = frame;
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  groundShadow(ctx, cx, 15.5 * s, 5 * s, 1.2 * s, 0.22);
+  const by        = Math.sin(t * 0.058) * 0.36;
+  const walk      = Math.sin(t * 0.13);
+  const tailSwing = Math.sin(t * 0.05) * 14;
+  const blinkOpen = !((t % 190) > 183);
+  const legL = walk * 0.46;
+  const legR = -walk * 0.46;
 
-  // ── Flame tail ──────────────────────────────────────────────
-  const tailSway = Math.sin(t * 0.05) * 14;
+  // ── Palette ─────────────────────────────────────────────────
+  const ink    = '#801500';
+  const bodL   = '#EE7030';   // body highlight
+  const bodM   = '#D05818';   // body mid
+  const bodD   = '#A03010';   // body dark
+  const cream  = '#FFEECC';   // mane cream
+  const creamL = '#FFF8E8';
+  const maneO  = '#FF8800';   // mane orange
+  const maneY  = '#FFAA44';   // mane yellow
+  const amber  = '#8B4513';   // iris
+  const lw = u(0.26);
+
+  groundShadow(ctx, u(8), u(15.4), u(4.2), u(0.9), 0.18);
+
+  // ── FLAME TAIL (behind body) ──────────────────────────────────
   ctx.save();
-  ctx.translate(cx + 3 * s, 10 * s + bob);
-  ctx.rotate((tailSway * Math.PI) / 180);
-  // Tail base
-  blob(ctx, '#CC4400', '#801500', 0.5 * s, () => {
+  ctx.translate(u(11.4), u(10.0 + by));
+  ctx.rotate((tailSwing * Math.PI) / 180);
+  // Base tail
+  blob(ctx, bodD, ink, lw, () => {
     ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(1.5 * s, -1.5 * s, 2.5 * s, -4 * s, 2 * s, -6.5 * s);
-    ctx.bezierCurveTo(1 * s, -6 * s, 0.5 * s, -3 * s, 0, -0.5 * s);
+    ctx.bezierCurveTo(u(1.5), u(-1.5), u(2.5), u(-4.2), u(2.0), u(-6.6));
+    ctx.bezierCurveTo(u(1.0), u(-6.0), u(0.5), u(-3.0), u(0), u(-0.5));
     ctx.closePath();
   });
-  // Animated flame layers on tail
+  // 3 animated flame layers on tail
+  const tailColors = [maneO, maneY, '#FFDD44'];
   for (let fi = 0; fi < 3; fi++) {
-    const flicker = Math.sin(t * 0.16 + fi * 0.9) * 0.5 * s;
-    const alpha = 0.65 + Math.sin(t * 0.12 + fi) * 0.2;
-    const colors = ['#FF8800', '#FFAA00', '#FFDD44'];
-    fill(ctx, colors[fi], alpha, () => {
-      ctx.moveTo(0.5 * s, -3 * s + flicker);
+    const flicker = Math.sin(t * 0.16 + fi * 0.9) * u(0.5);
+    fill(ctx, tailColors[fi], 0.62 + fi * 0.1, () => {
+      ctx.moveTo(u(0.5), u(-3.0) + flicker);
       ctx.bezierCurveTo(
-        1 * s, -4.5 * s + flicker,
-        2.5 * s + flicker * 0.3, -6 * s,
-        2 * s + fi * 0.2 * s, -7 * s + flicker * 0.5
+        u(1.0), u(-4.6) + flicker,
+        u(2.6) + flicker * 0.3, u(-6.2),
+        u(2.0) + u(fi * 0.2), u(-7.2) + flicker * 0.5,
       );
-      ctx.bezierCurveTo(
-        1.5 * s, -6.5 * s,
-        0.5 * s, -4 * s,
-        0, -3 * s + flicker
-      );
+      ctx.bezierCurveTo(u(1.5), u(-6.6), u(0.5), u(-4.2), u(0), u(-3.0) + flicker);
       ctx.closePath();
     });
   }
   ctx.restore();
 
-  // ── Body ──────────────────────────────────────────────────────
-  const bodyY = 11 * s + bob;
-  const bodyGrad = radialGrad(ctx, cx - s, bodyY - 2 * s, 4.5 * s, '#DD7030', '#A03010');
-  blob(ctx, bodyGrad, '#801500', 0.9 * s, () => {
-    ctx.ellipse(cx, bodyY, 4.5 * s, 3.8 * s, 0, 0, Math.PI * 2);
+  // ── BODY ────────────────────────────────────────────────────
+  const bodyGrad = radialGrad(ctx, u(7.0), u(9.4 + by), u(4.2), bodL, bodD);
+  blob(ctx, bodyGrad, ink, lw, () => {
+    ctx.ellipse(u(8), u(10.2 + by), u(3.8), u(3.3), 0, 0, Math.PI * 2);
+  });
+  // Cream inner belly
+  fill(ctx, cream, 0.42, () => {
+    ctx.ellipse(u(8), u(10.9 + by), u(2.4), u(2.0), 0, 0, Math.PI * 2);
   });
 
-  // ── Big fluffy mane on chest (Flareon's most distinctive feature) ──
-  const maneColors = ['#FF8800', '#FFAA44', '#FFDD88'];
-  for (let mi = 0; mi < 3; mi++) {
-    const maneFlicker = Math.sin(t * 0.07 + mi * 1.2) * 0.8 * s;
-    const baseX = cx + (mi - 1) * 2 * s;
-    const baseY = bodyY - 3.5 * s;
-    fill(ctx, maneColors[mi], 0.7 + mi * 0.08, () => {
-      ctx.arc(baseX + maneFlicker * 0.2, baseY - mi * 0.5 * s, (2.5 - mi * 0.3) * s, 0, Math.PI * 2);
+  // ── FLUFFY MANE (front of body — Flareon's signature feature) ─
+  // 7 overlapping puffy circles radiating from chest center
+  const maneCenter = { x: u(8), y: u(7.8 + by) };
+  const maneRings = [
+    // [offsetX, offsetY, radius, color, alpha]
+    [u(-2.2), u(0.8), u(2.3), maneO,  0.80],
+    [u( 2.2), u(0.8), u(2.3), maneO,  0.80],
+    [u( 0.0), u(0.2), u(2.5), maneY,  0.76],
+    [u(-1.6), u(-0.7), u(1.9), maneY, 0.72],
+    [u( 1.6), u(-0.7), u(1.9), maneY, 0.72],
+    [u( 0.0), u(-1.4), u(1.7), '#FFCC44', 0.68],
+  ] as [number, number, number, string, number][];
+  for (const [ox, oy, r, colour, a] of maneRings) {
+    const flicker = Math.sin(t * 0.072 + ox * 0.3) * u(0.18);
+    fill(ctx, colour, a, () => {
+      ctx.arc(maneCenter.x + ox + flicker, maneCenter.y + oy, r, 0, Math.PI * 2);
     });
   }
-  // Cream center of mane
-  fill(ctx, '#FFEECC', 0.55, () => {
-    ctx.arc(cx, bodyY - 3 * s, 1.5 * s, 0, Math.PI * 2);
+  // Bright cream center of mane
+  fill(ctx, creamL, 0.55, () => {
+    ctx.arc(maneCenter.x, maneCenter.y - u(0.5), u(1.4), 0, Math.PI * 2);
   });
 
-  // ── Legs ──────────────────────────────────────────────────────
-  const legBob = Math.sin(t * 0.07) * 0.35 * s;
-  blob(ctx, '#CC5020', '#801500', 0.6 * s, () => {
-    ctx.ellipse(cx - 2.5 * s, 13.8 * s + bob + legBob, 1.2 * s, 1.8 * s, 0, 0, Math.PI * 2);
+  // ── LEGS ────────────────────────────────────────────────────
+  blob(ctx, bodM, ink, lw, () => {
+    ctx.ellipse(u(5.8), u(13.5 + by + legL), u(1.3), u(1.75), 0.06, 0, Math.PI * 2);
   });
-  blob(ctx, '#CC5020', '#801500', 0.6 * s, () => {
-    ctx.ellipse(cx + 2.5 * s, 13.8 * s + bob - legBob, 1.2 * s, 1.8 * s, 0, 0, Math.PI * 2);
+  blob(ctx, bodM, ink, lw, () => {
+    ctx.ellipse(u(10.2), u(13.5 + by + legR), u(1.3), u(1.75), -0.06, 0, Math.PI * 2);
   });
-  fill(ctx, '#FFCC88', 0.6, () => {
-    ctx.arc(cx - 2.5 * s, 14.8 * s + bob, 0.9 * s, 0, Math.PI * 2);
-    ctx.arc(cx + 2.5 * s, 14.8 * s + bob, 0.9 * s, 0, Math.PI * 2);
+  // Cream toe pads
+  blob(ctx, cream, ink, lw * 0.7, () => {
+    ctx.ellipse(u(5.8), u(14.5 + by + legL), u(1.1), u(0.56), 0, 0, Math.PI * 2);
   });
-
-  // ── Head ──────────────────────────────────────────────────────
-  const headY = 4.8 * s + bob;
-  const headGrad = radialGrad(ctx, cx - s, headY - 1.5 * s, 4 * s, '#EE7030', '#A03010');
-  blob(ctx, headGrad, '#801500', 1 * s, () => {
-    ctx.arc(cx, headY, 4 * s, 0, Math.PI * 2);
+  blob(ctx, cream, ink, lw * 0.7, () => {
+    ctx.ellipse(u(10.2), u(14.5 + by + legR), u(1.1), u(0.56), 0, 0, Math.PI * 2);
   });
 
-  // ── Furry pointed ears ────────────────────────────────────────
-  blob(ctx, '#CC5020', '#801500', 0.7 * s, () => {
-    ctx.moveTo(cx - 2.3 * s, headY - 2.8 * s);
-    ctx.lineTo(cx - 4.8 * s, headY - 7.5 * s);
-    ctx.lineTo(cx - 0.5 * s, headY - 3.5 * s);
+  // ── EARS ────────────────────────────────────────────────────
+  blob(ctx, bodM, ink, lw, () => {
+    ctx.moveTo(u(4.8), u(3.6 + by));
+    ctx.lineTo(u(3.0), u(-1.2 + by));
+    ctx.lineTo(u(6.0), u(0.2 + by));
     ctx.closePath();
   });
-  fill(ctx, '#FFCC88', 0.45, () => {
-    ctx.moveTo(cx - 2.5 * s, headY - 3.0 * s);
-    ctx.lineTo(cx - 4.4 * s, headY - 6.8 * s);
-    ctx.lineTo(cx - 1.0 * s, headY - 3.8 * s);
+  fill(ctx, cream, 0.42, () => {
+    ctx.moveTo(u(4.9), u(3.2 + by));
+    ctx.lineTo(u(3.5), u(-0.8 + by));
+    ctx.lineTo(u(5.7), u(0.4 + by));
     ctx.closePath();
   });
-  blob(ctx, '#CC5020', '#801500', 0.7 * s, () => {
-    ctx.moveTo(cx + 2.3 * s, headY - 2.8 * s);
-    ctx.lineTo(cx + 4.8 * s, headY - 7.5 * s);
-    ctx.lineTo(cx + 0.5 * s, headY - 3.5 * s);
+  blob(ctx, bodM, ink, lw, () => {
+    ctx.moveTo(u(11.2), u(3.6 + by));
+    ctx.lineTo(u(13.0), u(-1.2 + by));
+    ctx.lineTo(u(10.0), u(0.2 + by));
     ctx.closePath();
   });
-  fill(ctx, '#FFCC88', 0.45, () => {
-    ctx.moveTo(cx + 2.5 * s, headY - 3.0 * s);
-    ctx.lineTo(cx + 4.4 * s, headY - 6.8 * s);
-    ctx.lineTo(cx + 1.0 * s, headY - 3.8 * s);
+  fill(ctx, cream, 0.42, () => {
+    ctx.moveTo(u(11.1), u(3.2 + by));
+    ctx.lineTo(u(12.5), u(-0.8 + by));
+    ctx.lineTo(u(10.3), u(0.4 + by));
     ctx.closePath();
   });
 
-  // ── Eyes (warm amber/brown) ───────────────────────────────────
-  const edx = eyeDir ? eyeDir.dx * 0.3 * s : 0;
-  const edy = eyeDir ? eyeDir.dy * 0.2 * s : 0;
-  const eyeY = headY + 0.4 * s;
-  const blink = (frame % 68) < 3;
+  // ── HEAD ────────────────────────────────────────────────────
+  const headGrad = radialGrad(ctx, u(7.0), u(3.9 + by), u(3.6), bodL, bodM);
+  blob(ctx, headGrad, ink, lw, () => {
+    ctx.ellipse(u(8), u(4.8 + by), u(3.4), u(3.1), 0, 0, Math.PI * 2);
+  });
 
-  if (!blink) {
-    blob(ctx, '#ffffff', '#801500', 0.35 * s, () => {
-      ctx.ellipse(cx - 1.5 * s, eyeY, 1.3 * s, 1.4 * s, 0, 0, Math.PI * 2);
+  // ── CHEEKS (mood-reactive) ───────────────────────────────────
+  const cheekR = mood === 'happy' ? 1.18 : mood === 'tired' ? 0.8 : 1.0;
+  fill(ctx, '#FF9966', 0.3 * cheekR, () => {
+    ctx.ellipse(u(5.3), u(5.85 + by), u(0.9 * cheekR), u(0.65 * cheekR), 0, 0, Math.PI * 2);
+    ctx.ellipse(u(10.7), u(5.85 + by), u(0.9 * cheekR), u(0.65 * cheekR), 0, 0, Math.PI * 2);
+  });
+
+  // ── MUZZLE ──────────────────────────────────────────────────
+  fill(ctx, cream, 0.5, () => {
+    ctx.ellipse(u(8), u(6.1 + by), u(1.7), u(1.1), 0, 0, Math.PI * 2);
+  });
+
+  // ── EYES ────────────────────────────────────────────────────
+  const ey = 4.6 + by;
+  if (mood === 'tired') {
+    if (blinkOpen) {
+      fill(ctx, amber, 0.7, () => {
+        ctx.arc(u(6.55), u(ey), u(0.6), 0, Math.PI * 2);
+        ctx.arc(u(9.45), u(ey), u(0.6), 0, Math.PI * 2);
+      });
+      stroke(ctx, ink, u(0.26), 0.88, () => {
+        ctx.moveTo(u(5.85), u(ey - 0.4)); ctx.lineTo(u(7.25), u(ey - 0.4));
+        ctx.moveTo(u(8.75), u(ey - 0.4)); ctx.lineTo(u(10.15), u(ey - 0.4));
+      });
+    } else {
+      stroke(ctx, ink, u(0.24), 1, () => {
+        ctx.moveTo(u(6.0), u(ey)); ctx.lineTo(u(7.1), u(ey));
+        ctx.moveTo(u(8.9), u(ey)); ctx.lineTo(u(10.0), u(ey));
+      });
+    }
+  } else if (!blinkOpen) {
+    stroke(ctx, ink, u(0.24), 1, () => {
+      ctx.moveTo(u(6.0), u(ey)); ctx.lineTo(u(7.1), u(ey));
+      ctx.moveTo(u(8.9), u(ey)); ctx.lineTo(u(10.0), u(ey));
     });
-    blob(ctx, '#ffffff', '#801500', 0.35 * s, () => {
-      ctx.ellipse(cx + 1.5 * s, eyeY, 1.3 * s, 1.4 * s, 0, 0, Math.PI * 2);
-    });
-    fill(ctx, '#8B4513', 1, () => {
-      ctx.ellipse(cx - 1.5 * s + edx, eyeY + edy, 0.8 * s, 0.9 * s, 0, 0, Math.PI * 2);
-      ctx.ellipse(cx + 1.5 * s + edx, eyeY + edy, 0.8 * s, 0.9 * s, 0, 0, Math.PI * 2);
+  } else {
+    const ex  = eyeDir ? eyeDir.dx * 0.3 : 0;
+    const edy = eyeDir ? eyeDir.dy * 0.2 : 0;
+    // White sclera
+    blob(ctx, '#FFFFFF', ink, u(0.1), () => { ctx.ellipse(u(6.55), u(ey), u(1.0), u(1.1), 0, 0, Math.PI * 2); });
+    blob(ctx, '#FFFFFF', ink, u(0.1), () => { ctx.ellipse(u(9.45), u(ey), u(1.0), u(1.1), 0, 0, Math.PI * 2); });
+    // Brown iris
+    fill(ctx, amber, 1, () => {
+      ctx.ellipse(u(6.55 + ex * 0.35), u(ey + edy * 0.35), u(0.7), u(0.78), 0, 0, Math.PI * 2);
+      ctx.ellipse(u(9.45 + ex * 0.35), u(ey + edy * 0.35), u(0.7), u(0.78), 0, 0, Math.PI * 2);
     });
     fill(ctx, '#3B1000', 1, () => {
-      ctx.ellipse(cx - 1.5 * s + edx * 1.2, eyeY + edy * 1.2, 0.45 * s, 0.5 * s, 0, 0, Math.PI * 2);
-      ctx.ellipse(cx + 1.5 * s + edx * 1.2, eyeY + edy * 1.2, 0.45 * s, 0.5 * s, 0, 0, Math.PI * 2);
+      ctx.arc(u(6.55 + ex * 0.5), u(ey + edy * 0.5), u(0.42), 0, Math.PI * 2);
+      ctx.arc(u(9.45 + ex * 0.5), u(ey + edy * 0.5), u(0.42), 0, Math.PI * 2);
     });
-    glint(ctx, cx - 1.5 * s + edx - 0.25 * s, eyeY + edy - 0.3 * s, 0.22 * s);
-    glint(ctx, cx + 1.5 * s + edx - 0.25 * s, eyeY + edy - 0.3 * s, 0.22 * s);
+    glint(ctx, u(6.28 + ex * 0.2), u(ey - 0.34 + edy * 0.2), u(0.25));
+    glint(ctx, u(9.18 + ex * 0.2), u(ey - 0.34 + edy * 0.2), u(0.25));
+  }
+
+  // ── NOSE + MOUTH ────────────────────────────────────────────
+  fill(ctx, bodD, 0.88, () => {
+    ctx.arc(u(8), u(5.65 + by), u(0.3), 0, Math.PI * 2);
+  });
+  if (mood === 'happy') {
+    stroke(ctx, ink, u(0.17), 0.88, () => {
+      ctx.moveTo(u(7.0), u(6.2 + by));
+      ctx.quadraticCurveTo(u(8), u(6.9 + by), u(9.0), u(6.2 + by));
+    });
+  } else if (mood === 'tired') {
+    stroke(ctx, ink, u(0.16), 0.7, () => {
+      ctx.moveTo(u(7.4), u(6.28 + by)); ctx.lineTo(u(8.6), u(6.28 + by));
+    });
   } else {
-    stroke(ctx, '#801500', 0.5 * s, 1, () => {
-      ctx.arc(cx - 1.5 * s, eyeY + 0.3 * s, 0.8 * s, Math.PI, 0);
-      ctx.arc(cx + 1.5 * s, eyeY + 0.3 * s, 0.8 * s, Math.PI, 0);
+    stroke(ctx, ink, u(0.16), 0.8, () => {
+      ctx.moveTo(u(7.3), u(6.1 + by));
+      ctx.quadraticCurveTo(u(8), u(6.6 + by), u(8.7), u(6.1 + by));
     });
   }
 
-  // Nose + mouth
-  fill(ctx, '#CC4400', 0.8, () => {
-    ctx.arc(cx, headY + 1.5 * s, 0.4 * s, 0, Math.PI * 2);
-  });
-  stroke(ctx, '#801500', 0.4 * s, 0.7, () => {
-    ctx.arc(cx, headY + 2.5 * s, 1 * s, Math.PI * 1.15, Math.PI * 1.85);
-  });
-
-  // ── Floating ember particles ──────────────────────────────────
-  const emberCount = mood === 'happy' ? 5 : 2;
+  // ── EMBER PARTICLES ─────────────────────────────────────────
+  const emberCount = mood === 'happy' ? 6 : 3;
   for (let i = 0; i < emberCount; i++) {
-    const ep = (t * 0.55 + i * 19) % 50;
-    const life = ep / 50;
-    const alpha = Math.sin(life * Math.PI) * 0.55;
+    const ep    = (t * 0.54 + i * 18) % 52;
+    const life  = ep / 52;
+    const alpha = Math.sin(life * Math.PI) * 0.52;
     if (alpha < 0.05) continue;
-    const ex = cx + (i - emberCount / 2) * 3 * s + Math.sin(life * Math.PI * 2 + i) * 1.5 * s;
-    const ey = bodyY - 4 * s - life * 9 * s;
+    const ex = u(8 + (i - emberCount / 2) * 1.8 + Math.sin(life * Math.PI * 2 + i) * 0.9);
+    const ey2 = u(6.5 - life * 7.5);
     fill(ctx, i % 2 ? '#FF8800' : '#FFCC44', alpha, () => {
-      ctx.arc(ex, ey, (0.5 + (1 - life) * 0.5) * s, 0, Math.PI * 2);
+      ctx.arc(ex, ey2, u(0.42 + (1 - life) * 0.3), 0, Math.PI * 2);
     });
   }
 }

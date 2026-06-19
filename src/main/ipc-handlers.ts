@@ -1,4 +1,4 @@
-import { ipcMain, Menu, screen, BrowserWindow } from 'electron';
+import { ipcMain, Menu, screen, BrowserWindow, Notification } from 'electron';
 import { getSettings, saveSettings, setFirstRunDone } from './store';
 import { applyLoginItem, isMac } from './platform';
 import { IPC } from '../shared/types';
@@ -10,6 +10,8 @@ import {
   getPomodoroTimer, setPomodoroTimer,
   getMessageReminder, setMessageReminder,
   getHttpServer, setHttpServer,
+  isDndActive,
+  getKeyboardTracker,
 } from './services';
 import { NekoDriftHttpServer } from './http-server';
 import {
@@ -17,11 +19,15 @@ import {
   removeSprite,
   listSprites,
   resizeSprite,
+  dragSprite,
+  setSpriteIgnoreMouse,
   setSpritesAlwaysOnTop,
   setSpritesVisibleOnAllWorkspaces,
 } from './sprite-manager';
 import { SpriteType } from '../shared/types';
-import { getManagerWindow } from './window-manager';
+import { getManagerWindow, getTray } from './window-manager';
+import { updateTrayMood } from './tray';
+import { incrementLifetimePets, getCatAgeDays, getCatBirthday } from './store';
 
 export interface IpcDeps {
   getCatWindow: () => BrowserWindow | null;
@@ -35,6 +41,25 @@ export interface IpcDeps {
 export function setupIPC(deps: IpcDeps): void {
   const { getCatWindow, createSettingsWindow, createManagerWindow, quitApp } = deps;
   let lastPomoState: import('../shared/types').PomodoroState | null = null;
+
+  // Birthday notification on launch
+  (() => {
+    try {
+      const birthday = new Date(getCatBirthday());
+      const now = new Date();
+      const ageDays = getCatAgeDays();
+      if (ageDays > 0 && birthday.getDate() === now.getDate() && birthday.getMonth() === now.getMonth()) {
+        const name = getSettings().catName || 'your cat';
+        if (Notification.isSupported()) {
+          new Notification({
+            title: `Happy Birthday, ${name}! 🎂`,
+            body: `${name} is ${ageDays} day${ageDays !== 1 ? 's' : ''} old today!`,
+            silent: false,
+          }).show();
+        }
+      }
+    } catch (_) {}
+  })();
 
   const send = (channel: string, ...args: unknown[]) => {
     if (channel === IPC.POMODORO_STATE) {
@@ -54,10 +79,16 @@ export function setupIPC(deps: IpcDeps): void {
   const restartStretchTimer = (updated: import('../shared/types').CatSettings) => {
     getStretchTimer()?.stop();
     setStretchTimer(undefined);
-    if (!updated.stretchEnabled || updated.dndEnabled) return;
+    if (!updated.stretchEnabled || isDndActive()) return;
 
     const st = new StretchTimer(
-      (msg) => { send(IPC.STRETCH_REMINDER, msg); send(IPC.CAT_SPEECH, msg); },
+      (msg) => {
+        send(IPC.STRETCH_REMINDER, msg);
+        send(IPC.CAT_SPEECH, msg);
+        if (Notification.isSupported()) {
+          new Notification({ title: 'NekoDrift 🐱', body: msg, silent: true }).show();
+        }
+      },
       updated.stretchIntervalMin,
       updated.name,
     );
@@ -80,13 +111,18 @@ export function setupIPC(deps: IpcDeps): void {
   const restartMessageReminder = (updated: import('../shared/types').CatSettings) => {
     getMessageReminder()?.stop();
     setMessageReminder(null);
-    if (!updated.reminderEnabled || updated.dndEnabled) return;
+    if (!updated.reminderEnabled || isDndActive()) return;
 
     const mr = new MessageReminder(
       updated.reminderHour,
       updated.reminderMinute,
       updated.reminderMessage,
-      (msg) => send(IPC.REMINDER_TRIGGER, msg),
+      (msg) => {
+        send(IPC.REMINDER_TRIGGER, msg);
+        if (Notification.isSupported()) {
+          new Notification({ title: 'NekoDrift 🐱', body: msg, silent: true }).show();
+        }
+      },
     );
     mr.start();
     setMessageReminder(mr);
@@ -111,14 +147,10 @@ export function setupIPC(deps: IpcDeps): void {
       restartMessageReminder(updated);
     }
 
-    if (partial.dndEnabled !== undefined) {
-      if (updated.dndEnabled) {
-        restartStretchTimer(updated);
-        restartMessageReminder(updated);
-      } else {
-        restartStretchTimer(updated);
-        restartMessageReminder(updated);
-      }
+    if (partial.dndEnabled !== undefined || partial.dndScheduleEnabled !== undefined
+        || partial.dndStartHour !== undefined || partial.dndEndHour !== undefined) {
+      restartStretchTimer(updated);
+      restartMessageReminder(updated);
     }
 
     if (partial.alwaysOnTop !== undefined) {
@@ -210,6 +242,7 @@ export function setupIPC(deps: IpcDeps): void {
       },
       { type: 'separator' },
       { label: 'Settings...', click: createSettingsWindow },
+      { label: 'Control Panel...', click: createManagerWindow },
       {
         label: cw?.isVisible() ? 'Hide cat' : 'Show cat',
         click: () => {
@@ -229,6 +262,7 @@ export function setupIPC(deps: IpcDeps): void {
     send(IPC.CAT_SETTINGS, updated);
   });
 
+  let lastEdgeBump = 0;
   ipcMain.on(IPC.DRAG_CAT, (_event, dx: number, dy: number) => {
     if (getSettings().lockedPosition) return;
     const cw = getCatWindow();
@@ -239,11 +273,17 @@ export function setupIPC(deps: IpcDeps): void {
     const display = screen.getDisplayNearestPoint({ x: newX, y: newY });
     const { bounds } = display;
     const [w, h] = cw.getSize();
-    cw.setPosition(
-      Math.max(bounds.x, Math.min(bounds.x + bounds.width - w, newX)),
-      Math.max(bounds.y, Math.min(bounds.y + bounds.height - h, newY)),
-      false,
-    );
+    const clampedX = Math.max(bounds.x, Math.min(bounds.x + bounds.width - w, newX));
+    const clampedY = Math.max(bounds.y, Math.min(bounds.y + bounds.height - h, newY));
+    cw.setPosition(clampedX, clampedY, false);
+
+    // Trigger edge-bump surprise once per second when cat is pushed against any edge
+    const now = Date.now();
+    const atEdge = clampedX !== newX || clampedY !== newY;
+    if (atEdge && now - lastEdgeBump > 1000) {
+      lastEdgeBump = now;
+      cw.webContents.send(IPC.SHAKE_EVENT);
+    }
   });
 
   ipcMain.on(IPC.POMODORO_CONTROL, (_event, action: 'start' | 'pause' | 'reset') => {
@@ -265,6 +305,105 @@ export function setupIPC(deps: IpcDeps): void {
   ipcMain.handle(IPC.SPRITE_REMOVE, (_event, id: string) => removeSprite(id));
   ipcMain.handle(IPC.SPRITE_LIST, () => listSprites());
   ipcMain.handle(IPC.SPRITE_RESIZE, (_event, id: string, size: number) => resizeSprite(id, size));
+  ipcMain.on(IPC.SPRITE_DRAG, (_event, id: string, dx: number, dy: number) => dragSprite(id, dx, dy));
+  ipcMain.on(IPC.SPRITE_SET_IGNORE_MOUSE, (_event, id: string, ignore: boolean) => setSpriteIgnoreMouse(id, ignore));
   ipcMain.on(IPC.OPEN_MANAGER, () => createManagerWindow());
   ipcMain.handle(IPC.POMO_GET, () => lastPomoState);
+
+  // ─── Cat stats (pushed from renderer, served to manager) ───
+  let cachedCatStats: Record<string, unknown> | null = null;
+  let lastPetCount = 0;
+  // Mood history: up to 48 samples (one per 30 min = 24 h), rotates daily
+  const moodHistory: { hour: number; mood: string }[] = [];
+  let moodHistoryDate = new Date().toDateString();
+  let lastRecordedMoodHour = -1;
+  ipcMain.on(IPC.CAT_STATS_PUSH, (_event, stats) => {
+    const incoming = stats as Record<string, unknown>;
+    // Increment lifetime pets when session petCount grows
+    const newPets = (incoming?.petCount as number) ?? 0;
+    if (newPets > lastPetCount) {
+      const diff = newPets - lastPetCount;
+      const total = incrementLifetimePets(diff);
+      const milestones = [10, 25, 50, 100, 250, 500, 1000];
+      if (milestones.includes(total) && Notification.isSupported()) {
+        new Notification({
+          title: 'NekoDrift 🎉',
+          body: `${total} lifetime pets! Your cat loves you! ♡`,
+          silent: true,
+        }).show();
+      }
+    }
+    lastPetCount = newPets;
+    if (incoming?.__lonelyCry && Notification.isSupported()) {
+      const n = getSettings().catName || 'your cat';
+      new Notification({ title: 'NekoDrift 🥺', body: `${n} is feeling lonely... come say hi!`, silent: false }).show();
+    }
+    // Hunger notification
+    if (incoming?.hunger === 'hungry' && incoming?.__hungerNotified !== true) {
+      const n = getSettings().catName || 'your cat';
+      if (Notification.isSupported()) {
+        new Notification({ title: 'NekoDrift 🍣', body: `${n} is getting hungry! Open the manager to feed.`, silent: true }).show();
+      }
+    }
+    cachedCatStats = { ...incoming, lifetimePets: lastPetCount };
+
+    // Record mood into hourly history
+    const now = new Date();
+    const today = now.toDateString();
+    if (today !== moodHistoryDate) {
+      moodHistory.length = 0;
+      moodHistoryDate = today;
+      lastRecordedMoodHour = -1;
+    }
+    const currentHour = now.getHours();
+    if (currentHour !== lastRecordedMoodHour && incoming?.mood) {
+      moodHistory.push({ hour: currentHour, mood: incoming.mood as string });
+      if (moodHistory.length > 48) moodHistory.shift();
+      lastRecordedMoodHour = currentHour;
+    }
+
+    const tray = getTray?.();
+    if (tray && incoming?.mood && getSettings().catName) {
+      updateTrayMood(tray, incoming.mood as string, getSettings().catName);
+    }
+  });
+  ipcMain.handle(IPC.CAT_STATS_GET, () => ({
+    ...cachedCatStats,
+    keysToday: getKeyboardTracker()?.getTodayKeyCount() ?? 0,
+    moodHistory: [...moodHistory],
+    catAgeDays: getCatAgeDays(),
+  }));
+
+  // ─── Remote cat actions (manager → main → cat) ─────────────
+  ipcMain.on(IPC.CAT_REMOTE_ACTION, (_event, action: string) => {
+    const cw = getCatWindow();
+    if (cw && !cw.isDestroyed()) {
+      cw.webContents.send(IPC.CAT_REMOTE_ACTION_FWD, action);
+    }
+  });
+
+  // ─── Get cat window bounds for wander ────────────────────────
+  ipcMain.handle(IPC.GET_CAT_BOUNDS, () => {
+    const cw = getCatWindow();
+    if (!cw || cw.isDestroyed()) return null;
+    const [x, y] = cw.getPosition();
+    const [w, h] = cw.getSize();
+    const display = screen.getDisplayNearestPoint({ x, y });
+    const b = display.bounds;
+    return { x, y, w, h, displayX: b.x, displayY: b.y, displayW: b.width, displayH: b.height };
+  });
+
+  // ─── Window bounce (cat jumps — hop window up then back) ─────
+  ipcMain.on(IPC.CAT_WINDOW_BOUNCE, (_event, heightPx: number) => {
+    const cw = getCatWindow();
+    if (!cw || cw.isDestroyed() || getSettings().lockedPosition) return;
+    const [x, y] = cw.getPosition();
+    const display = screen.getDisplayNearestPoint({ x, y });
+    const minY = display.bounds.y;
+    const jumpY = Math.max(minY, y - heightPx);
+    cw.setPosition(x, jumpY, false);
+    setTimeout(() => {
+      if (!cw.isDestroyed()) cw.setPosition(x, y, false);
+    }, 400);
+  });
 }

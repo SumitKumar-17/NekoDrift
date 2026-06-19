@@ -1,11 +1,12 @@
 import { CatColor, CatAnimation, CatSettings, EyeDir, PomodoroState, AiState } from '../../shared/types';
-import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts } from './pixel-cat';
+import { drawCat, drawSpeechBubble, drawSteam, drawZzz, drawPomodoroTimer, drawHearts, drawSparkles, drawCatGhost, drawSeasonalParticles } from './pixel-cat';
 import { SoundEngine } from './sound';
 import { MoodSystem } from './mood';
 import {
   OVERHEAT_MESSAGES, AI_THINK_MESSAGES, AI_DONE_MESSAGES,
   BOOT_MESSAGES, STRETCH_DONE_MESSAGES, STRETCH_SNOOZE_MESSAGES, CAT_RANDOM_THOUGHTS,
   POMODORO_BREAK_MESSAGES, POMODORO_FOCUS_MESSAGES, POMODORO_DONE_MESSAGES, SHAKE_MESSAGES,
+  TIME_OF_DAY_MESSAGES, RUN_MESSAGES, TYPING_MARATHON_MESSAGES, COFFEE_MESSAGES,
 } from '../../shared/constants';
 
 declare global {
@@ -36,6 +37,10 @@ declare global {
       onReminderTrigger: (cb: (msg: string) => void) => void;
       onShakeEvent: (cb: () => void) => void;
       onHeatLevel: (cb: (level: number) => void) => void;
+      pushCatStats: (stats: Record<string, unknown>) => void;
+      onCatRemoteAction: (cb: (action: string) => void) => void;
+      windowBounce: (heightPx: number) => void;
+      getCatBounds: () => Promise<{ x: number; y: number; w: number; h: number; displayX: number; displayY: number; displayW: number; displayH: number } | null>;
     };
   }
 }
@@ -71,12 +76,15 @@ let pomodoroState: PomodoroState = { mode: 'idle', remainingMs: 0, session: 0 };
 let frame = 0;
 let showHearts = false;
 let heartsTimer: ReturnType<typeof setTimeout> | null = null;
+let showSparklesBurst = false;
+let sparklesTimer: ReturnType<typeof setTimeout> | null = null;
 let wobble = 0;
 let wobbleDecay = false;
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
 let isHoveringCat = false;
+let catFacing = 1; // 1 = right (default), -1 = left
 
 // ─── Canvas ────────────────────────────────────────────────────
 const canvas = document.getElementById('cat-canvas') as HTMLCanvasElement;
@@ -105,12 +113,23 @@ function forceAnim(anim: CatAnimation, durationMs: number) {
   forcedAnim = anim;
   if (forcedAnimTimer) clearTimeout(forcedAnimTimer);
   forcedAnimTimer = setTimeout(() => { forcedAnim = null; }, durationMs);
+
+  if (anim === 'jump' && !settings.lockedPosition) {
+    const jumpH = settings.size * 18;
+    (window.nekodrift as any).windowBounce?.(jumpH);
+  }
 }
 
 function showHeartsBurst(durationMs = 2500) {
   showHearts = true;
   if (heartsTimer) clearTimeout(heartsTimer);
   heartsTimer = setTimeout(() => { showHearts = false; }, durationMs);
+}
+
+function showSparkleEffect(durationMs = 1800) {
+  showSparklesBurst = true;
+  if (sparklesTimer) clearTimeout(sparklesTimer);
+  sparklesTimer = setTimeout(() => { showSparklesBurst = false; }, durationMs);
 }
 
 // ─── Render ────────────────────────────────────────────────────
@@ -132,6 +151,10 @@ function render() {
 
   ctx.save();
   ctx.translate(offsetX, offsetY);
+  if (catFacing === -1) {
+    ctx.translate(catSize, 0);
+    ctx.scale(-1, 1);
+  }
   drawCat(ctx, {
     color: settings.color as CatColor,
     pattern: settings.pattern,
@@ -139,10 +162,11 @@ function render() {
     animation: anim,
     frame,
     scale,
-    eyeDir,
+    eyeDir: catFacing === -1 ? { dx: -eyeDir.dx, dy: eyeDir.dy } : eyeDir,
     heatLevel,
     wobble,
     mood: catMood,
+    hat: (settings as any).hat ?? 'none',
   });
   ctx.restore();
 
@@ -152,11 +176,28 @@ function render() {
 
   if (anim === 'sleep') {
     drawZzz(ctx, offsetX + catSize - scale, offsetY + scale * 2, frame, scale / 5);
+
+    // Deep sleep ghost — floats up after 3 minutes idle
+    const deepSleepMs = 3 * 60 * 1000;
+    if (idleStartTime > 0 && Date.now() - idleStartTime > deepSleepMs) {
+      const ghostY = offsetY - Math.sin(frame * 0.02) * scale * 2;
+      ctx.save();
+      ctx.translate(0, ghostY - offsetY - catSize * 0.6);
+      drawCatGhost(ctx, settings.color as CatColor, scale / 5);
+      ctx.restore();
+    }
   }
 
   if (showHearts || anim === 'purr' || anim === 'happy') {
     drawHearts(ctx, offsetX + catSize / 2, offsetY - scale * 2, frame, scale / 5);
   }
+
+  if (showSparklesBurst) {
+    drawSparkles(ctx, offsetX + catSize / 2, offsetY + catSize / 3, frame, scale / 5);
+  }
+
+  // Seasonal ambient particles (snow, hearts, ghosts)
+  drawSeasonalParticles(ctx, canvas.width, canvas.height, frame, scale / 5);
 
   if (settings.pomodoroEnabled && pomodoroState.mode !== 'idle') {
     drawPomodoroTimer(
@@ -182,6 +223,13 @@ function render() {
   }
 
   frame++;
+  tickWander();
+
+  // Ambient purr: start when sitting/happy, stop when not
+  const shouldPurr = settings.soundEnabled && (anim === 'sit' || anim === 'purr') && catMood !== 'tired';
+  if (shouldPurr && frame % 30 === 0) sound.startAmbientPurr();
+  else if (!shouldPurr && frame % 30 === 0) sound.stopAmbientPurr();
+
   requestAnimationFrame(render);
 }
 
@@ -245,6 +293,7 @@ canvas.addEventListener('pointermove', (e) => {
   if (isDragging) {
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
+    if (Math.abs(dx) > 2) catFacing = dx > 0 ? 1 : -1;
     window.nekodrift.dragCat(dx, dy);
     dragStartX = e.clientX;
     dragStartY = e.clientY;
@@ -277,6 +326,17 @@ canvas.addEventListener('pointerleave', () => {
     isHoveringCat = false;
     window.nekodrift.setIgnoreMouse(true);
   }
+});
+
+canvas.addEventListener('dblclick', () => {
+  if (!isHoveringCat) return;
+  mood.onPet();
+  forceAnim('happy', 1800);
+  showHeartsBurst(1800);
+  showSparkleEffect(1600);
+  sound.meow();
+  const petPhrases = ['♡ ♡ ♡', '*happy squeak*', 'nyaaa!! ♡', 'pet pet pet!! ♡'];
+  showSpeech(petPhrases[Math.floor(Math.random() * petPhrases.length)], 1800);
 });
 
 canvas.addEventListener('contextmenu', (e) => {
@@ -319,6 +379,7 @@ document.getElementById('btn-snooze')!.addEventListener('click', () => {
 window.nekodrift.onCatSettings((s) => {
   settings = s;
   sound.enabled = s.soundEnabled;
+  sound.volume = (s.soundVolume ?? 70) / 100;
   resize();
 });
 
@@ -334,22 +395,46 @@ window.nekodrift.onStretchReminder((msg) => {
   sound.alert();
 });
 
+let idleStartTime = 0;
 window.nekodrift.onIdleChanged((idle) => {
+  const now = Date.now();
   isIdle = idle;
   if (!idle) {
-    forceAnim('happy', 3000);
-    showHeartsBurst(2000);
+    // Wake-up sequence: stretch → happy
+    forceAnim('stretch', 2000);
+    setTimeout(() => {
+      forceAnim('happy', 2000);
+      showHeartsBurst(2000);
+    }, 2000);
     setTimeout(() => sound.chime(), 600);
+
+    // If away ≥ 10 min, maybe sniff coffee; otherwise time-of-day greeting
+    const awayMs = idleStartTime > 0 ? now - idleStartTime : 0;
+    if (awayMs >= 10 * 60 * 1000 && Math.random() < 0.45) {
+      const msg = COFFEE_MESSAGES[Math.floor(Math.random() * COFFEE_MESSAGES.length)];
+      setTimeout(() => showSpeech(msg, 4000), 2200);
+    } else {
+      const greetKey = getTimeOfDayKey();
+      const msgs = TIME_OF_DAY_MESSAGES[greetKey];
+      const msg = msgs[Math.floor(Math.random() * msgs.length)];
+      setTimeout(() => showSpeech(msg(settings.catName), 4000), 2200);
+    }
   } else {
     // Cat settles to sleep with a soft purr
+    idleStartTime = now;
     setTimeout(() => sound.purr(1.8), 800);
   }
 });
 
 window.nekodrift.onTypingChanged((typing) => {
   isTyping = typing;
-  if (typing) mood.onTyping();
-  else heatLevel = Math.max(0, heatLevel - 0.8);
+  if (typing) {
+    mood.onTyping();
+    if (typingStartTime === 0) typingStartTime = Date.now();
+  } else {
+    heatLevel = Math.max(0, heatLevel - 0.8);
+    typingStartTime = 0;
+  }
 });
 
 window.nekodrift.onHeatLevel((level) => {
@@ -363,16 +448,26 @@ window.nekodrift.onHeatLevel((level) => {
 
 window.nekodrift.onMouseVelocity((vel) => {
   if (isIdle) return;
-  if (vel > 300 && currentAnim !== 'hunt') {
+  if (vel > 650 && currentAnim !== 'run') {
+    currentAnim = 'run';
+    if (Math.random() < 0.35) {
+      const msg = RUN_MESSAGES[Math.floor(Math.random() * RUN_MESSAGES.length)];
+      showSpeech(msg, 1800);
+    }
+  } else if (vel > 300 && currentAnim !== 'hunt' && currentAnim !== 'run') {
     forceAnim('hunt', 2200);
   } else if (vel > 0 && !forcedAnim && !isTyping && currentAnim === 'idle') {
     currentAnim = 'walk';
-  } else if (vel === 0 && currentAnim === 'walk') {
+  } else if (vel === 0 && (currentAnim === 'walk' || currentAnim === 'run')) {
     currentAnim = 'idle';
   }
 });
 
 window.nekodrift.onEyeDir((dir) => {
+  // Update facing direction when running/walking to follow the mouse
+  if ((currentAnim === 'run' || currentAnim === 'walk') && Math.abs(dir.dx) > 0.3) {
+    catFacing = dir.dx > 0 ? 1 : -1;
+  }
   eyeDir = {
     dx: eyeDir.dx + (dir.dx - eyeDir.dx) * 0.25,
     dy: eyeDir.dy + (dir.dy - eyeDir.dy) * 0.25,
@@ -456,32 +551,220 @@ setInterval(() => {
   if (!isTyping && heatLevel > 0) heatLevel = Math.max(0, heatLevel - 0.15);
 }, 1500);
 
-// ─── Idle behaviours ───────────────────────────────────────────
+// ─── Typing marathon detector ──────────────────────────────────
+let typingStartTime = 0;
+let lastTypingMarathonAlert = 0;
+
 setInterval(() => {
+  if (!isTyping) { typingStartTime = 0; return; }
+  if (typingStartTime === 0) typingStartTime = Date.now();
+
+  const typingMinutes = (Date.now() - typingStartTime) / 60_000;
+  const now = Date.now();
+
+  // Alert every 20 mins of continuous typing
+  if (typingMinutes >= 20 && now - lastTypingMarathonAlert > 20 * 60_000) {
+    lastTypingMarathonAlert = now;
+    const msgs = TYPING_MARATHON_MESSAGES;
+    const msg = msgs[Math.floor(Math.random() * msgs.length)];
+    showSpeech(typeof msg === 'function' ? msg(settings.name) : msg, 5000);
+  }
+}, 30_000);
+
+// ─── Idle behaviours ───────────────────────────────────────────
+let lastIdleHour = -1;
+
+function runIdleBehavior() {
   if (isIdle || forcedAnim || isTyping || currentAnim !== 'idle') return;
   const catMood = mood.getMood();
   const r = Math.random();
-  if (r < 0.18) {
-    if (catMood === 'lonely') showSpeech(`${settings.name}... pet me please... 🥺`, 4000);
+
+  if (r < 0.14) {
+    if (catMood === 'lonely') { showSpeech(`${settings.name}... pet me please... 🥺`, 4000); }
     else if (catMood === 'happy') { forceAnim('happy', 1500); showHeartsBurst(1500); }
     else if (catMood === 'tired') showSpeech('...so tired... need nap... 😴', 3500);
-  } else if (r < 0.35) {
+    else { forceAnim('happy', 1200); }
+  } else if (r < 0.28) {
     forceAnim('stretch', 3000);
-  } else if (r < 0.45) {
+  } else if (r < 0.38) {
     forceAnim('sit', 4500);
-  } else if (r < 0.58) {
+  } else if (r < 0.52) {
     const thought = CAT_RANDOM_THOUGHTS[Math.floor(Math.random() * CAT_RANDOM_THOUGHTS.length)];
     showSpeech(thought, 4000);
-  } else if (r < 0.66) {
+  } else if (r < 0.60) {
     forceAnim('purr', 2500);
     showSpeech('*self-grooming intensifies* 🐾', 2500);
+  } else if (r < 0.68) {
+    // Extra: jump then sit
+    forceAnim('jump', 800);
+    setTimeout(() => { forceAnim('sit', 3000); }, 800);
   }
-}, 45_000);
+
+  // Hourly time-of-day check-in
+  const now = new Date();
+  const hr = now.getHours();
+  if (hr !== lastIdleHour && now.getMinutes() < 3) {
+    lastIdleHour = hr;
+    const todKey = getTimeOfDayKey();
+    const msgs = TIME_OF_DAY_MESSAGES[todKey];
+    const msg = msgs[Math.floor(Math.random() * msgs.length)];
+    setTimeout(() => showSpeech(msg(settings.catName), 4500), 2000);
+  }
+}
+
+setInterval(runIdleBehavior, 40_000);
+
+// ─── Lonely notification (once per session if unpetted for 5+ min) ──
+let lonelySentThisSession = false;
+setInterval(() => {
+  if (lonelySentThisSession) return;
+  if (mood.getMood() === 'lonely') {
+    lonelySentThisSession = true;
+    (window.nekodrift as any).pushCatStats?.({ __lonelyCry: true });
+  }
+}, 5 * 60_000);
+
+// ─── Auto-wander ───────────────────────────────────────────────
+// Cat occasionally walks to a new X position on screen
+let wanderTarget: number | null = null;
+let wanderDir = 1; // +1 right, -1 left
+let isWandering = false;
+let wanderCancelTime = 0;
+
+async function startWander(): Promise<void> {
+  if (isWandering || settings.lockedPosition || isIdle || forcedAnim) return;
+  const bounds = await (window.nekodrift as any).getCatBounds?.();
+  if (!bounds) return;
+  const { x, w, displayX, displayW } = bounds;
+  const margin = w * 0.2;
+  const minX = displayX + margin;
+  const maxX = displayX + displayW - w - margin;
+  if (maxX <= minX) return;
+
+  wanderTarget = minX + Math.random() * (maxX - minX);
+  wanderDir = wanderTarget > x ? 1 : -1;
+  catFacing = wanderDir;
+  isWandering = true;
+  wanderCancelTime = Date.now() + 8000; // max 8s walk
+  currentAnim = 'walk';
+}
+
+function tickWander(): void {
+  if (!isWandering) return;
+  if (forcedAnim || isTyping || settings.lockedPosition || Date.now() > wanderCancelTime) {
+    isWandering = false;
+    wanderTarget = null;
+    currentAnim = 'idle';
+    return;
+  }
+  // Move 1px per tick at 60fps → smooth walk
+  const speed = settings.size * 0.8;
+  window.nekodrift.dragCat(wanderDir * speed, 0);
+}
+
+// Check wander arrival asynchronously every 200ms
+setInterval(async () => {
+  if (!isWandering || wanderTarget === null) return;
+  const bounds = await (window.nekodrift as any).getCatBounds?.();
+  if (!bounds) return;
+  const dist = Math.abs(bounds.x - wanderTarget);
+  if (dist < 6 || Date.now() > wanderCancelTime) {
+    isWandering = false;
+    wanderTarget = null;
+    // React when arriving: 30% chance of a sit, 20% chance of a stretch
+    const r = Math.random();
+    if (r < 0.3) { currentAnim = 'sit'; setTimeout(() => { if (!forcedAnim) currentAnim = 'idle'; }, 3500); }
+    else if (r < 0.5) { forceAnim('stretch', 2800); }
+    else { currentAnim = 'idle'; }
+    return;
+  }
+  // Edge collision check — if cat is near screen edge, turn around
+  const margin = bounds.w * 0.15;
+  if (bounds.x <= bounds.displayX + margin && wanderDir < 0) {
+    catFacing = 1;
+    wanderDir = 1;
+    wanderTarget = bounds.displayX + bounds.displayW * 0.5;
+    forceAnim('surprised', 600);
+  } else if (bounds.x + bounds.w >= bounds.displayX + bounds.displayW - margin && wanderDir > 0) {
+    catFacing = -1;
+    wanderDir = -1;
+    wanderTarget = bounds.displayX + bounds.displayW * 0.5;
+    forceAnim('surprised', 600);
+  }
+}, 200);
+
+// Trigger wander ~every 90s when not busy
+setInterval(() => {
+  if (!isIdle && !isTyping && !forcedAnim && Math.random() < 0.40) {
+    startWander();
+  }
+}, 90_000);
+
+// Secondary micro-behavior at shorter interval (subtle life signs when sitting)
+setInterval(() => {
+  if (isIdle || forcedAnim || isTyping || currentAnim !== 'idle') return;
+  if (Math.random() < 0.12) {
+    showSpeech('...', 1200);
+  }
+}, 18_000);
+
+function getTimeOfDayKey(): keyof typeof TIME_OF_DAY_MESSAGES {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'morning';
+  if (h >= 12 && h < 18) return 'afternoon';
+  if (h >= 18 && h < 23) return 'evening';
+  return 'night';
+}
+
+// ─── Remote actions (from manager) ─────────────────────────────
+(window.nekodrift as any).onCatRemoteAction?.((action: string) => {
+  switch (action) {
+    case 'pet':
+      mood.onPet();
+      forceAnim('happy', 2000);
+      showHeartsBurst(2000);
+      showSparkleEffect(1800);
+      sound.meow();
+      showSpeech('ooh ooh! pet! ♡', 2000);
+      break;
+    case 'jump':
+      forceAnim('jump', 1200);
+      setTimeout(() => forceAnim('happy', 1500), 1200);
+      sound.chime();
+      break;
+    case 'stretch':
+      forceAnim('stretch', 3000);
+      showSpeech('ahhh~ stretching! 🧘', 2500);
+      break;
+    case 'surprise':
+      forceAnim('surprised', 1200);
+      sound.pop();
+      break;
+    case 'sleep':
+      forceAnim('sleep', 5000);
+      showSpeech('...zzz... 😴', 4000);
+      break;
+    case 'feed':
+      mood.onFeed();
+      forceAnim('happy', 2000);
+      sound.chime();
+      showSpeech('nom nom! 🍣', 2200);
+      break;
+  }
+});
+
+// ─── Stats push ────────────────────────────────────────────────
+function pushStats(): void {
+  const stats = mood.getStats();
+  (window.nekodrift as any).pushCatStats({ ...stats, currentAnim });
+}
+setInterval(pushStats, 30_000);
 
 // ─── Boot ──────────────────────────────────────────────────────
 async function boot() {
   settings = await window.nekodrift.getSettings();
   sound.enabled = settings.soundEnabled;
+  sound.volume = (settings.soundVolume ?? 70) / 100;
   resize();
 
   forceAnim('happy', 5000);
@@ -489,7 +772,14 @@ async function boot() {
   const bootMsg = BOOT_MESSAGES[Math.floor(Math.random() * BOOT_MESSAGES.length)];
   showSpeech(bootMsg(settings.catName), 4500);
 
+  // Follow-up with a time-of-day greeting
+  const todKey = getTimeOfDayKey();
+  const todMsgs = TIME_OF_DAY_MESSAGES[todKey];
+  const todMsg = todMsgs[Math.floor(Math.random() * todMsgs.length)];
+  setTimeout(() => showSpeech(todMsg(settings.catName), 4000), 5000);
+
   setTimeout(() => { if (sound.enabled) sound.meow(); }, 300);
+  setTimeout(pushStats, 3000);
 
   render();
 }

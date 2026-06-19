@@ -1,5 +1,5 @@
 // ─── Cat types ─────────────────────────────────────────────────
-export type CatColor = 'orange' | 'gray' | 'black' | 'white' | 'brown' | 'pink';
+export type CatColor = 'orange' | 'gray' | 'black' | 'white' | 'brown' | 'pink' | 'cream' | 'golden';
 
 export type CatPattern = 'none' | 'tuxedo' | 'tabby' | 'calico' | 'spotted' | 'bicolor';
 
@@ -16,9 +16,12 @@ export interface EyeDir {
 export type CatMood = 'happy' | 'content' | 'tired' | 'lonely';
 
 // ─── Settings ──────────────────────────────────────────────────
+export type CatHat = 'none' | 'tophat' | 'bow' | 'crown' | 'santa' | 'halo';
+
 export interface CatSettings {
   color: CatColor;
   pattern: CatPattern;
+  hat: CatHat;
   name: string;
   catName: string;
   stretchIntervalMin: number;
@@ -51,6 +54,12 @@ export interface CatSettings {
   customPixels: string;
   // Do Not Disturb — pauses stretch + daily reminder notifications
   dndEnabled: boolean;
+  // DND schedule — auto-enable quiet hours (e.g. 22–8)
+  dndScheduleEnabled: boolean;
+  dndStartHour: number;
+  dndEndHour: number;
+  // Sound volume 0–100 (applied when soundEnabled is true)
+  soundVolume: number;
 }
 
 // ─── State objects ─────────────────────────────────────────────
@@ -67,7 +76,7 @@ export interface AiState {
 }
 
 // ─── Multi-sprite types ────────────────────────────────────────
-export type SpriteType = 'cat' | 'pikachu' | 'eevee' | 'gengar' | 'snorlax';
+export type SpriteType = 'cat' | 'pikachu' | 'eevee' | 'gengar' | 'snorlax' | 'bulbasaur' | 'mewtwo' | 'squirtle' | 'charmander' | 'jigglypuff' | 'psyduck' | 'meowth' | 'clefairy' | 'magikarp' | 'abra' | 'slowpoke' | 'ditto' | 'togepi' | 'mew' | 'vulpix' | 'umbreon' | 'sylveon' | 'flareon';
 
 export interface SpriteConfig {
   id: string;
@@ -115,11 +124,19 @@ export const IPC = {
   TOGGLE_LOCK:        'cat:toggle-lock',
 
   // Multi-sprite management
-  SPRITE_ADD:         'sprite:add',
-  SPRITE_REMOVE:      'sprite:remove',
-  SPRITE_LIST:        'sprite:list',
-  SPRITE_RESIZE:      'sprite:resize',
-  SPRITE_EYE_DIR:     'sprite:eye-dir',
-  OPEN_MANAGER:       'window:open-manager',
-  POMO_GET:           'pomodoro:get',
+  SPRITE_ADD:              'sprite:add',
+  SPRITE_REMOVE:           'sprite:remove',
+  SPRITE_LIST:             'sprite:list',
+  SPRITE_RESIZE:           'sprite:resize',
+  SPRITE_EYE_DIR:          'sprite:eye-dir',
+  SPRITE_DRAG:             'sprite:drag',
+  SPRITE_SET_IGNORE_MOUSE: 'sprite:set-ignore',
+  OPEN_MANAGER:            'window:open-manager',
+  POMO_GET:                'pomodoro:get',
+  CAT_STATS_PUSH:          'cat:stats-push',
+  CAT_STATS_GET:           'cat:stats-get',
+  CAT_REMOTE_ACTION:       'cat:remote-action',
+  CAT_REMOTE_ACTION_FWD:   'cat:remote-action-fwd',
+  CAT_WINDOW_BOUNCE:       'cat:window-bounce',
+  GET_CAT_BOUNDS:          'cat:get-bounds',
 } as const;

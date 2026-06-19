@@ -3,6 +3,7 @@ import { CatSettings } from './types';
 export const DEFAULT_SETTINGS: CatSettings = {
   color: 'orange',
   pattern: 'none',
+  hat: 'none',
   name: 'hooman',
   catName: 'NekoDrift',
   stretchIntervalMin: 30,
@@ -27,6 +28,10 @@ export const DEFAULT_SETTINGS: CatSettings = {
   claudeIntegration: true,
   customPixels: '0'.repeat(256),
   dndEnabled: false,
+  dndScheduleEnabled: false,
+  dndStartHour: 22,
+  dndEndHour: 8,
+  soundVolume: 70,
 };
 
 // Named cat breed presets
@@ -37,6 +42,8 @@ export const CAT_PRESETS = [
   { id: 'tuxedo',   label: 'Tuxedo',   color: 'black'  as const, pattern: 'tuxedo' as const },
   { id: 'calico',   label: 'Calico',   color: 'white'  as const, pattern: 'calico' as const },
   { id: 'sakura',   label: 'Sakura',   color: 'pink'   as const, pattern: 'none'   as const },
+  { id: 'cream',    label: 'Cream',    color: 'cream'  as const, pattern: 'none'   as const },
+  { id: 'golden',   label: 'Golden',   color: 'golden' as const, pattern: 'tabby'  as const },
 ] as const;
 
 export const IDLE_THRESHOLD_MS = 60_000 * 3;
@@ -55,6 +62,8 @@ export const CAT_COLORS = {
   white:  { body: '#f0ece8', belly: '#ffffff', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#ddd5cc', eye: '#2d1b0e', iris: '#3c80d0' },
   brown:  { body: '#8b5e3c', belly: '#c4956a', ear: '#f4a7b9', nose: '#c96a2a', stripe: '#6b4228', eye: '#2d1b0e', iris: '#c88020' },
   pink:   { body: '#f4a7b9', belly: '#ffd6e0', ear: '#ff8fa8', nose: '#e8607a', stripe: '#e8899e', eye: '#5c2a3a', iris: '#8880d8' },
+  cream:  { body: '#e8d5b8', belly: '#fff8ec', ear: '#f4a7b9', nose: '#f4a7b9', stripe: '#d4b890', eye: '#2d1b0e', iris: '#22b890' },
+  golden: { body: '#d4962a', belly: '#f5d080', ear: '#f4a7b9', nose: '#b87020', stripe: '#a06818', eye: '#2d1b0e', iris: '#d84020' },
 } as const;
 
 export const STRETCH_MESSAGES = [
@@ -177,4 +186,71 @@ export const CAT_RANDOM_THOUGHTS = [
   'I wonder if I\'m a good cat... (I am)',
   '*yawns dramatically*',
   'do you ever just... stare at a wall? ...no? just me.',
+  '*bats imaginary thing off desk*',
+  'I could be sleeping but here I am. supervising.',
+  '...could go for a sunbeam right now 🌞',
+  '*plots something definitely not mischievous*',
+  'gravity check: *knocks cup off desk*',
+  'what is even a Monday 🐾',
+  'if I fits, I sits. end of story.',
+  '*chirps at bird outside window*',
+  'the cursor... is moving... must chase...',
+  // bonus cat facts
+  'cat fact: we spend 70% of our lives sleeping 😴',
+  'cat fact: my whiskers can sense air currents 🌬',
+  'cat fact: cats have 32 muscles in each ear 👂',
+  'cat fact: we purr at 25-50Hz, good for healing 🐾',
+  'cat fact: cats have 3 eyelids! ask me about the third',
+  'cat fact: I can rotate my ears 180 degrees 🔁',
+  '...I need a snack. and a nap. in that order.',
+  '*flops dramatically for attention*',
+  'just knocked something over. no regrets.',
+  'fun fact: I am perfect',
+];
+
+export const TIME_OF_DAY_MESSAGES = {
+  morning: [
+    (catName: string) => `good morning! ☀️ ${catName} is ready to supervise!`,
+    (catName: string) => `rise and shine! ${catName} has been awake for hours 🐱`,
+    (catName: string) => `morning! ${catName} demands breakfast AND productivity! ☕`,
+  ],
+  afternoon: [
+    (catName: string) => `afternoon! ${catName} reporting for nap duty 😴`,
+    (catName: string) => `post-lunch check-in! ${catName} is watching 👀`,
+    (catName: string) => `hey! ${catName} here. what are we building today? 🐾`,
+  ],
+  evening: [
+    (catName: string) => `good evening~ ${catName} is in cozy mode 🌙`,
+    (catName: string) => `evening! ${catName} approves of late-night sessions ✨`,
+    (catName: string) => `you're still here? ${catName} is pleased 🌟`,
+  ],
+  night: [
+    (catName: string) => `midnight coder spotted! ${catName} approves 🌙`,
+    (catName: string) => `shhh... ${catName} is your only witness 🌑`,
+    (catName: string) => `3am? ${catName} has seen things. keep going 👁️`,
+  ],
+};
+
+export const RUN_MESSAGES = [
+  'zoom zoom!! 🏃',
+  'RUNNING!! can\'t stop!!',
+  '*sprinting intensifies* 🐾',
+  'go go go!! 💨',
+  'wheeeee!! 🌪️',
+  'fast cat go brrrr 💨',
+];
+
+export const TYPING_MARATHON_MESSAGES = [
+  (name: string) => `${name} has been typing forever... you ok? 🐾`,
+  (name: string) => `psst, ${name}... water break? 💧`,
+  (name: string) => `${name}! fingers need rest too! 🐾`,
+  '*watches your hands anxiously*',
+  'have you eaten? asking for a cat 🐱',
+];
+
+export const COFFEE_MESSAGES = [
+  '...is that coffee I smell? ☕',
+  '*sniffs* caffeine detected 👃',
+  'coffee++ detected. productivity incoming ☕',
+  'ooh ooh is it coffee time?? ☕',
 ];

@@ -74,6 +74,7 @@
       transition: background 0.13s, color 0.13s;
     }
     .nav-item:hover  { background: rgba(255,255,255,0.05); color: var(--text); }
+    .nav-item { transition: background 0.12s, color 0.12s; }
     .nav-item.active { background: rgba(155,142,248,0.18); color: var(--accent2); }
     .nav-icon { font-size: 16px; width: 22px; text-align: center; }
 
@@ -110,8 +111,19 @@
     .content::-webkit-scrollbar { width: 5px; }
     .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    .page { display: none; }
-    .page.active { display: block; }
+    .page {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .page.active {
+      display: block;
+      animation: pageIn 0.18s ease forwards;
+    }
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
     .page-title {
       font-size: 18px;
@@ -300,7 +312,7 @@
 
     .add-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       padding: 12px;
     }
@@ -310,7 +322,7 @@
       flex-direction: column;
       align-items: center;
       gap: 5px;
-      padding: 12px 6px;
+      padding: 10px 6px;
       border: 1.5px solid var(--border);
       border-radius: 10px;
       background: var(--surface);
@@ -320,6 +332,7 @@
       font-family: inherit;
       cursor: pointer;
       transition: border-color 0.13s, background 0.13s, transform 0.1s;
+      min-height: 80px;
     }
     .add-sprite-btn:hover { border-color: var(--accent2); background: rgba(155,142,248,0.08); transform: scale(1.04); }
     .add-sprite-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
@@ -440,6 +453,19 @@
       white-space: nowrap;
     }
     #save-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .stat-cell { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-val { font-size: 13px; font-weight: 600; color: var(--text); }
+
+    .cat-action-btn {
+      padding: 6px 12px; border-radius: 8px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      color: var(--text); font-family: inherit; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: border-color 0.12s, background 0.12s, transform 0.08s;
+    }
+    .cat-action-btn:hover { border-color: var(--accent); background: rgba(244,167,185,0.1); transform: scale(1.05); }
+    .cat-action-btn:active { transform: scale(0.96); }
   </style>
 </head>
 <body>
@@ -450,7 +476,7 @@
     <div class="logo">
       <span class="logo-emoji">🐾</span>
       <div>
-        <div class="logo-title">NekoDrift</div>
+        <div class="logo-title" id="sidebar-cat-name">NekoDrift</div>
         <div class="logo-sub">Control Panel</div>
       </div>
     </div>
@@ -477,6 +503,10 @@
       <button class="btn-settings" id="btn-open-settings">
         <span>🎨</span> Cat Appearance
       </button>
+      <div style="font-size:9px;color:var(--muted);text-align:center;padding:4px 0;line-height:1.6">
+        Alt+Shift+C — summon cat<br>
+        v1.0.0 🐾
+      </div>
     </div>
   </nav>
 
@@ -521,6 +551,11 @@
           <button class="btn-pomo" id="btn-pomo-pause">⏸ Pause</button>
           <button class="btn-pomo" id="btn-pomo-reset">↺ Reset</button>
         </div>
+        <div style="padding:6px 0 2px">
+          <button id="btn-focus-session" style="width:100%;padding:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.02em;opacity:0.9;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">
+            🎯 Focus Session — start Pomodoro + DND
+          </button>
+        </div>
         <div class="pomo-cfg">
           <div class="pomo-cfg-item">
             Focus <input type="number" id="pomo-focus" min="5" max="90" step="5" /> min
@@ -547,6 +582,10 @@
             <span style="color:var(--muted);font-size:12px;">min</span>
           </div>
         </div>
+        <div class="setting-row" style="padding:2px 0">
+          <span class="setting-label" style="color:var(--muted);font-size:11px">Next reminder</span>
+          <span id="stretch-next" style="font-size:11px;color:var(--accent)">—</span>
+        </div>
       </div>
 
       <!-- Daily Reminder -->
@@ -570,6 +609,10 @@
           <span class="setting-label">Message</span>
           <input type="text" id="reminder-msg" class="wide" maxlength="80" placeholder="Hey! Check in time!" />
         </div>
+        <div class="setting-row" style="padding:2px 0">
+          <span class="setting-label" style="color:var(--muted);font-size:11px">Next reminder</span>
+          <span id="reminder-next" style="font-size:11px;color:var(--accent)">—</span>
+        </div>
       </div>
 
       <button class="btn-save" id="btn-save-timers">Save Timer Settings</button>
@@ -590,6 +633,9 @@
         <div class="setting-col">
           <label>Shown as a sticky note when you hover the cat</label>
           <textarea id="sticky-text" maxlength="200" placeholder="Your note here..."></textarea>
+          <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px">
+            <span id="sticky-count">0</span>/200 chars
+          </div>
         </div>
       </div>
 
@@ -604,6 +650,9 @@
         <div class="setting-col">
           <label>Always visible above the cat</label>
           <input type="text" id="pinned-msg" class="wide" maxlength="80" placeholder="Write something..." />
+          <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px">
+            <span id="pinned-count">0</span>/80 chars
+          </div>
         </div>
       </div>
 
@@ -644,6 +693,45 @@
       <div class="page-title">System</div>
 
       <div class="card">
+        <div class="card-header">Quick Actions</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 0">
+          <button class="cat-action-btn" data-action="pet"     title="Pet the cat">🐾 Pet</button>
+          <button class="cat-action-btn" data-action="jump"    title="Make jump">🏃 Jump</button>
+          <button class="cat-action-btn" data-action="stretch" title="Stretch">🧘 Stretch</button>
+          <button class="cat-action-btn" data-action="surprise" title="Surprise!">😱 Surprise</button>
+          <button class="cat-action-btn" data-action="sleep"   title="Sleep">😴 Sleep</button>
+          <button class="cat-action-btn" data-action="feed"    title="Feed the cat">🍣 Feed</button>
+        </div>
+      </div>
+
+      <div class="card" id="cat-stats-card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+          Cat Status
+          <button id="btn-refresh-stats" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px" title="Refresh">↻</button>
+        </div>
+        <div id="cat-stats-body" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding:4px 0">
+          <div class="stat-cell"><span class="stat-label">Mood</span><span class="stat-val" id="stat-mood">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Session</span><span class="stat-val" id="stat-session">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Pets today</span><span class="stat-val" id="stat-pets">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Last pet</span><span class="stat-val" id="stat-lastpet">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Typing bursts</span><span class="stat-val" id="stat-typing">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Overheats</span><span class="stat-val" id="stat-overheat">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Lifetime pets ♡</span><span class="stat-val" id="stat-lifetime-pets">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Keys today</span><span class="stat-val" id="stat-keys-today">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Cat age</span><span class="stat-val" id="stat-cat-age">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Hunger</span><span class="stat-val" id="stat-hunger">—</span></div>
+          <div class="stat-cell"><span class="stat-label">Times fed</span><span class="stat-val" id="stat-feed-count">—</span></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="stat-label" style="margin-bottom:4px">Mood today</div>
+          <canvas id="mood-sparkline" width="260" height="38" style="width:100%;height:38px;display:block;border-radius:6px;background:rgba(255,255,255,0.04)"></canvas>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted,#888);margin-top:2px">
+            <span>midnight</span><span>noon</span><span>now</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-header">Behaviour</div>
         <div class="setting-row">
           <div>
@@ -677,6 +765,25 @@
         </div>
         <div class="setting-row">
           <div>
+            <div class="setting-label">DND Schedule</div>
+            <div class="setting-sub">Auto-quiet during these hours</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-dnd-schedule" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-row" id="dnd-hours-row" style="display:none;padding:2px 0 6px">
+          <span class="setting-label" style="font-size:11px;color:var(--muted)">Quiet hours</span>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+            <input type="number" id="dnd-start-hour" min="0" max="23" style="width:44px" />
+            <span style="color:var(--muted)">to</span>
+            <input type="number" id="dnd-end-hour" min="0" max="23" style="width:44px" />
+            <span style="color:var(--muted)">h</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
             <div class="setting-label">Show on all desktops</div>
             <div class="setting-sub">Cat follows across virtual desktops / workspaces</div>
           </div>
@@ -687,7 +794,39 @@
         </div>
       </div>
 
+      <div class="card">
+        <div class="card-header">Sound</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Sound effects</div>
+            <div class="setting-sub">Meow, purr, chime</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="sys-toggle-sound" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="setting-row" style="padding:6px 0">
+          <div class="setting-label">Volume</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" id="sys-range-volume" min="10" max="100" step="5" style="width:100px;accent-color:var(--accent)" />
+            <span id="sys-volume-label" style="font-size:11px;color:var(--muted);min-width:32px">70%</span>
+          </div>
+        </div>
+      </div>
+
       <button class="btn-save" id="btn-save-system">Save System Settings</button>
+
+      <div class="card" style="margin-top:12px">
+        <div class="card-header">Backup &amp; Restore</div>
+        <div style="display:flex;gap:8px;padding:4px 0">
+          <button id="btn-export-settings" style="flex:1;padding:7px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;cursor:pointer">⬇ Export Settings</button>
+          <label id="btn-import-settings" style="flex:1;padding:7px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center">
+            ⬆ Import Settings
+            <input type="file" id="import-file" accept=".json" style="display:none" />
+          </label>
+        </div>
+      </div>
     </section>
 
   </main>

@@ -3,8 +3,10 @@ import { CAT_COLORS } from '../../shared/constants';
 import { computeAnimState } from './drawing/animations';
 
 // Re-export overlays and particles so cat.ts/settings.ts keep the same import path
-export { drawSteam, drawZzz, drawHearts } from './drawing/particles';
+export { drawSteam, drawZzz, drawHearts, drawSparkles, drawSeasonalParticles } from './drawing/particles';
 export { drawPomodoroTimer, drawSpeechBubble, drawCatGhost } from './drawing/overlays';
+
+export type CatHat = 'none' | 'tophat' | 'bow' | 'crown' | 'santa' | 'halo';
 
 export interface DrawOptions {
   color: CatColor;
@@ -17,6 +19,7 @@ export interface DrawOptions {
   heatLevel?: number;
   wobble?: number;
   mood?: 'happy' | 'content' | 'tired' | 'lonely';
+  hat?: CatHat;
 }
 
 // 9-color editor palette (index 0 = transparent)
@@ -293,7 +296,23 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
   }
 
   if (animation === 'think') {
-    px(3, 2 + by, 2, 2, pal.body); // thought bubble start
+    // Thought bubble chain: three dots then main bubble
+    const bubbleAlpha = 0.55 + Math.sin(frame * 0.1) * 0.2;
+    // Dots (ascending)
+    px(-1, 1 + by, 1, 1, '#ffffff', bubbleAlpha * 0.6);
+    px(0, 0 + by, 1, 1, '#ffffff', bubbleAlpha * 0.75);
+    px(1.5, -1.5 + by, 1.5, 1.5, '#ffffff', bubbleAlpha * 0.88);
+    // Main bubble
+    ctx.globalAlpha = bubbleAlpha;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse((wobbleOff + 4) * scale, (-2) * scale, 3.5 * scale, 2.5 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    // Three dots inside bubble
+    px(2, -3 + by, 1, 1, pal.eye, 0.9);
+    px(4, -3 + by, 1, 1, pal.eye, 0.9);
+    px(6, -3 + by, 1, 1, pal.eye, 0.9);
   }
 
   // ── LEGS / PAWS ───────────────────────────────────────────────
@@ -349,14 +368,40 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     px(4, 9 + byr, 3, 2, pal.body);
     px(9, 9 + byr, 3, 2, pal.body);
     px(5, 11 + byr, 6, 1, pal.body);
+  } else if (animation === 'run') {
+    // Run: wide stride, legs extend far up and down, body crouched forward
+    const lo = Math.max(-2, Math.min(2, Math.round(legOffset * 0.7)));
+    px(4, 10 + byr, 3, 3 + lo, pal.body);   // left leg (taller stride)
+    px(9, 10 + byr, 3, 3 - lo, pal.body);   // right leg
+    px(4, 13 + byr + lo, 3, 1, pal.belly);
+    px(9, 13 + byr - lo, 3, 1, pal.belly);
+    // Dust puff under running paws (small pixel)
+    if (Math.abs(lo) >= 2) {
+      px(4 + (lo > 0 ? 0 : 6), 14 + byr, 2, 1, pal.belly, 0.35);
+    }
   } else {
-    // Walk / run / idle — two clean front legs, alternating for walk.
-    // Clamp the swing so a leg never shrinks to zero height.
+    // Walk / idle — two clean front legs, alternating for walk.
     const lo = Math.max(-1, Math.min(1, Math.round(legOffset * 0.5)));
     px(4, 11 + byr, 3, 2 + lo, pal.body);   // left leg
     px(9, 11 + byr, 3, 2 - lo, pal.body);   // right leg
     px(4, 13 + byr + lo, 3, 1, pal.belly);  // paw tips track each leg
     px(9, 13 + byr - lo, 3, 1, pal.belly);
+  }
+
+  // ── SPEED LINES (run) ──
+  if (animation === 'run') {
+    const lineAlpha = 0.22 + Math.abs(Math.sin(frame * 0.18)) * 0.12;
+    const off = (frame % 6);  // scrolling offset
+    ctx.globalAlpha = lineAlpha;
+    ctx.strokeStyle = pal.belly;
+    ctx.lineWidth = scale * 0.4;
+    for (let i = 0; i < 5; i++) {
+      const y = (3 + i * 2.5 + off * 0.4 + by) * scale;
+      const len = (2 + (i % 2)) * scale;
+      ctx.beginPath(); ctx.moveTo(-len * 1.4, y); ctx.lineTo(-1, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(17 * scale + 1, y); ctx.lineTo(17 * scale + len * 1.4, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
   }
 
   // ── OVERHEAT TINT ──
@@ -390,6 +435,118 @@ export function drawCat(ctx: CanvasRenderingContext2D, opts: DrawOptions): void 
     ctx.fillRect(wobbleOff * scale, 0, 16 * scale, 16 * scale);
     ctx.globalAlpha = 1;
   }
+
+  // ── HAT OVERLAY ──
+  if (opts.hat && opts.hat !== 'none' && animation !== 'sleep') {
+    drawHat(ctx, opts.hat, scale, wobbleOff, by, frame);
+  }
+}
+
+function drawHat(
+  ctx: CanvasRenderingContext2D,
+  hat: CatHat,
+  scale: number,
+  wobbleOff: number,
+  by: number,
+  frame: number,
+): void {
+  // Cat head center is around (7+wobbleOff, 2+by) in grid coords
+  const hx = (7 + wobbleOff) * scale;
+  const hy = (by + 1) * scale; // top of head
+
+  ctx.save();
+  switch (hat) {
+    case 'tophat': {
+      // Brim
+      ctx.fillStyle = '#1A1A2E';
+      ctx.fillRect(hx - 4 * scale, hy - 1 * scale, 8 * scale, 1 * scale);
+      // Cylinder
+      ctx.fillStyle = '#1A1A2E';
+      ctx.fillRect(hx - 2.5 * scale, hy - 4 * scale, 5 * scale, 3 * scale);
+      // Hat band (red)
+      ctx.fillStyle = '#CC3333';
+      ctx.fillRect(hx - 2.5 * scale, hy - 2 * scale, 5 * scale, 0.8 * scale);
+      break;
+    }
+    case 'bow': {
+      // Two bow lobes
+      ctx.fillStyle = '#FF4488';
+      ctx.beginPath();
+      ctx.ellipse(hx - 2.5 * scale, hy - 2 * scale, 2.2 * scale, 1.5 * scale, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(hx + 2.5 * scale, hy - 2 * scale, 2.2 * scale, 1.5 * scale, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Center knot
+      ctx.fillStyle = '#FF88BB';
+      ctx.beginPath();
+      ctx.arc(hx, hy - 2 * scale, 1.0 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'crown': {
+      const goldY = hy - 1.5 * scale;
+      // Crown base
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(hx - 4 * scale, goldY, 8 * scale, 2.5 * scale);
+      // Crown points (3 zigzag)
+      ctx.beginPath();
+      ctx.moveTo(hx - 4 * scale, goldY);
+      ctx.lineTo(hx - 4 * scale, goldY - 2.5 * scale);
+      ctx.lineTo(hx - 1.5 * scale, goldY - 1.2 * scale);
+      ctx.lineTo(hx, goldY - 2.8 * scale);
+      ctx.lineTo(hx + 1.5 * scale, goldY - 1.2 * scale);
+      ctx.lineTo(hx + 4 * scale, goldY - 2.5 * scale);
+      ctx.lineTo(hx + 4 * scale, goldY);
+      ctx.closePath();
+      ctx.fill();
+      // Gem on center point
+      ctx.fillStyle = '#FF4444';
+      ctx.beginPath();
+      ctx.arc(hx, goldY - 2.8 * scale, 0.8 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'santa': {
+      // White brim base
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(hx - 4.5 * scale, hy - 1.5 * scale, 9 * scale, 1.5 * scale);
+      // Red cone body
+      ctx.fillStyle = '#CC2222';
+      ctx.beginPath();
+      ctx.moveTo(hx - 3 * scale, hy - 1.5 * scale);
+      ctx.lineTo(hx + 1.5 * scale, hy - 6 * scale);
+      ctx.lineTo(hx + 3 * scale, hy - 1.5 * scale);
+      ctx.closePath();
+      ctx.fill();
+      // Pompom (pulses)
+      const pompScale = 1 + Math.sin(frame * 0.08) * 0.15;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(hx + 1.5 * scale, hy - 6 * scale, 1.3 * scale * pompScale, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'halo': {
+      // Floating gold ring above head
+      const haloFloat = Math.sin(frame * 0.04) * 0.5 * scale;
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 1.2 * scale;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(hx, hy - 3.5 * scale + haloFloat, 4 * scale, 1.5 * scale, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // Inner gold glow
+      ctx.strokeStyle = '#FFFFAA';
+      ctx.lineWidth = 0.5 * scale;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.ellipse(hx, hy - 3.5 * scale + haloFloat, 3.5 * scale, 1.2 * scale, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    }
+  }
+  ctx.restore();
 }
 
 // ── PREDEFINED PATTERNS ──
